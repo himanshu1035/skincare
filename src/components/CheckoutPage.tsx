@@ -1,30 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
-import { ArrowLeft, Lock, CreditCard, CheckCircle2, Truck, MapPin, Percent } from 'lucide-react';
+import { ArrowLeft, Lock, CheckCircle2, MapPin, Percent, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+
+const STATES = [
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"
+];
 
 export const CheckoutPage: React.FC = () => {
   const { cart, createOrder, currency, checkUserExists, registerUser, settings } = useStore();
   const navigate = useNavigate();
   
-  // Contact States
+  // Form States
   const [email, setEmail] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [address, setAddress] = useState('');
+  const [landmark, setLandmark] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('Punjab');
+  const [zip, setZip] = useState('');
   const [mobile, setMobile] = useState('');
   const [password, setPassword] = useState('');
+  
   const [userExists, setUserExists] = useState<boolean | null>(null);
-
-  // Address States
-  const [address, setAddress] = useState('');
-  const [city, setCity] = useState('');
-  const [state, setState] = useState('');
-  const [zip, setZip] = useState('');
-
-  // Payment States
   const [paymentMethod, setPaymentMethod] = useState<'Prepaid' | 'COD'>('Prepaid');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Check if user exists
+  // Check user exists
   useEffect(() => {
     const timer = setTimeout(async () => {
       if (email.includes('@') && mobile.length >= 10) {
@@ -46,188 +50,210 @@ export const CheckoutPage: React.FC = () => {
   const payNowAmount = (paymentMethod === 'COD' && settings.payDeliveryFirst) ? deliveryCharge : (paymentMethod === 'Prepaid' ? finalTotal : 0);
 
   const handleCompletePurchase = async () => {
-    if (!email || !mobile || !address || !city || !state || !zip) {
-      alert('Please fill in all details');
-      return;
-    }
-
-    if (userExists === false && !password) {
-      alert('Please set a password to create your account');
+    if (!email || !firstName || !lastName || !address || !city || !zip || !mobile) {
+      alert('Please fill in all required fields');
       return;
     }
 
     setIsProcessing(true);
-
     let userId = null;
-    if (userExists === false) {
+    if (userExists === false && password) {
       userId = await registerUser(email, mobile, password);
-      if (!userId) {
-        alert('Failed to create account. Please try again.');
-        setIsProcessing(false);
-        return;
-      }
     }
 
     const success = await createOrder({ 
-      email, 
-      mobile, 
-      address, 
-      city, 
-      state, 
-      zip, 
-      paymentMethod, 
-      totalAmount: finalTotal,
-      userId 
+      email, mobile, firstName, lastName, address, landmark, city, state, zip, paymentMethod, totalAmount: finalTotal, userId 
     });
 
     if (success) {
-      alert(paymentMethod === 'COD' && settings.payDeliveryFirst 
-        ? `Order placed! Please pay ${currency}${deliveryCharge.toFixed(2)} delivery charge to confirm.` 
-        : 'Order placed successfully!');
+      alert('Order placed successfully!');
       navigate('/');
     } else {
-      alert('Failed to place order. Please try again.');
+      alert('Failed to place order.');
     }
     setIsProcessing(false);
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f9f9f9', padding: '40px 0' }}>
-      <div className="container" style={{ maxWidth: '1100px' }}>
-        <button onClick={() => navigate('/')} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', marginBottom: '32px', fontWeight: '600' }}>
-          <ArrowLeft size={18} /> BACK TO SHOP
-        </button>
+    <div style={{ minHeight: '100vh', background: 'white', padding: '40px 0' }}>
+      <style>{`
+        .input-field { width: 100%; padding: 14px 16px; border: 1.5px solid #d9d9d9; borderRadius: 8px; fontSize: 14px; transition: border-color 0.2s; }
+        .input-field:focus { border-color: var(--accent-gold); outline: none; }
+        .section-title { font-size: 22px; font-weight: 700; margin-bottom: 20px; color: #1a1a1a; }
+        .payment-card { padding: 20px; border-radius: 12px; border: 1.5px solid #eee; cursor: pointer; transition: all 0.2s; display: flex; align-items: flex-start; gap: 16px; }
+        .payment-card.active { border-color: var(--accent-gold); background: #fffcf5; }
+        .radio-circle { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #ddd; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+        .payment-card.active .radio-circle { border-color: var(--accent-gold); }
+        .radio-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent-gold); }
+      `}</style>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: '40px' }}>
+      <div className="container" style={{ maxWidth: '1200px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '80px' }}>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            
-            {/* 1. Contact */}
-            <div style={{ background: 'white', padding: '32px', borderRadius: '20px', boxShadow: 'var(--shadow-sm)' }}>
-              <h2 style={{ fontSize: '20px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}><CheckCircle2 size={24} color="var(--accent-gold)" /> 1. Contact Details</h2>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <input type="email" placeholder="Email Address" value={email} onChange={(e) => setEmail(e.target.value)} style={{ padding: '16px', borderRadius: '12px', border: '1px solid #eee' }} />
-                <input type="tel" placeholder="Mobile Number" value={mobile} onChange={(e) => setMobile(e.target.value)} style={{ padding: '16px', borderRadius: '12px', border: '1px solid #eee' }} />
+          {/* Left Column: Form */}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+              <div style={{ fontSize: '28px', fontWeight: 'bold' }}>COSRX<span style={{ color: 'var(--accent-gold)' }}>.</span></div>
+              {!userExists && <button onClick={() => navigate('/login')} style={{ background: 'none', color: 'var(--accent-gold)', fontWeight: '600', textDecoration: 'underline' }}>Sign in</button>}
+            </div>
+
+            {/* Contact Section */}
+            <div style={{ marginBottom: '40px' }}>
+              <h2 className="section-title">Contact</h2>
+              <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="input-field" />
+            </div>
+
+            {/* Delivery Section */}
+            <div style={{ marginBottom: '40px' }}>
+              <h2 className="section-title">Delivery</h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ position: 'relative' }}>
+                  <select className="input-field" style={{ appearance: 'none' }} disabled>
+                    <option>India</option>
+                  </select>
+                  <ChevronDown size={18} style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                </div>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <input type="text" placeholder="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="input-field" />
+                  <input type="text" placeholder="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} className="input-field" />
+                </div>
+
+                <input type="text" placeholder="Full Address (House no., Area, etc)" value={address} onChange={(e) => setAddress(e.target.value)} className="input-field" />
+                <input type="text" placeholder="Landmark (optional)" value={landmark} onChange={(e) => setLandmark(e.target.value)} className="input-field" />
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                  <input type="text" placeholder="City" value={city} onChange={(e) => setCity(e.target.value)} className="input-field" />
+                  <div style={{ position: 'relative' }}>
+                    <select className="input-field" style={{ appearance: 'none' }} value={state} onChange={(e) => setState(e.target.value)}>
+                      {STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                    <ChevronDown size={18} style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                  </div>
+                  <input type="text" placeholder="PIN code" value={zip} onChange={(e) => setZip(e.target.value)} className="input-field" />
+                </div>
+
+                <div style={{ position: 'relative' }}>
+                  <input type="tel" placeholder="Phone" value={mobile} onChange={(e) => setMobile(e.target.value)} className="input-field" />
+                  <div style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', color: '#999', cursor: 'help' }}>?</div>
+                </div>
               </div>
 
               {userExists === false && (
-                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} style={{ background: 'rgba(197,160,89,0.05)', padding: '20px', borderRadius: '12px', border: '1px dashed var(--accent-gold)', marginTop: '20px' }}>
-                  <div style={{ fontWeight: 'bold', color: 'var(--accent-gold)', fontSize: '14px', marginBottom: '8px' }}>NEW CUSTOMER? CREATE PASSWORD</div>
-                  <input type="password" placeholder="Set Account Password" value={password} onChange={(e) => setPassword(e.target.value)} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--accent-gold)' }} />
+                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} style={{ marginTop: '20px', padding: '20px', borderRadius: '12px', background: '#f5f5f7' }}>
+                  <p style={{ fontSize: '13px', fontWeight: '600', marginBottom: '12px' }}>New here? Create a password to track your order.</p>
+                  <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className="input-field" style={{ background: 'white' }} />
                 </motion.div>
               )}
             </div>
 
-            {/* 2. Shipping */}
-            <div style={{ background: 'white', padding: '32px', borderRadius: '20px', boxShadow: 'var(--shadow-sm)' }}>
-              <h2 style={{ fontSize: '20px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}><MapPin size={24} color="var(--accent-gold)" /> 2. Shipping Address</h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <input type="text" placeholder="House No, Street, Landmark" value={address} onChange={(e) => setAddress(e.target.value)} style={{ padding: '16px', borderRadius: '12px', border: '1px solid #eee' }} />
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
-                  <input type="text" placeholder="City" value={city} onChange={(e) => setCity(e.target.value)} style={{ padding: '16px', borderRadius: '12px', border: '1px solid #eee' }} />
-                  <input type="text" placeholder="State" value={state} onChange={(e) => setState(e.target.value)} style={{ padding: '16px', borderRadius: '12px', border: '1px solid #eee' }} />
-                  <input type="text" placeholder="ZIP Code" value={zip} onChange={(e) => setZip(e.target.value)} style={{ padding: '16px', borderRadius: '12px', border: '1px solid #eee' }} />
-                </div>
-              </div>
-            </div>
-
-            {/* 3. Payment */}
-            <div style={{ background: 'white', padding: '32px', borderRadius: '20px', boxShadow: 'var(--shadow-sm)' }}>
-              <h2 style={{ fontSize: '20px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}><CreditCard size={24} color="var(--accent-gold)" /> 3. Payment Method</h2>
+            {/* Payment Section */}
+            <div style={{ marginBottom: '40px' }}>
+              <h2 className="section-title">Payment</h2>
+              <p style={{ fontSize: '13px', color: '#666', marginBottom: '20px' }}>All transactions are secure and encrypted.</p>
               
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <button 
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div 
+                  className={`payment-card ${paymentMethod === 'Prepaid' ? 'active' : ''}`}
                   onClick={() => setPaymentMethod('Prepaid')}
-                  style={{ 
-                    padding: '24px', borderRadius: '16px', border: paymentMethod === 'Prepaid' ? '2px solid var(--accent-gold)' : '1px solid #eee',
-                    background: paymentMethod === 'Prepaid' ? 'rgba(197,160,89,0.05)' : 'white', textAlign: 'left', position: 'relative'
-                  }}
                 >
-                  <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Pay Online</div>
-                  <div style={{ fontSize: '12px', color: 'var(--success-green)', fontWeight: 'bold' }}>Save {currency}{settings.prepayDiscount} instantly</div>
-                  {paymentMethod === 'Prepaid' && <CheckCircle2 size={20} style={{ position: 'absolute', top: '12px', right: '12px' }} color="var(--accent-gold)" />}
-                </button>
-
-                <button 
-                  onClick={() => setPaymentMethod('COD')}
-                  style={{ 
-                    padding: '24px', borderRadius: '16px', border: paymentMethod === 'COD' ? '2px solid var(--accent-gold)' : '1px solid #eee',
-                    background: paymentMethod === 'COD' ? 'rgba(197,160,89,0.05)' : 'white', textAlign: 'left', position: 'relative'
-                  }}
-                >
-                  <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Cash on Delivery</div>
-                  <div style={{ fontSize: '12px', color: 'var(--error-red)' }}>+{currency}{settings.codCharge} COD Charge</div>
-                  {paymentMethod === 'COD' && <CheckCircle2 size={20} style={{ position: 'absolute', top: '12px', right: '12px' }} color="var(--accent-gold)" />}
-                </button>
-              </div>
-
-              {paymentMethod === 'COD' && settings.payDeliveryFirst && (
-                <div style={{ marginTop: '20px', background: '#fff9e6', border: '1px solid #ffe58f', padding: '16px', borderRadius: '12px', fontSize: '13px', display: 'flex', gap: '10px' }}>
-                  <Truck size={20} color="#faad14" />
-                  <div>
-                    <strong>Pay Delivery First:</strong> To prevent fake orders, please pay the delivery charge of <strong>{currency}{settings.deliveryCharge}</strong> now. The rest can be paid as COD.
+                  <div className="radio-circle">
+                    {paymentMethod === 'Prepaid' && <div className="radio-dot" />}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <span style={{ fontWeight: '600' }}>Pay Now - UPI, Cards, Wallets</span>
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo.png" style={{ height: '12px' }} alt="UPI" />
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/Visa.svg" style={{ height: '12px' }} alt="Visa" />
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" style={{ height: '12px' }} alt="MC" />
+                      </div>
+                    </div>
+                    <p style={{ fontSize: '12px', color: '#666' }}>Get extra {currency}{settings.prepayDiscount} discount instantly on prepaying.</p>
                   </div>
                 </div>
-              )}
+
+                <div 
+                  className={`payment-card ${paymentMethod === 'COD' ? 'active' : ''}`}
+                  onClick={() => setPaymentMethod('COD')}
+                >
+                  <div className="radio-circle">
+                    {paymentMethod === 'COD' && <div className="radio-dot" />}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <span style={{ fontWeight: '600' }}>Cash on Delivery</span>
+                      <DollarSign size={16} color="#666" />
+                    </div>
+                    <p style={{ fontSize: '12px', color: '#666' }}>Handling charge of {currency}{settings.codCharge} applies for COD orders.</p>
+                    {settings.payDeliveryFirst && (
+                      <div style={{ marginTop: '12px', padding: '12px', background: '#fff9e6', borderRadius: '8px', fontSize: '11px', color: '#856404' }}>
+                        Note: {currency}{settings.deliveryCharge} delivery charge must be paid online to confirm.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
+
+            <button 
+              className="btn-primary" 
+              style={{ width: '100%', height: '64px', fontSize: '18px', fontWeight: 'bold', borderRadius: '12px', letterSpacing: '1px' }}
+              onClick={handleCompletePurchase}
+              disabled={isProcessing}
+            >
+              {isProcessing ? 'PROCESSING...' : (payNowAmount > 0 ? `PAY ${currency}${payNowAmount.toFixed(2)}` : 'PLACE ORDER')}
+            </button>
           </div>
 
-          {/* Right: Summary */}
-          <div style={{ position: 'sticky', top: '20px' }}>
-            <div style={{ background: 'white', padding: '32px', borderRadius: '24px', boxShadow: 'var(--shadow-sm)' }}>
-              <h2 style={{ fontSize: '18px', marginBottom: '24px' }}>Order Summary</h2>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
-                {cart.map((item) => (
-                  <div key={item.id} style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          {/* Right Column: Summary */}
+          <div>
+            <div style={{ background: '#f5f5f7', padding: '40px', borderRadius: '24px', position: 'sticky', top: '40px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '32px' }}>
+                {cart.map(item => (
+                  <div key={item.id} style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                     <div style={{ position: 'relative' }}>
-                      <img src={item.image} alt={item.name} style={{ width: '56px', height: '56px', borderRadius: '12px', border: '1px solid #eee' }} />
-                      <span style={{ position: 'absolute', top: '-8px', right: '-8px', background: 'var(--text-dark)', color: 'white', width: '20px', height: '20px', borderRadius: '50%', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{item.quantity}</span>
+                      <img src={item.image} style={{ width: '64px', height: '64px', borderRadius: '12px', border: '1px solid #ddd', background: 'white' }} alt="" />
+                      <span style={{ position: 'absolute', top: '-10px', right: '-10px', background: '#666', color: 'white', width: '22px', height: '22px', borderRadius: '50%', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{item.quantity}</span>
                     </div>
-                    <div style={{ flex: 1, fontSize: '13px', fontWeight: '500' }}>{item.name}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '14px', fontWeight: '600' }}>{item.name}</div>
+                      <div style={{ fontSize: '12px', color: '#666' }}>{item.isFree ? 'Free Gift' : 'Premium Snail Mucin'}</div>
+                    </div>
                     <div style={{ fontWeight: 'bold' }}>{currency}{item.isFree ? '0.00' : (item.price * item.quantity).toFixed(2)}</div>
                   </div>
                 ))}
               </div>
 
-              <div style={{ borderTop: '1px solid #eee', paddingTop: '24px', display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '14px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
-                  <span>Items Subtotal</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '14px', borderTop: '1px solid #ddd', paddingTop: '24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Subtotal</span>
                   <span>{currency}{itemsTotal.toFixed(2)}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
-                  <span>Delivery Charge</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Shipping</span>
                   <span>{currency}{deliveryCharge.toFixed(2)}</span>
                 </div>
-                {paymentMethod === 'COD' && settings.codCharge > 0 && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--error-red)' }}>
-                    <span>COD Extra Charge</span>
-                    <span>+{currency}{settings.codCharge.toFixed(2)}</span>
+                {paymentMethod === 'COD' && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>COD Handling</span>
+                    <span>{currency}{settings.codCharge.toFixed(2)}</span>
                   </div>
                 )}
-                {paymentMethod === 'Prepaid' && settings.prepayDiscount > 0 && (
+                {paymentMethod === 'Prepaid' && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--success-green)', fontWeight: 'bold' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Percent size={14} /> Prepaid Discount</span>
+                    <span>Prepaid Discount</span>
                     <span>-{currency}{settings.prepayDiscount.toFixed(2)}</span>
                   </div>
                 )}
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '22px', fontWeight: 'bold', marginTop: '12px', borderTop: '1px solid #eee', paddingTop: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '24px', fontWeight: 'bold', marginTop: '12px', borderTop: '1px solid #ddd', paddingTop: '12px' }}>
                   <span>Total</span>
-                  <span>{currency}{finalTotal.toFixed(2)}</span>
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{ fontSize: '12px', color: '#666', marginRight: '8px' }}>INR</span>
+                    {currency}{finalTotal.toFixed(2)}
+                  </div>
                 </div>
-              </div>
-
-              <button 
-                className="btn-primary" 
-                style={{ width: '100%', justifyContent: 'center', marginTop: '32px', height: '64px', fontSize: '18px' }}
-                onClick={handleCompletePurchase}
-                disabled={isProcessing}
-              >
-                {isProcessing ? 'PROCESSING...' : (payNowAmount > 0 ? `PAY ${currency}${payNowAmount.toFixed(2)}` : 'PLACE ORDER')}
-              </button>
-
-              <div style={{ marginTop: '24px', display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
-                <Lock size={14} /> 256-bit Secure Encryption
+                <p style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>Including {currency}60.25 in taxes</p>
               </div>
             </div>
           </div>
@@ -237,3 +263,5 @@ export const CheckoutPage: React.FC = () => {
     </div>
   );
 };
+
+import { DollarSign } from 'lucide-react';

@@ -141,7 +141,7 @@ export const AdminPage: React.FC = () => {
                   <input type="number" value={price} onChange={(e) => setPrice(Number(e.target.value))} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
                   <label style={{ fontSize: '14px' }}>Original Price ({currency})</label>
                   <input type="number" value={origPrice} onChange={(e) => setOrigPrice(Number(e.target.value))} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
-                  <button onClick={() => updateProduct({ price, originalPrice: origPrice })} className="btn-primary" style={{ justifyContent: 'center' }}>SAVE CHANGES</button>
+                  <button onClick={async () => { await updateProduct({ price, originalPrice: origPrice }); alert('Product details updated successfully!'); }} className="btn-primary" style={{ justifyContent: 'center' }}>SAVE CHANGES</button>
                 </div>
               </div>
 
@@ -183,7 +183,7 @@ export const AdminPage: React.FC = () => {
                       {settings.payDeliveryFirst ? <ToggleRight size={40} /> : <ToggleLeft size={40} />}
                     </button>
                   </div>
-                  <button onClick={() => updateSettings({ deliveryCharge })} className="btn-primary" style={{ justifyContent: 'center' }}>SAVE DELIVERY</button>
+                  <button onClick={async () => { await updateSettings({ deliveryCharge }); alert('Delivery settings saved!'); }} className="btn-primary" style={{ justifyContent: 'center' }}>SAVE DELIVERY</button>
                 </div>
               </div>
 
@@ -196,7 +196,7 @@ export const AdminPage: React.FC = () => {
                   <label style={{ fontSize: '14px' }}>Prepayment Discount ({currency})</label>
                   <input type="number" value={prepayDiscount} onChange={(e) => setPrepayDiscount(Number(e.target.value))} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
                   
-                  <button onClick={() => updateSettings({ codCharge, prepayDiscount })} className="btn-primary" style={{ justifyContent: 'center', marginTop: '10px' }}>SAVE RULES</button>
+                  <button onClick={async () => { await updateSettings({ codCharge, prepayDiscount }); alert('Payment rules saved successfully!'); }} className="btn-primary" style={{ justifyContent: 'center', marginTop: '10px' }}>SAVE RULES</button>
                 </div>
               </div>
             </div>

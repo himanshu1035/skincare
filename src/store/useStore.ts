@@ -84,7 +84,10 @@ interface State {
   createOrder: (orderData: { 
     email: string, 
     mobile: string, 
+    firstName: string,
+    lastName: string,
     address: string, 
+    landmark?: string,
     city: string, 
     state: string, 
     zip: string,
@@ -249,12 +252,15 @@ export const useStore = create<State>((set, get) => ({
     return data.skin_id;
   },
 
-  createOrder: async ({ email, mobile, address, city, state, zip, paymentMethod, totalAmount, userId }) => {
+  createOrder: async ({ email, mobile, firstName, lastName, address, landmark, city, state, zip, paymentMethod, totalAmount, userId }) => {
     const store = get();
     const { error } = await supabase.from('skin_orders').insert({
       skin_customer_email: email,
       skin_customer_mobile: mobile,
+      skin_first_name: firstName,
+      skin_last_name: lastName,
       skin_customer_address: address,
+      skin_landmark: landmark,
       skin_customer_city: city,
       skin_customer_state: state,
       skin_customer_zip: zip,
