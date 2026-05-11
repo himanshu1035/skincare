@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useStore } from '../store/useStore';
 import { useNavigate } from 'react-router-dom';
-import { Package, Truck, Calendar, CreditCard, LogOut, ChevronRight, User } from 'lucide-react';
+import { Package, Truck, LogOut, User, Mail, Phone } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export const AccountPage: React.FC = () => {

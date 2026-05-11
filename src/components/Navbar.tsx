@@ -1,11 +1,10 @@
 import React from 'react';
-import { ShoppingCart, User, LogOut } from 'lucide-react';
+import { ShoppingCart, User } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { Link, useNavigate } from 'react-router-dom';
 
 export const Navbar: React.FC = () => {
-  const { toggleCart, cart, currentUser, logout } = useStore();
-  const navigate = useNavigate();
+  const { toggleCart, cart, currentUser } = useStore();
 
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 

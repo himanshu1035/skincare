@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
-import { BarChart3, ToggleLeft, ToggleRight, Save, LogOut, Package, Settings, RefreshCw, Users, ShoppingCart, Truck, Edit2, Check, X } from 'lucide-react';
+import { BarChart3, ToggleLeft, ToggleRight, LogOut, Package, Settings, RefreshCw, Users, ShoppingCart, Edit2, Check, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const CURRENCIES = [
@@ -23,14 +23,12 @@ export const AdminPage: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [tab, setTab] = useState<'settings' | 'orders' | 'users'>('settings');
-  const navigate = useNavigate();
 
   // Data states
   const [orders, setOrders] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [price, setPrice] = useState(0);
   const [origPrice, setOrigPrice] = useState(0);
-  const [isUpdating, setIsUpdating] = useState(false);
 
   // Edit states
   const [editingOrder, setEditingOrder] = useState<string | null>(null);

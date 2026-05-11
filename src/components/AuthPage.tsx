@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/useStore';
 import { useNavigate } from 'react-router-dom';
-import { User, Lock, Mail, Phone, ArrowLeft, Loader2 } from 'lucide-react';
+import { Lock, Mail, Phone, ArrowLeft, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export const AuthPage: React.FC = () => {
