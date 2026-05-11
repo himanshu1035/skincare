@@ -24,6 +24,7 @@ interface User {
   id: string;
   email: string;
   mobile: string;
+  username?: string;
   firstName?: string;
   lastName?: string;
   address?: string;
@@ -107,7 +108,8 @@ interface State {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   checkUserExists: (email: string, mobile: string) => Promise<boolean>;
-  registerUser: (email: string, mobile: string, password: string) => Promise<string | null>;
+  registerUser: (email: string, mobile: string, password: string, extra?: any) => Promise<string | null>;
+  updateUserDetails: (userId: string, updates: Partial<User>) => Promise<void>;
   
   // Order Actions
   createOrder: (orderData: any) => Promise<boolean>;
@@ -117,7 +119,6 @@ interface State {
   fetchAllOrders: () => Promise<Order[]>;
   fetchAllUsers: () => Promise<User[]>;
   updateOrderStatus: (orderId: string, status: string, trackingId?: string) => Promise<void>;
-  updateUserDetails: (userId: string, updates: Partial<User>) => Promise<void>;
 }
 
 const DEFAULT_PRODUCT: Product = {
@@ -327,12 +328,16 @@ export const useStore = create<State>((set, get) => ({
     return !!data;
   },
 
-  registerUser: async (email, mobile, password) => {
+  registerUser: async (email, mobile, password, extra?: any) => {
     try {
       const { data, error } = await supabase.from('skin_users').insert({ 
+        skin_id: crypto.randomUUID(),
         skin_email: email, 
         skin_mobile: mobile, 
-        skin_password: password 
+        skin_password: password,
+        skin_username: extra?.username,
+        skin_first_name: extra?.firstName,
+        skin_last_name: extra?.lastName
       }).select('*').single();
       
       if (error) {
@@ -340,7 +345,15 @@ export const useStore = create<State>((set, get) => ({
         return null;
       }
       
-      set({ currentUser: { id: data.skin_id, email: data.skin_email, mobile: data.skin_mobile } });
+      const user = { 
+        id: data.skin_id, 
+        email: data.skin_email, 
+        mobile: data.skin_mobile,
+        username: data.skin_username,
+        firstName: data.skin_first_name,
+        lastName: data.skin_last_name
+      };
+      set({ currentUser: user });
       return data.skin_id;
     } catch (err) {
       console.error('Registration Exception:', err);
