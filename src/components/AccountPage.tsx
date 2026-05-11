@@ -158,39 +158,52 @@ export const AccountPage: React.FC = () => {
                 </div>
 
                 <div style={{ paddingTop: '24px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <h4 style={{ fontSize: '14px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <MapPin size={16} color="var(--accent-gold)" /> Saved Addresses
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                    <h4 style={{ fontSize: '15px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <MapPin size={18} color="var(--accent-gold)" /> Shipping Profiles
                     </h4>
                     <button 
-                      onClick={() => setAddressModal({ firstName: currentUser.firstName, lastName: currentUser.lastName, address: '', city: '', state: '', zip: '', mobile: currentUser.mobile, isDefault: addresses.length === 0 })} 
-                      style={{ background: 'none', border: 'none', color: 'var(--accent-gold)', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                      onClick={() => setAddressModal({ firstName: currentUser.firstName, lastName: currentUser.lastName, address: '', addressLine2: '', city: '', state: '', zip: '', country: 'India', mobile: currentUser.mobile, alternateMobile: '', isDefault: addresses.length === 0 })} 
+                      style={{ background: 'var(--accent-gold)', border: 'none', color: 'white', fontSize: '11px', fontWeight: '900', padding: '6px 14px', borderRadius: '50px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(197,160,89,0.2)' }}
                     >
                       + ADD NEW
                     </button>
                   </div>
                   
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     {addresses.map(addr => (
-                      <div key={addr.id} style={{ fontSize: '13px', color: '#666', lineHeight: '1.6', background: '#f9f9f9', padding: '16px', borderRadius: '12px', position: 'relative' }}>
-                        <div style={{ fontWeight: 'bold', color: 'black', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          {addr.firstName} {addr.lastName}
-                          {addr.isDefault && <span style={{ fontSize: '10px', background: 'var(--accent-gold)', color: 'white', padding: '2px 6px', borderRadius: '4px' }}>DEFAULT</span>}
+                      <div key={addr.id} style={{ 
+                        padding: '24px', borderRadius: '24px', position: 'relative',
+                        background: 'white', border: '1px solid #eee', boxShadow: '0 4px 6px rgba(0,0,0,0.02)',
+                        transition: 'transform 0.2s', cursor: 'default'
+                      }}>
+                        <div style={{ fontWeight: '800', color: 'black', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ fontSize: '15px' }}>{addr.firstName} {addr.lastName}</span>
+                          {addr.isDefault && <span style={{ fontSize: '9px', background: 'black', color: 'white', padding: '3px 8px', borderRadius: '50px', letterSpacing: '0.5px' }}>DEFAULT</span>}
                         </div>
-                        {addr.address}<br />
-                        {addr.city}, {addr.state} - {addr.zip}<br />
-                        T: {addr.mobile}
+                        <div style={{ fontSize: '13px', color: '#64748b', lineHeight: '1.7' }}>
+                          {addr.address}{addr.addressLine2 && `, ${addr.addressLine2}`}<br />
+                          {addr.city}, {addr.state} - {addr.zip}<br />
+                          {addr.country}<br />
+                          <div style={{ marginTop: '4px' }}>
+                            <span style={{ color: '#94a3b8', fontSize: '12px' }}>Phone: {addr.mobile}</span>
+                            {addr.alternateMobile && <span style={{ color: '#94a3b8', fontSize: '12px', marginLeft: '12px' }}>Alt: {addr.alternateMobile}</span>}
+                          </div>
+                        </div>
                         
-                        <div style={{ marginTop: '12px', display: 'flex', gap: '12px' }}>
-                          <button onClick={() => setAddressModal(addr)} style={{ background: 'none', border: 'none', color: '#666', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', textDecoration: 'underline' }}>EDIT</button>
+                        <div style={{ marginTop: '20px', display: 'flex', gap: '16px', borderTop: '1px solid #f8fafc', paddingTop: '16px' }}>
+                          <button onClick={() => setAddressModal(addr)} style={{ background: 'none', border: 'none', color: 'black', fontSize: '12px', fontWeight: '800', cursor: 'pointer', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}>EDIT</button>
                           {!addr.isDefault && (
-                            <button onClick={() => deleteAddress(addr.id)} style={{ background: 'none', border: 'none', color: '#ff4d4d', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', textDecoration: 'underline' }}>DELETE</button>
+                            <button onClick={async () => { if(window.confirm('Delete this address?')) await deleteAddress(addr.id); }} style={{ background: 'none', border: 'none', color: '#ff4d4d', fontSize: '12px', fontWeight: '800', cursor: 'pointer', textDecoration: 'none' }}>DELETE</button>
                           )}
                         </div>
                       </div>
                     ))}
                     {addresses.length === 0 && (
-                      <p style={{ fontSize: '13px', color: '#999', fontStyle: 'italic' }}>No saved addresses yet.</p>
+                      <div style={{ textAlign: 'center', padding: '32px', background: '#f8fafc', borderRadius: '24px', border: '2px dashed #e2e8f0' }}>
+                        <MapPin size={32} color="#cbd5e1" style={{ marginBottom: '12px' }} />
+                        <p style={{ fontSize: '13px', color: '#94a3b8', fontWeight: '600' }}>No addresses saved yet.</p>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -209,22 +222,35 @@ export const AccountPage: React.FC = () => {
               <h3 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '24px' }}>{addressModal.id ? 'Edit Address' : 'Add New Address'}</h3>
               <form onSubmit={async (e) => {
                 e.preventDefault();
-                if (addressModal.id) await updateAddress(addressModal.id, addressModal);
-                else await addAddress(addressModal);
-                setAddressModal(null);
+                setIsUpdatingPassword(true); // Reusing this loading state for simplicity or add a new one
+                let success = false;
+                if (addressModal.id) success = await updateAddress(addressModal.id, addressModal);
+                else success = await addAddress(addressModal);
+                
+                if (success) {
+                  setAddressModal(null);
+                } else {
+                  alert('Failed to save address. Please ensure the database table exists.');
+                }
+                setIsUpdatingPassword(false);
               }} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <input type="text" placeholder="First Name" value={addressModal.firstName} onChange={e => setAddressModal({...addressModal, firstName: e.target.value})} className="auth-input" required />
                   <input type="text" placeholder="Last Name" value={addressModal.lastName} onChange={e => setAddressModal({...addressModal, lastName: e.target.value})} className="auth-input" required />
                 </div>
-                <input type="text" placeholder="Street Address" value={addressModal.address} onChange={e => setAddressModal({...addressModal, address: e.target.value})} className="auth-input" required />
+                <input type="text" placeholder="Street Address (Line 1)" value={addressModal.address} onChange={e => setAddressModal({...addressModal, address: e.target.value})} className="auth-input" required />
+                <input type="text" placeholder="Street Address (Line 2) - Optional" value={addressModal.addressLine2} onChange={e => setAddressModal({...addressModal, addressLine2: e.target.value})} className="auth-input" />
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <input type="text" placeholder="City" value={addressModal.city} onChange={e => setAddressModal({...addressModal, city: e.target.value})} className="auth-input" required />
                   <input type="text" placeholder="State" value={addressModal.state} onChange={e => setAddressModal({...addressModal, state: e.target.value})} className="auth-input" required />
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <input type="text" placeholder="Zip Code" value={addressModal.zip} onChange={e => setAddressModal({...addressModal, zip: e.target.value})} className="auth-input" required />
+                  <input type="text" placeholder="Country" value={addressModal.country} onChange={e => setAddressModal({...addressModal, country: e.target.value})} className="auth-input" required />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <input type="tel" placeholder="Mobile" value={addressModal.mobile} onChange={e => setAddressModal({...addressModal, mobile: e.target.value})} className="auth-input" required />
+                  <input type="tel" placeholder="Alternate Mobile (Optional)" value={addressModal.alternateMobile} onChange={e => setAddressModal({...addressModal, alternateMobile: e.target.value})} className="auth-input" />
                 </div>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer' }}>
                   <input type="checkbox" checked={addressModal.isDefault} onChange={e => setAddressModal({...addressModal, isDefault: e.target.checked})} />

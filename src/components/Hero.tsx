@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ShoppingCart, Star, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
+import { ShoppingCart, Star, CheckCircle2, Loader2, Sparkles, ShoppingBag } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 export const Hero: React.FC = () => {
@@ -113,14 +113,25 @@ export const Hero: React.FC = () => {
             </p>
           </div>
 
-          <button 
-            className="btn-primary" 
-            onClick={handleAddToCart}
-            style={{ width: '100%', justifyContent: 'center', height: '72px', fontSize: '18px', fontWeight: '900', borderRadius: '16px', background: 'black', color: 'white' }}
-          >
-            <ShoppingCart size={22} style={{ marginRight: '12px' }} />
-            {isBogoActive ? 'ADD TO CART - GET 1 FREE' : 'ADD TO CART NOW'}
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <button 
+              className="btn-primary" 
+              onClick={handleAddToCart}
+              style={{ width: '100%', justifyContent: 'center', height: '72px', fontSize: '18px', fontWeight: '900', borderRadius: '16px', background: 'black', color: 'white' }}
+            >
+              <ShoppingCart size={22} style={{ marginRight: '12px' }} />
+              {isBogoActive ? 'ADD TO CART - GET 1 FREE' : 'ADD TO CART NOW'}
+            </button>
+            <a 
+              href="/orders"
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60px', fontSize: '14px', fontWeight: '800', borderRadius: '16px', background: '#f8fafc', border: '1px solid #e2e8f0', color: 'black', textDecoration: 'none', transition: 'all 0.2s' }}
+              onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--accent-gold)'}
+              onMouseLeave={(e) => e.currentTarget.style.borderColor = '#e2e8f0'}
+            >
+              <ShoppingBag size={18} style={{ marginRight: '8px' }} color="var(--accent-gold)" />
+              VIEW MY ORDERS
+            </a>
+          </div>
 
           <div style={{ marginTop: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '8px', fontWeight: '700' }}>

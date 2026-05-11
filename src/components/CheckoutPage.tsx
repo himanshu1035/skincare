@@ -18,11 +18,13 @@ export const CheckoutPage: React.FC = () => {
   const [lastName, setLastName] = useState('');
   const [username, setUsername] = useState('');
   const [address, setAddress] = useState('');
-  const [landmark, setLandmark] = useState('');
+  const [addressLine2, setAddressLine2] = useState('');
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [zip, setZip] = useState('');
+  const [country, setCountry] = useState('India');
   const [mobile, setMobile] = useState('');
+  const [alternateMobile, setAlternateMobile] = useState('');
   const [password, setPassword] = useState('');
   const upiLogoUrl = "https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/upi-payment-icon.png";
   
@@ -38,10 +40,11 @@ export const CheckoutPage: React.FC = () => {
       setLastName(currentUser.lastName || '');
       setUsername(currentUser.username || '');
       setAddress(currentUser.address || '');
-      setLandmark(currentUser.landmark || '');
+      setAddressLine2(currentUser.addressLine2 || '');
       setCity(currentUser.city || '');
       setState(currentUser.state || '');
       setZip(currentUser.zip || '');
+      setCountry(currentUser.country || 'India');
       setMobile(currentUser.mobile || '');
       fetchAddresses();
     }
@@ -59,11 +62,13 @@ export const CheckoutPage: React.FC = () => {
     setFirstName(addr.firstName);
     setLastName(addr.lastName);
     setAddress(addr.address);
-    setLandmark(addr.landmark || '');
+    setAddressLine2(addr.addressLine2 || '');
     setCity(addr.city);
     setState(addr.state);
     setZip(addr.zip);
+    setCountry(addr.country || 'India');
     setMobile(addr.mobile);
+    setAlternateMobile(addr.alternateMobile || '');
   };
   
   const [userExists, setUserExists] = useState<boolean | null>(null);
@@ -103,7 +108,7 @@ export const CheckoutPage: React.FC = () => {
     }
 
     const result = await createOrder({ 
-      email, mobile, firstName, lastName, address, landmark, city, state, zip, paymentMethod, totalAmount: finalTotal, userId: userId || currentUser?.id 
+      email, mobile, alternateMobile, firstName, lastName, address, addressLine2, city, state, zip, country, paymentMethod, totalAmount: finalTotal, userId: userId || currentUser?.id 
     });
 
     if (result) {
@@ -188,13 +193,26 @@ export const CheckoutPage: React.FC = () => {
                       >
                         <div style={{ fontWeight: 'bold', fontSize: '13px', marginBottom: '4px' }}>{addr.firstName} {addr.lastName}</div>
                         <div style={{ fontSize: '11px', color: '#666', lineHeight: '1.4' }}>
-                          {addr.address}<br />
-                          {addr.city}, {addr.zip}
+                          {addr.address}{addr.addressLine2 && `, ${addr.addressLine2}`}<br />
+                          {addr.city}, {addr.zip}<br />
+                          {addr.country}
                         </div>
                       </div>
                     ))}
                     <div 
-                      onClick={() => { setSelectedAddressId('new'); setFirstName(''); setLastName(''); setAddress(''); setLandmark(''); setCity(''); setState(''); setZip(''); setMobile(''); }}
+                      onClick={() => { 
+                        setSelectedAddressId('new'); 
+                        setFirstName(''); 
+                        setLastName(''); 
+                        setAddress(''); 
+                        setAddressLine2(''); 
+                        setCity(''); 
+                        setState(''); 
+                        setZip(''); 
+                        setCountry('India');
+                        setMobile(''); 
+                        setAlternateMobile('');
+                      }}
                       style={{ 
                         flexShrink: 0, width: '220px', padding: '16px', borderRadius: '16px', 
                         border: `2px solid ${selectedAddressId === 'new' ? 'var(--accent-gold)' : '#eee'}`,
@@ -218,21 +236,36 @@ export const CheckoutPage: React.FC = () => {
                 </div>
 
                 <div style={{ marginBottom: '8px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#666', marginBottom: '8px', display: 'block' }}>Street Address / House No.</label>
-                  <input type="text" placeholder="House no. / Street / Apartment" value={address} onChange={(e) => setAddress(e.target.value)} className="input-field" />
+                  <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#666', marginBottom: '8px', display: 'block' }}>Shipping Address</label>
+                  <input type="text" placeholder="House no. / Street / Apartment (Line 1)" value={address} onChange={(e) => setAddress(e.target.value)} className="input-field" style={{ marginBottom: '12px' }} />
+                  <input type="text" placeholder="Apartment, suite, unit, etc. (Line 2) - Optional" value={addressLine2} onChange={(e) => setAddressLine2(e.target.value)} className="input-field" />
                 </div>
-                <input type="text" placeholder="Landmark (Optional)" value={landmark} onChange={(e) => setLandmark(e.target.value)} className="input-field" />
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '16px' }}>
                   <input type="text" placeholder="City" value={city} onChange={(e) => setCity(e.target.value)} className="input-field" />
                   <div style={{ position: 'relative' }}>
                     <select className="input-field" style={{ appearance: 'none' }} value={state} onChange={(e) => setState(e.target.value)}>
-                      <option value="" disabled>Select State</option>
+                      <option value="" disabled>Select State/Province</option>
                       {STATES.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                     <ChevronDown size={16} style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#999' }} />
                   </div>
-                  <input type="text" placeholder="ZIP Code" value={zip} onChange={(e) => setZip(e.target.value)} className="input-field" />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <input type="text" placeholder="Postal / ZIP Code" value={zip} onChange={(e) => setZip(e.target.value)} className="input-field" />
+                  <input type="text" placeholder="Country" value={country} onChange={(e) => setCountry(e.target.value)} className="input-field" />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div style={{ position: 'relative' }}>
+                    <Phone size={16} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#999' }} />
+                    <input type="tel" placeholder="Mobile Number" value={mobile} onChange={(e) => setMobile(e.target.value)} className="input-field" style={{ paddingLeft: '44px' }} />
+                  </div>
+                  <div style={{ position: 'relative' }}>
+                    <Phone size={16} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#999' }} />
+                    <input type="tel" placeholder="Alt Number (Optional)" value={alternateMobile} onChange={(e) => setAlternateMobile(e.target.value)} className="input-field" style={{ paddingLeft: '44px' }} />
+                  </div>
                 </div>
               </div>
 

@@ -580,10 +580,16 @@ export const AdminPage: React.FC = () => {
                   </div>
                 ) : (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                    <div style={{ gridColumn: 'span 2' }}><label style={{fontSize: '12px', fontWeight: 'bold'}}>Street Address</label><input type="text" value={editModal.data.address} onChange={(e) => setEditModal({...editModal, data: {...editModal.data, address: e.target.value}})} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #eee' }} /></div>
+                    <div><label style={{fontSize: '12px', fontWeight: 'bold'}}>First Name</label><input type="text" value={editModal.data.firstName} onChange={(e) => setEditModal({...editModal, data: {...editModal.data, firstName: e.target.value}})} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #eee' }} /></div>
+                    <div><label style={{fontSize: '12px', fontWeight: 'bold'}}>Last Name</label><input type="text" value={editModal.data.lastName} onChange={(e) => setEditModal({...editModal, data: {...editModal.data, lastName: e.target.value}})} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #eee' }} /></div>
+                    <div><label style={{fontSize: '12px', fontWeight: 'bold'}}>Customer Mobile</label><input type="tel" value={editModal.data.customerMobile} onChange={(e) => setEditModal({...editModal, data: {...editModal.data, customerMobile: e.target.value}})} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #eee' }} /></div>
+                    <div><label style={{fontSize: '12px', fontWeight: 'bold'}}>Alt Mobile</label><input type="tel" value={editModal.data.alternateMobile || ''} onChange={(e) => setEditModal({...editModal, data: {...editModal.data, alternateMobile: e.target.value}})} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #eee' }} /></div>
+                    <div style={{ gridColumn: 'span 2' }}><label style={{fontSize: '12px', fontWeight: 'bold'}}>Street Address (L1)</label><input type="text" value={editModal.data.address} onChange={(e) => setEditModal({...editModal, data: {...editModal.data, address: e.target.value}})} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #eee' }} /></div>
+                    <div style={{ gridColumn: 'span 2' }}><label style={{fontSize: '12px', fontWeight: 'bold'}}>Street Address (L2)</label><input type="text" value={editModal.data.addressLine2 || ''} onChange={(e) => setEditModal({...editModal, data: {...editModal.data, addressLine2: e.target.value}})} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #eee' }} /></div>
                     <div><label style={{fontSize: '12px', fontWeight: 'bold'}}>City</label><input type="text" value={editModal.data.city} onChange={(e) => setEditModal({...editModal, data: {...editModal.data, city: e.target.value}})} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #eee' }} /></div>
                     <div><label style={{fontSize: '12px', fontWeight: 'bold'}}>State</label><input type="text" value={editModal.data.state} onChange={(e) => setEditModal({...editModal, data: {...editModal.data, state: e.target.value}})} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #eee' }} /></div>
                     <div><label style={{fontSize: '12px', fontWeight: 'bold'}}>Zip Code</label><input type="text" value={editModal.data.zip} onChange={(e) => setEditModal({...editModal, data: {...editModal.data, zip: e.target.value}})} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #eee' }} /></div>
+                    <div><label style={{fontSize: '12px', fontWeight: 'bold'}}>Country</label><input type="text" value={editModal.data.country || 'India'} onChange={(e) => setEditModal({...editModal, data: {...editModal.data, country: e.target.value}})} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #eee' }} /></div>
                     <div><label style={{fontSize: '12px', fontWeight: 'bold'}}>Status</label>
                       <select value={editModal.data.status} onChange={(e) => setEditModal({...editModal, data: {...editModal.data, status: e.target.value}})} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #eee' }}>
                         {ORDER_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
@@ -646,8 +652,9 @@ export const AdminPage: React.FC = () => {
                     <h3 style={{ fontSize: '12px', fontWeight: 'bold', color: '#64748b', marginBottom: '16px', textTransform: 'uppercase' }}>Shipping Address</h3>
                     <div style={{ fontSize: '14px', lineHeight: '1.6' }}>
                       {viewOrder.address}<br/>
-                      {viewOrder.landmark && `Landmark: ${viewOrder.landmark}`}<br/>
-                      {viewOrder.city}, {viewOrder.state} - {viewOrder.zip}
+                      {viewOrder.addressLine2 && `${viewOrder.addressLine2}`}<br/>
+                      {viewOrder.city}, {viewOrder.state} - {viewOrder.zip}<br/>
+                      {viewOrder.country}
                     </div>
                   </div>
                 </div>

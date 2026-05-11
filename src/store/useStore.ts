@@ -29,10 +29,11 @@ interface User {
   firstName?: string;
   lastName?: string;
   address?: string;
-  landmark?: string;
+  addressLine2?: string;
   city?: string;
   state?: string;
   zip?: string;
+  country?: string;
   createdAt?: string;
   password?: string;
 }
@@ -43,11 +44,13 @@ export interface Address {
   firstName: string;
   lastName: string;
   address: string;
-  landmark?: string;
+  addressLine2?: string;
   city: string;
   state: string;
   zip: string;
+  country: string;
   mobile: string;
+  alternateMobile?: string;
   isDefault: boolean;
 }
 
@@ -58,10 +61,11 @@ interface Order {
   firstName?: string;
   lastName?: string;
   address?: string;
-  landmark?: string;
+  addressLine2?: string;
   city?: string;
   state?: string;
   zip?: string;
+  country?: string;
   paymentMethod: string;
   totalAmount: number;
   items: CartItem[];
@@ -70,6 +74,7 @@ interface Order {
   utrId?: string;
   createdAt: string;
   userId?: string;
+  alternateMobile?: string;
 }
 
 interface CampaignSettings {
@@ -353,10 +358,11 @@ export const useStore = create<State>()(
         firstName: data.skin_first_name,
         lastName: data.skin_last_name,
         address: data.skin_address,
-        landmark: data.skin_landmark,
+        addressLine2: data.skin_address_line2,
         city: data.skin_city,
         state: data.skin_state,
-        zip: data.skin_zip
+        zip: data.skin_zip,
+        country: data.skin_country
       } });
       return true;
     }
@@ -409,13 +415,15 @@ export const useStore = create<State>()(
     const { error } = await supabase.from('skin_orders').insert({
       skin_customer_email: orderData.email,
       skin_customer_mobile: orderData.mobile,
+      skin_alternate_mobile: orderData.alternateMobile,
       skin_first_name: orderData.firstName,
       skin_last_name: orderData.lastName,
       skin_customer_address: orderData.address,
-      skin_landmark: orderData.landmark,
+      skin_address_line2: orderData.addressLine2,
       skin_customer_city: orderData.city,
       skin_customer_state: orderData.state,
       skin_customer_zip: orderData.zip,
+      skin_country: orderData.country || 'India',
       skin_payment_method: orderData.paymentMethod,
       skin_total_amount: orderData.totalAmount,
       skin_items: store.cart,
@@ -431,10 +439,11 @@ export const useStore = create<State>()(
         skin_first_name: orderData.firstName,
         skin_last_name: orderData.lastName,
         skin_address: orderData.address,
-        skin_landmark: orderData.landmark,
+        skin_address_line2: orderData.addressLine2,
         skin_city: orderData.city,
         skin_state: orderData.state,
-        skin_zip: orderData.zip
+        skin_zip: orderData.zip,
+        skin_country: orderData.country || 'India'
       }).eq('skin_id', uid);
       
       // Update local state too
@@ -459,13 +468,15 @@ export const useStore = create<State>()(
       id: o.skin_id,
       customerEmail: o.skin_customer_email,
       customerMobile: o.skin_customer_mobile,
+      alternateMobile: o.skin_alternate_mobile,
       firstName: o.skin_first_name,
       lastName: o.skin_last_name,
       address: o.skin_customer_address,
-      landmark: o.skin_landmark,
+      addressLine2: o.skin_address_line2,
       city: o.skin_customer_city,
       state: o.skin_customer_state,
       zip: o.skin_customer_zip,
+      country: o.skin_country,
       paymentMethod: o.skin_payment_method,
       totalAmount: o.skin_total_amount,
       items: o.skin_items,
@@ -482,13 +493,15 @@ export const useStore = create<State>()(
       id: o.skin_id,
       customerEmail: o.skin_customer_email,
       customerMobile: o.skin_customer_mobile,
+      alternateMobile: o.skin_alternate_mobile,
       firstName: o.skin_first_name,
       lastName: o.skin_last_name,
       address: o.skin_customer_address,
-      landmark: o.skin_landmark,
+      addressLine2: o.skin_address_line2,
       city: o.skin_customer_city,
       state: o.skin_customer_state,
       zip: o.skin_customer_zip,
+      country: o.skin_country,
       paymentMethod: o.skin_payment_method,
       totalAmount: o.skin_total_amount,
       items: o.skin_items,
@@ -509,10 +522,11 @@ export const useStore = create<State>()(
       firstName: u.skin_first_name,
       lastName: u.skin_last_name,
       address: u.skin_address,
-      landmark: u.skin_landmark,
+      addressLine2: u.skin_address_line2,
       city: u.skin_city,
       state: u.skin_state,
       zip: u.skin_zip,
+      country: u.skin_country,
       createdAt: u.skin_created_at,
       password: u.skin_password
     }));
@@ -552,13 +566,16 @@ export const useStore = create<State>()(
 
   adminUpdateOrder: async (orderId, updates) => {
     const { error } = await supabase.from('skin_orders').update({
-      skin_customer_first_name: updates.firstName,
-      skin_customer_last_name: updates.lastName,
+      skin_first_name: updates.firstName,
+      skin_last_name: updates.lastName,
       skin_customer_mobile: updates.customerMobile,
-      skin_customer_address: updates.customerAddress,
+      skin_alternate_mobile: updates.alternateMobile,
+      skin_customer_address: updates.address,
+      skin_address_line2: updates.addressLine2,
       skin_customer_city: updates.city,
       skin_customer_state: updates.state,
       skin_customer_zip: updates.zip,
+      skin_country: updates.country,
       skin_status: updates.status,
       skin_tracking_id: updates.trackingId
     }).eq('skin_id', orderId);
@@ -585,11 +602,13 @@ export const useStore = create<State>()(
       firstName: a.skin_first_name,
       lastName: a.skin_last_name,
       address: a.skin_address,
-      landmark: a.skin_landmark,
+      addressLine2: a.skin_address_line2,
       city: a.skin_city,
       state: a.skin_state,
       zip: a.skin_zip,
+      country: a.skin_country,
       mobile: a.skin_mobile,
+      alternateMobile: a.skin_alternate_mobile,
       isDefault: a.skin_is_default
     })) });
   },
@@ -602,11 +621,13 @@ export const useStore = create<State>()(
       skin_first_name: address.firstName,
       skin_last_name: address.lastName,
       skin_address: address.address,
-      skin_landmark: address.landmark,
+      skin_address_line2: address.addressLine2,
       skin_city: address.city,
       skin_state: address.state,
       skin_zip: address.zip,
+      skin_country: address.country || 'India',
       skin_mobile: address.mobile,
+      skin_alternate_mobile: address.alternateMobile,
       skin_is_default: address.isDefault
     });
     if (!error) await get().fetchAddresses();
@@ -618,11 +639,13 @@ export const useStore = create<State>()(
       skin_first_name: updates.firstName,
       skin_last_name: updates.lastName,
       skin_address: updates.address,
-      skin_landmark: updates.landmark,
+      skin_address_line2: updates.addressLine2,
       skin_city: updates.city,
       skin_state: updates.state,
       skin_zip: updates.zip,
+      skin_country: updates.country,
       skin_mobile: updates.mobile,
+      skin_alternate_mobile: updates.alternateMobile,
       skin_is_default: updates.isDefault
     }).eq('skin_id', id);
     if (!error) await get().fetchAddresses();
