@@ -41,7 +41,10 @@ export const AdminPanel: React.FC = () => {
             <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Toggle the Buy 1 Get 1 Free campaign</div>
           </div>
           <button 
-            onClick={() => setBogoActive(!isBogoActive)}
+            onClick={async () => {
+              const nextState = !isBogoActive;
+              await setBogoActive(nextState);
+            }}
             style={{ background: 'none', color: isBogoActive ? 'var(--success-green)' : '#ccc' }}
           >
             {isBogoActive ? <ToggleRight size={40} /> : <ToggleLeft size={40} />}

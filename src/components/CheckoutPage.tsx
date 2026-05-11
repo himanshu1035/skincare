@@ -2,10 +2,29 @@ import React from 'react';
 import { useStore } from '../store/useStore';
 import { ArrowLeft, ShieldCheck, Lock, Truck, CreditCard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 
 export const CheckoutPage: React.FC = () => {
-  const { cart } = useStore();
+  const { cart, createOrder } = useStore();
   const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleCompletePurchase = async () => {
+    if (!email) {
+      alert('Please enter your email');
+      return;
+    }
+    setIsProcessing(true);
+    const success = await createOrder(email);
+    if (success) {
+      alert('Order placed successfully!');
+      navigate('/');
+    } else {
+      alert('Failed to place order. Please try again.');
+    }
+    setIsProcessing(false);
+  };
 
   const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   const totalSavings = cart.reduce((acc, item) => acc + ((item.originalPrice - item.price) * item.quantity), 0);
@@ -30,7 +49,13 @@ export const CheckoutPage: React.FC = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div style={{ background: 'white', padding: '32px', borderRadius: '12px', boxShadow: 'var(--shadow-sm)' }}>
             <h2 style={{ fontSize: '20px', marginBottom: '24px' }}>1. Contact Information</h2>
-            <input type="email" placeholder="Email Address" style={{ width: '100%', padding: '16px', borderRadius: '8px', border: '1px solid #eee', marginBottom: '16px' }} />
+            <input 
+              type="email" 
+              placeholder="Email Address" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              style={{ width: '100%', padding: '16px', borderRadius: '8px', border: '1px solid #eee', marginBottom: '16px' }} 
+            />
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text-muted)' }}>
               <input type="checkbox" id="offers" />
               <label htmlFor="offers">Email me with news and exclusive offers</label>
@@ -109,8 +134,13 @@ export const CheckoutPage: React.FC = () => {
               </div>
             </div>
 
-            <button className="btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: '32px', height: '56px' }}>
-              COMPLETE PURCHASE
+            <button 
+              className="btn-primary" 
+              style={{ width: '100%', justifyContent: 'center', marginTop: '32px', height: '56px', opacity: isProcessing ? 0.7 : 1 }}
+              onClick={handleCompletePurchase}
+              disabled={isProcessing}
+            >
+              {isProcessing ? 'PROCESSING...' : 'COMPLETE PURCHASE'}
             </button>
             
             <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>

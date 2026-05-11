@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { supabase } from '../lib/supabase';
 
 interface CartItem {
   id: string;
@@ -18,30 +19,63 @@ interface State {
   stockLeft: number;
   
   // Actions
+  fetchCampaignSettings: () => Promise<void>;
   toggleCart: () => void;
-  setBogoActive: (active: boolean) => void;
+  setBogoActive: (active: boolean) => Promise<void>;
   addToCart: (product: Omit<CartItem, 'quantity' | 'isFree'>) => void;
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, delta: number) => void;
   clearCart: () => void;
+  createOrder: (email: string) => Promise<boolean>;
 }
 
-export const useStore = create<State>((set) => ({
+export const useStore = create<State>((set, get) => ({
   cart: [],
   isBogoActive: true,
   isCartOpen: false,
-  offerExpiresAt: Date.now() + 1000 * 60 * 60 * 2, // 2 hours from now
+  offerExpiresAt: Date.now() + 1000 * 60 * 60 * 2,
   stockLeft: 42,
   
+  fetchCampaignSettings: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('skin_campaign_settings')
+        .select('*')
+        .eq('skin_id', 'bogo_campaign')
+        .single();
+      
+      if (data && !error) {
+        set({ 
+          isBogoActive: data.skin_is_active,
+          offerExpiresAt: data.skin_expires_at ? new Date(data.skin_expires_at).getTime() : get().offerExpiresAt
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching campaign settings:', err);
+    }
+  },
+
   toggleCart: () => set((state) => ({ isCartOpen: !state.isCartOpen })),
   
-  setBogoActive: (active) => set({ isBogoActive: active }),
+  setBogoActive: async (active) => {
+    try {
+      const { error } = await supabase
+        .from('skin_campaign_settings')
+        .update({ skin_is_active: active, skin_updated_at: new Date().toISOString() })
+        .eq('skin_id', 'bogo_campaign');
+      
+      if (!error) {
+        set({ isBogoActive: active });
+      }
+    } catch (err) {
+      console.error('Error updating BOGO status:', err);
+    }
+  },
   
   addToCart: (product) => set((state) => {
     const existingMain = state.cart.find(item => item.id === product.id && !item.isFree);
     
     if (existingMain) {
-      // Sync quantity for both main and free
       return {
         cart: state.cart.map(item => 
           item.id === product.id 
@@ -52,7 +86,6 @@ export const useStore = create<State>((set) => ({
       };
     }
 
-    // Add new pair
     const mainItem: CartItem = { ...product, quantity: 1 };
     const freeItem: CartItem = { 
       ...product, 
@@ -64,14 +97,13 @@ export const useStore = create<State>((set) => ({
     };
 
     return { 
-      cart: [...state.cart, mainItem, freeItem],
+      cart: state.isBogoActive ? [...state.cart, mainItem, freeItem] : [...state.cart, mainItem],
       isCartOpen: true,
-      stockLeft: Math.max(0, state.stockLeft - 2)
+      stockLeft: Math.max(0, state.stockLeft - (state.isBogoActive ? 2 : 1))
     };
   }),
 
   removeFromCart: (id) => set((state) => {
-    // If we remove the main item, remove the free one too
     const baseId = id.replace('-free', '');
     return {
       cart: state.cart.filter(item => !item.id.startsWith(baseId))
@@ -91,4 +123,29 @@ export const useStore = create<State>((set) => ({
   }),
 
   clearCart: () => set({ cart: [] }),
+
+  createOrder: async (email) => {
+    const state = get();
+    const subtotal = state.cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+    
+    try {
+      const { error } = await supabase
+        .from('skin_orders')
+        .insert({
+          skin_customer_email: email,
+          skin_total_amount: subtotal,
+          skin_items: state.cart,
+          skin_created_at: new Date().toISOString()
+        });
+      
+      if (!error) {
+        state.clearCart();
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Error creating order:', err);
+      return false;
+    }
+  }
 }));

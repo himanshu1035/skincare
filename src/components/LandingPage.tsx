@@ -8,8 +8,14 @@ import { AdminPanel } from './AdminPanel';
 import { useStore } from '../store/useStore';
 import { Star, ShieldCheck, Truck, RefreshCw, ShoppingCart } from 'lucide-react';
 
+import { useEffect } from 'react';
+
 export const LandingPage: React.FC = () => {
-  const { addToCart } = useStore();
+  const { addToCart, fetchCampaignSettings } = useStore();
+
+  useEffect(() => {
+    fetchCampaignSettings();
+  }, []);
 
   const handleAddToCart = () => {
     addToCart({
