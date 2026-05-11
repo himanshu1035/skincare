@@ -208,7 +208,12 @@ export const CheckoutPage: React.FC = () => {
                 {cart.map(item => (
                   <div key={item.id} style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                     <div style={{ position: 'relative' }}>
-                      <img src={item.image} style={{ width: '64px', height: '64px', borderRadius: '12px', border: '1px solid #ddd', background: 'white' }} alt="" />
+                      <img 
+                        src={item.image} 
+                        style={{ width: '64px', height: '64px', borderRadius: '12px', border: '1px solid #ddd', background: 'white', objectFit: 'contain' }} 
+                        alt="" 
+                        onError={(e) => { (e.target as HTMLImageElement).src = 'https://m.media-amazon.com/images/I/51r8A+Y+ZHL._SL1000_.jpg'; }}
+                      />
                       <span style={{ position: 'absolute', top: '-10px', right: '-10px', background: '#666', color: 'white', width: '22px', height: '22px', borderRadius: '50%', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{item.quantity}</span>
                     </div>
                     <div style={{ flex: 1 }}>

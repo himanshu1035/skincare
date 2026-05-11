@@ -99,7 +99,7 @@ const DEFAULT_PRODUCT: Product = {
   name: 'COSRX Advanced Snail 96 Mucin Power Essence',
   price: 25.0,
   originalPrice: 50.0,
-  image: '/assets/product.png',
+  image: 'https://m.media-amazon.com/images/I/51r8A+Y+ZHL._SL1000_.jpg',
   stockCount: 42
 };
 
@@ -235,10 +235,24 @@ export const useStore = create<State>((set, get) => ({
   },
 
   registerUser: async (email, mobile, password) => {
-    const { data, error } = await supabase.from('skin_users').insert({ skin_email: email, skin_mobile: mobile, skin_password: password }).select('*').single();
-    if (error) return null;
-    set({ currentUser: { id: data.skin_id, email: data.skin_email, mobile: data.skin_mobile } });
-    return data.skin_id;
+    try {
+      const { data, error } = await supabase.from('skin_users').insert({ 
+        skin_email: email, 
+        skin_mobile: mobile, 
+        skin_password: password 
+      }).select('*').single();
+      
+      if (error) {
+        console.error('Registration Error:', error);
+        return null;
+      }
+      
+      set({ currentUser: { id: data.skin_id, email: data.skin_email, mobile: data.skin_mobile } });
+      return data.skin_id;
+    } catch (err) {
+      console.error('Registration Exception:', err);
+      return null;
+    }
   },
 
   createOrder: async (orderData) => {
