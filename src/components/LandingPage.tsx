@@ -3,7 +3,6 @@ import { Navbar } from './Navbar';
 import { Hero } from './Hero';
 import { ProductSection } from './ProductSection';
 import { CartDrawer } from './CartDrawer';
-import { MarketingPopups } from './MarketingPopups';
 import { useStore } from '../store/useStore';
 import { Star, ShieldCheck, Truck, RefreshCw, ShoppingCart } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -127,7 +126,6 @@ export const LandingPage: React.FC = () => {
       </div>
 
       <CartDrawer />
-      <MarketingPopups />
     </div>
   );
 };

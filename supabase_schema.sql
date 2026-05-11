@@ -35,6 +35,8 @@ CREATE TABLE skin_orders (
   skin_total_amount DECIMAL(10,2) NOT NULL,
   skin_items JSONB NOT NULL,
   skin_user_id UUID REFERENCES skin_users(skin_id),
+  skin_status TEXT DEFAULT 'Processing', -- Processing, Shipped, Delivered, Cancelled
+  skin_tracking_id TEXT,
   skin_created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

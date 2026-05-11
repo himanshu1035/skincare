@@ -4,17 +4,22 @@ import { ShoppingCart, Star, CheckCircle2, TrendingUp, Loader2 } from 'lucide-re
 import { useStore } from '../store/useStore';
 
 export const Hero: React.FC = () => {
-  const { addToCart, stockLeft, currency, product, isBogoActive } = useStore();
+  const { addToCart, stockLeft, currency, product, isBogoActive, isLoading } = useStore();
 
-  // If product is null, it means we are still loading or Supabase is not set up
-  if (!product) {
+  // If we are loading and have NO product yet, show spinner
+  if (isLoading && !product) {
     return (
       <section style={{ padding: '100px 0', textAlign: 'center', background: 'var(--secondary-ivory)' }}>
-        <Loader2 className="animate-spin" size={48} color="var(--accent-gold)" style={{ margin: '0 auto' }} />
-        <p style={{ marginTop: '20px', color: 'var(--text-muted)' }}>Loading Premium Skincare...</p>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+          <Loader2 className="animate-spin" size={48} color="var(--accent-gold)" />
+          <p style={{ color: 'var(--text-muted)' }}>Loading Premium Skincare...</p>
+        </div>
       </section>
     );
   }
+
+  // If still no product after loading finishes, we'll use the one from the store (which now has a fallback)
+  if (!product) return null;
 
   const handleAddToCart = () => {
     addToCart({
