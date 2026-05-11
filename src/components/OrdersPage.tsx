@@ -62,12 +62,12 @@ export const OrdersPage: React.FC = () => {
                   borderRadius: '24px', 
                   overflow: 'hidden', 
                   boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
-                  border: order.status === 'Cancelled' ? '2px solid #fee2e2' : '1px solid #e2e8f0'
+                  border: (order.status === 'Cancelled' || order.status === 'Payment Failed') ? '2px solid #fee2e2' : '1px solid #e2e8f0'
                 }}
               >
                 <div style={{ 
                   padding: '20px 24px', 
-                  background: order.status === 'Cancelled' ? '#fef2f2' : '#fff',
+                  background: (order.status === 'Cancelled' || order.status === 'Payment Failed') ? '#fef2f2' : '#fff',
                   borderBottom: '1px solid #f1f5f9', 
                   display: 'flex', 
                   justifyContent: 'space-between', 
@@ -84,18 +84,18 @@ export const OrdersPage: React.FC = () => {
                     borderRadius: '50px', 
                     fontSize: '11px', 
                     fontWeight: '900',
-                    background: order.status === 'Cancelled' ? '#ef4444' : (order.status === 'Delivered' ? '#10b981' : '#f59e0b'),
+                    background: (order.status === 'Cancelled' || order.status === 'Payment Failed') ? '#ef4444' : (order.status === 'Delivered' ? '#10b981' : '#f59e0b'),
                     color: 'white',
-                    boxShadow: order.status === 'Cancelled' ? '0 0 15px rgba(239, 68, 68, 0.3)' : 'none'
+                    boxShadow: (order.status === 'Cancelled' || order.status === 'Payment Failed') ? '0 0 15px rgba(239, 68, 68, 0.3)' : 'none'
                   }}>
                     {order.status.toUpperCase()}
                   </div>
                 </div>
 
-                <div style={{ padding: '24px', opacity: order.status === 'Cancelled' ? 0.7 : 1 }}>
-                  {order.status === 'Cancelled' && (
+                <div style={{ padding: '24px', opacity: (order.status === 'Cancelled' || order.status === 'Payment Failed') ? 0.7 : 1 }}>
+                  {(order.status === 'Cancelled' || order.status === 'Payment Failed') && (
                     <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '12px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold', marginBottom: '20px', textAlign: 'center' }}>
-                      THIS ORDER WAS CANCELLED
+                      {order.status === 'Cancelled' ? 'THIS ORDER WAS CANCELLED' : 'PAYMENT FAILED / ABANDONED'}
                     </div>
                   )}
                   <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', overflowX: 'auto', paddingBottom: '12px' }}>
@@ -111,21 +111,25 @@ export const OrdersPage: React.FC = () => {
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                     <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', marginBottom: '12px' }}>
-                        <Truck size={16} />
-                        <span style={{ fontSize: '13px', fontWeight: '600' }}>{order.trackingId || 'Processing Shipment'}</span>
-                      </div>
-                      <Link to={`/track?id=${order.trackingId || order.id}`} style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '4px', 
-                        fontSize: '13px', 
-                        fontWeight: '700', 
-                        color: 'var(--accent-gold)', 
-                        textDecoration: 'none' 
-                      }}>
-                        Track Package <ChevronRight size={16} />
-                      </Link>
+                      {order.status !== 'Payment Failed' && (
+                        <>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', marginBottom: '12px' }}>
+                            <Truck size={16} />
+                            <span style={{ fontSize: '13px', fontWeight: '600' }}>{order.trackingId || 'Processing Shipment'}</span>
+                          </div>
+                          <Link to={`/track?id=${order.trackingId || order.id}`} style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '4px', 
+                            fontSize: '13px', 
+                            fontWeight: '700', 
+                            color: 'var(--accent-gold)', 
+                            textDecoration: 'none' 
+                          }}>
+                            Track Package <ChevronRight size={16} />
+                          </Link>
+                        </>
+                      )}
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <div style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>TOTAL AMOUNT</div>

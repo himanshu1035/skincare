@@ -33,12 +33,9 @@ export const UPIPaymentPage: React.FC = () => {
   // Handle Cancel on Back
   useEffect(() => {
     return () => {
-      // If the component unmounts and we haven't shown success, mark order as potentially abandoned
-      // In a real app, we'd check if the order is still 'Pending Payment'
-      // But for this request, we'll implement a 'Cancel' logic if they didn't finish
+      // If the component unmounts and we haven't shown success, mark order as failed
       if (!showSuccessModal && orderId) {
-        // We don't await here as it's a cleanup
-        useStore.getState().updateOrderStatus(orderId, 'Cancelled');
+        useStore.getState().updateOrderStatus(orderId, 'Payment Failed');
       }
     };
   }, [showSuccessModal, orderId]);

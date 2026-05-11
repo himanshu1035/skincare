@@ -16,6 +16,7 @@ const ORDER_STATUSES = [
   "Out for Delivery",
   "Delivered",
   "Cancelled",
+  "Payment Failed",
   "Returned"
 ];
 
