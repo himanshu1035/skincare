@@ -33,6 +33,22 @@ interface User {
   city?: string;
   state?: string;
   zip?: string;
+  createdAt?: string;
+  password?: string;
+}
+
+export interface Address {
+  id: string;
+  userId: string;
+  firstName: string;
+  lastName: string;
+  address: string;
+  landmark?: string;
+  city: string;
+  state: string;
+  zip: string;
+  mobile: string;
+  isDefault: boolean;
 }
 
 interface Order {
@@ -128,6 +144,13 @@ interface State {
   adminUpdateUser: (userId: string, updates: any) => Promise<boolean>;
   deleteUser: (userId: string) => Promise<boolean>;
   submitUtr: (orderId: string, utrId: string) => Promise<boolean>;
+  
+  // Address Actions
+  addresses: Address[];
+  fetchAddresses: () => Promise<void>;
+  addAddress: (address: Omit<Address, 'id' | 'userId'>) => Promise<boolean>;
+  updateAddress: (id: string, updates: Partial<Address>) => Promise<boolean>;
+  deleteAddress: (id: string) => Promise<boolean>;
 }
 
 const DEFAULT_PRODUCT: Product = {
@@ -148,6 +171,7 @@ export const useStore = create<State>()(
   offerExpiresAt: Date.now() + 1000 * 60 * 60 * 2,
   stockLeft: 42,
   currency: '₹',
+  addresses: [],
   product: null,
   isLoading: true,
   currentUser: null,
@@ -489,7 +513,8 @@ export const useStore = create<State>()(
       city: u.skin_city,
       state: u.skin_state,
       zip: u.skin_zip,
-      createdAt: u.skin_created_at
+      createdAt: u.skin_created_at,
+      password: u.skin_password
     }));
   },
 
@@ -511,7 +536,9 @@ export const useStore = create<State>()(
       skin_first_name: updates.firstName,
       skin_last_name: updates.lastName,
       skin_email: updates.email,
-      skin_mobile: updates.mobile
+      skin_mobile: updates.mobile,
+      skin_address: updates.address,
+      skin_password: updates.password
     }).eq('skin_id', userId);
     return !error;
   },
@@ -543,6 +570,66 @@ export const useStore = create<State>()(
 
   submitUtr: async (orderId, utrId) => {
     const { error } = await supabase.from('skin_orders').update({ skin_utr_id: utrId }).eq('skin_id', orderId);
+    return !error;
+  },
+
+  fetchAddresses: async () => {
+    const userId = get().currentUser?.id;
+    if (!userId) return;
+    const { data } = await supabase.from('skin_addresses').select('*').eq('skin_user_id', userId).order('skin_is_default', { ascending: false });
+    set({ addresses: (data || []).map(a => ({
+      id: a.skin_id,
+      userId: a.skin_user_id,
+      firstName: a.skin_first_name,
+      lastName: a.skin_last_name,
+      address: a.skin_address,
+      landmark: a.skin_landmark,
+      city: a.skin_city,
+      state: a.skin_state,
+      zip: a.skin_zip,
+      mobile: a.skin_mobile,
+      isDefault: a.skin_is_default
+    })) });
+  },
+
+  addAddress: async (address) => {
+    const userId = get().currentUser?.id;
+    if (!userId) return false;
+    const { error } = await supabase.from('skin_addresses').insert({
+      skin_user_id: userId,
+      skin_first_name: address.firstName,
+      skin_last_name: address.lastName,
+      skin_address: address.address,
+      skin_landmark: address.landmark,
+      skin_city: address.city,
+      skin_state: address.state,
+      skin_zip: address.zip,
+      skin_mobile: address.mobile,
+      skin_is_default: address.isDefault
+    });
+    if (!error) await get().fetchAddresses();
+    return !error;
+  },
+
+  updateAddress: async (id, updates) => {
+    const { error } = await supabase.from('skin_addresses').update({
+      skin_first_name: updates.firstName,
+      skin_last_name: updates.lastName,
+      skin_address: updates.address,
+      skin_landmark: updates.landmark,
+      skin_city: updates.city,
+      skin_state: updates.state,
+      skin_zip: updates.zip,
+      skin_mobile: updates.mobile,
+      skin_is_default: updates.isDefault
+    }).eq('skin_id', id);
+    if (!error) await get().fetchAddresses();
+    return !error;
+  },
+
+  deleteAddress: async (id) => {
+    const { error } = await supabase.from('skin_addresses').delete().eq('skin_id', id);
+    if (!error) await get().fetchAddresses();
     return !error;
   }
     }),

@@ -43,6 +43,7 @@ export const AdminPage: React.FC = () => {
   
   // Edit Modals
   const [editModal, setEditModal] = useState<{ type: 'user' | 'order', data: any } | null>(null);
+  const [viewOrder, setViewOrder] = useState<any>(null);
   const [newReview, setNewReview] = useState({ userName: '', rating: 5, comment: '' });
 
   useEffect(() => {
@@ -312,6 +313,7 @@ export const AdminPage: React.FC = () => {
               <thead style={{ background: '#f8fafc' }}>
                 <tr style={{ textAlign: 'left' }}>
                   <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Order</th>
+                  <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Type</th>
                   <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Customer</th>
                   <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Address</th>
                   <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Status</th>
@@ -321,9 +323,14 @@ export const AdminPage: React.FC = () => {
               <tbody>
                 {filteredOrders.map(order => (
                   <tr key={order.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '20px 24px' }}>
+                     <td style={{ padding: '20px 24px' }}>
                       <div style={{ fontWeight: '700' }}>#{order.id.slice(0, 8).toUpperCase()}</div>
                       <div style={{ fontSize: '12px', color: '#94a3b8' }}>{currency}{order.totalAmount.toFixed(2)}</div>
+                    </td>
+                    <td style={{ padding: '20px 24px' }}>
+                      <div style={{ fontSize: '11px', fontWeight: 'bold', color: order.paymentMethod === 'COD' ? '#92400e' : '#059669', background: order.paymentMethod === 'COD' ? '#fef3c7' : '#ecfdf5', padding: '4px 8px', borderRadius: '4px', display: 'inline-block' }}>
+                        {order.paymentMethod}
+                      </div>
                     </td>
                     <td style={{ padding: '20px 24px' }}>
                       <div style={{ fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}><UserIcon size={14} color="#94a3b8" /> {order.firstName} {order.lastName}</div>
@@ -332,7 +339,7 @@ export const AdminPage: React.FC = () => {
                     <td style={{ padding: '20px 24px', maxWidth: '250px' }}>
                       <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
                         <MapPin size={14} style={{ marginTop: '2px', flexShrink: 0 }} />
-                        <span>{order.customerAddress}, {order.city}, {order.state}</span>
+                        <span>{order.address}</span>
                       </div>
                     </td>
                     <td style={{ padding: '20px 24px' }}>
@@ -349,6 +356,7 @@ export const AdminPage: React.FC = () => {
                     </td>
                     <td style={{ padding: '20px 24px' }}>
                       <div style={{ display: 'flex', gap: '8px' }}>
+                        <button onClick={() => setViewOrder(order)} style={{ padding: '8px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e2e8f0', cursor: 'pointer', color: '#64748b' }} title="View Details">Details</button>
                         <button onClick={() => setEditModal({ type: 'order', data: order })} style={{ padding: '8px', borderRadius: '8px', background: '#f1f5f9', border: 'none', cursor: 'pointer', color: '#64748b' }}><Edit2 size={16} /></button>
                         <button onClick={() => handleDeleteOrder(order.id)} style={{ padding: '8px', borderRadius: '8px', background: '#fef2f2', border: 'none', cursor: 'pointer', color: '#ef4444' }}><Trash2 size={16} /></button>
                       </div>
@@ -464,6 +472,15 @@ export const AdminPage: React.FC = () => {
                       {settings.isCodEnabled ? <ToggleRight size={40} /> : <ToggleLeft size={40} />}
                     </button>
                   </div>
+                  <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontWeight: '700', fontSize: '14px' }}>Pay COD Fee Upfront</div>
+                      <div style={{ fontSize: '11px', color: '#64748b' }}>Forces user to pay the extra COD fee via UPI before confirming</div>
+                    </div>
+                    <button onClick={() => autoSaveSettings({ payDeliveryFirst: !settings.payDeliveryFirst })} style={{ background: 'none', border: 'none', color: settings.payDeliveryFirst ? '#10b981' : '#cbd5e1', cursor: 'pointer' }}>
+                      {settings.payDeliveryFirst ? <ToggleRight size={40} /> : <ToggleLeft size={40} />}
+                    </button>
+                  </div>
                 </div>
              </div>
            </div>
@@ -558,10 +575,12 @@ export const AdminPage: React.FC = () => {
                     <div><label style={{fontSize: '12px', fontWeight: 'bold'}}>Last Name</label><input type="text" value={editModal.data.lastName} onChange={(e) => setEditModal({...editModal, data: {...editModal.data, lastName: e.target.value}})} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #eee' }} /></div>
                     <div style={{ gridColumn: 'span 2' }}><label style={{fontSize: '12px', fontWeight: 'bold'}}>Email</label><input type="email" value={editModal.data.email} onChange={(e) => setEditModal({...editModal, data: {...editModal.data, email: e.target.value}})} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #eee' }} /></div>
                     <div style={{ gridColumn: 'span 2' }}><label style={{fontSize: '12px', fontWeight: 'bold'}}>Mobile</label><input type="tel" value={editModal.data.mobile} onChange={(e) => setEditModal({...editModal, data: {...editModal.data, mobile: e.target.value}})} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #eee' }} /></div>
+                    <div style={{ gridColumn: 'span 2' }}><label style={{fontSize: '12px', fontWeight: 'bold'}}>Street Address</label><input type="text" value={editModal.data.address || ''} onChange={(e) => setEditModal({...editModal, data: {...editModal.data, address: e.target.value}})} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #eee' }} /></div>
+                    <div style={{ gridColumn: 'span 2' }}><label style={{fontSize: '12px', fontWeight: 'bold'}}>Change Password</label><input type="text" placeholder="Leave empty to keep current" onChange={(e) => setEditModal({...editModal, data: {...editModal.data, password: e.target.value}})} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #eee' }} /></div>
                   </div>
                 ) : (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                    <div style={{ gridColumn: 'span 2' }}><label style={{fontSize: '12px', fontWeight: 'bold'}}>Street Address</label><input type="text" value={editModal.data.customerAddress} onChange={(e) => setEditModal({...editModal, data: {...editModal.data, customerAddress: e.target.value}})} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #eee' }} /></div>
+                    <div style={{ gridColumn: 'span 2' }}><label style={{fontSize: '12px', fontWeight: 'bold'}}>Street Address</label><input type="text" value={editModal.data.address} onChange={(e) => setEditModal({...editModal, data: {...editModal.data, address: e.target.value}})} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #eee' }} /></div>
                     <div><label style={{fontSize: '12px', fontWeight: 'bold'}}>City</label><input type="text" value={editModal.data.city} onChange={(e) => setEditModal({...editModal, data: {...editModal.data, city: e.target.value}})} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #eee' }} /></div>
                     <div><label style={{fontSize: '12px', fontWeight: 'bold'}}>State</label><input type="text" value={editModal.data.state} onChange={(e) => setEditModal({...editModal, data: {...editModal.data, state: e.target.value}})} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #eee' }} /></div>
                     <div><label style={{fontSize: '12px', fontWeight: 'bold'}}>Zip Code</label><input type="text" value={editModal.data.zip} onChange={(e) => setEditModal({...editModal, data: {...editModal.data, zip: e.target.value}})} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #eee' }} /></div>
@@ -583,6 +602,67 @@ export const AdminPage: React.FC = () => {
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {viewOrder && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ background: 'white', width: '100%', maxWidth: '800px', borderRadius: '24px', maxHeight: '90vh', overflow: 'auto', padding: '40px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px' }}>
+                <h2 style={{ fontSize: '24px', fontWeight: '900' }}>Order Details</h2>
+                <button onClick={() => setViewOrder(null)} style={{ background: '#eee', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}>CLOSE</button>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '40px' }}>
+                <div>
+                  <h3 style={{ fontSize: '14px', fontWeight: 'bold', color: '#999', marginBottom: '16px', textTransform: 'uppercase' }}>Items Ordered</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {viewOrder.items.map((item: any) => (
+                      <div key={item.id} style={{ display: 'flex', gap: '16px', alignItems: 'center', borderBottom: '1px solid #eee', paddingBottom: '16px' }}>
+                        <img src={item.image} style={{ width: '60px', height: '60px', borderRadius: '12px', objectFit: 'cover' }} alt="" />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 'bold', fontSize: '14px' }}>{item.name}</div>
+                          <div style={{ fontSize: '12px', color: '#666' }}>{currency}{item.price} x {item.quantity}</div>
+                        </div>
+                        <div style={{ fontWeight: '900' }}>{currency}{(item.price * item.quantity).toFixed(2)}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ background: '#f8fafc', padding: '24px', borderRadius: '20px', marginBottom: '24px' }}>
+                    <h3 style={{ fontSize: '12px', fontWeight: 'bold', color: '#64748b', marginBottom: '16px', textTransform: 'uppercase' }}>Customer Info</h3>
+                    <div style={{ fontSize: '14px', lineHeight: '1.6' }}>
+                      <b>{viewOrder.firstName} {viewOrder.lastName}</b><br/>
+                      {viewOrder.customerEmail}<br/>
+                      {viewOrder.customerMobile}
+                    </div>
+                  </div>
+
+                  <div style={{ background: '#f8fafc', padding: '24px', borderRadius: '20px' }}>
+                    <h3 style={{ fontSize: '12px', fontWeight: 'bold', color: '#64748b', marginBottom: '16px', textTransform: 'uppercase' }}>Shipping Address</h3>
+                    <div style={{ fontSize: '14px', lineHeight: '1.6' }}>
+                      {viewOrder.address}<br/>
+                      {viewOrder.landmark && `Landmark: ${viewOrder.landmark}`}<br/>
+                      {viewOrder.city}, {viewOrder.state} - {viewOrder.zip}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ marginTop: '40px', borderTop: '2px solid #eee', paddingTop: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: '12px', color: '#999', fontWeight: 'bold', marginBottom: '4px' }}>ORDER STATUS</div>
+                  <div style={{ fontWeight: '900', color: 'black' }}>{viewOrder.status.toUpperCase()}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '12px', color: '#999', fontWeight: 'bold', marginBottom: '4px' }}>TOTAL AMOUNT ({viewOrder.paymentMethod})</div>
+                  <div style={{ fontSize: '28px', fontWeight: '900', color: 'black' }}>{currency}{viewOrder.totalAmount.toFixed(2)}</div>
+                </div>
+              </div>
             </motion.div>
           </div>
         )}

@@ -2,12 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { useStore } from '../store/useStore';
 import { useNavigate, Link } from 'react-router-dom';
 import { Package, Truck, LogOut, User, Mail, Phone, MapPin, AtSign, Calendar, ChevronRight, Loader2 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const AccountPage: React.FC = () => {
   const { currentUser, logout, fetchUserOrders, currency } = useStore();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [addressModal, setAddressModal] = useState<any | null>(null);
+  const { addresses, fetchAddresses, addAddress, updateAddress, deleteAddress } = useStore();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -15,12 +17,13 @@ export const AccountPage: React.FC = () => {
       navigate('/login');
       return;
     }
-    const loadOrders = async () => {
+    const loadData = async () => {
       const data = await fetchUserOrders();
       setOrders(data);
+      await fetchAddresses();
       setLoading(false);
     };
-    loadOrders();
+    loadData();
   }, [currentUser]);
 
   if (!currentUser) return null;
@@ -111,7 +114,7 @@ export const AccountPage: React.FC = () => {
                           </div>
                           <div>
                             <div style={{ fontSize: '13px', fontWeight: 'bold' }}>{order.trackingId || 'Preparing for shipment'}</div>
-                            <Link to={`/track?id=${order.id}`} style={{ fontSize: '12px', color: 'var(--accent-gold)', textDecoration: 'none', fontWeight: '600', display: 'flex', alignItems: 'center' }}>
+                            <Link to={`/track?id=${order.trackingId || order.id}`} style={{ fontSize: '12px', color: 'var(--accent-gold)', textDecoration: 'none', fontWeight: '600', display: 'flex', alignItems: 'center' }}>
                               Track Order <ChevronRight size={14} />
                             </Link>
                           </div>
@@ -156,19 +159,41 @@ export const AccountPage: React.FC = () => {
                 </div>
 
                 <div style={{ paddingTop: '24px' }}>
-                  <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <MapPin size={16} color="var(--accent-gold)" /> Saved Shipping Address
-                  </h4>
-                  {currentUser.address ? (
-                    <div style={{ fontSize: '13px', color: '#666', lineHeight: '1.6', background: '#f9f9f9', padding: '16px', borderRadius: '12px' }}>
-                      <b>{currentUser.firstName} {currentUser.lastName}</b><br />
-                      {currentUser.address}<br />
-                      {currentUser.landmark && <>{currentUser.landmark}<br /></>}
-                      {currentUser.city}, {currentUser.state} - {currentUser.zip}
-                    </div>
-                  ) : (
-                    <p style={{ fontSize: '13px', color: '#999', fontStyle: 'italic' }}>No saved address yet. Your address will be saved after your first purchase.</p>
-                  )}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <h4 style={{ fontSize: '14px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <MapPin size={16} color="var(--accent-gold)" /> Saved Addresses
+                    </h4>
+                    <button 
+                      onClick={() => setAddressModal({ firstName: currentUser.firstName, lastName: currentUser.lastName, address: '', city: '', state: '', zip: '', mobile: currentUser.mobile, isDefault: addresses.length === 0 })} 
+                      style={{ background: 'none', border: 'none', color: 'var(--accent-gold)', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                    >
+                      + ADD NEW
+                    </button>
+                  </div>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {addresses.map(addr => (
+                      <div key={addr.id} style={{ fontSize: '13px', color: '#666', lineHeight: '1.6', background: '#f9f9f9', padding: '16px', borderRadius: '12px', position: 'relative' }}>
+                        <div style={{ fontWeight: 'bold', color: 'black', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {addr.firstName} {addr.lastName}
+                          {addr.isDefault && <span style={{ fontSize: '10px', background: 'var(--accent-gold)', color: 'white', padding: '2px 6px', borderRadius: '4px' }}>DEFAULT</span>}
+                        </div>
+                        {addr.address}<br />
+                        {addr.city}, {addr.state} - {addr.zip}<br />
+                        T: {addr.mobile}
+                        
+                        <div style={{ marginTop: '12px', display: 'flex', gap: '12px' }}>
+                          <button onClick={() => setAddressModal(addr)} style={{ background: 'none', border: 'none', color: '#666', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', textDecoration: 'underline' }}>EDIT</button>
+                          {!addr.isDefault && (
+                            <button onClick={() => deleteAddress(addr.id)} style={{ background: 'none', border: 'none', color: '#ff4d4d', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', textDecoration: 'underline' }}>DELETE</button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    {addresses.length === 0 && (
+                      <p style={{ fontSize: '13px', color: '#999', fontStyle: 'italic' }}>No saved addresses yet.</p>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -176,6 +201,45 @@ export const AccountPage: React.FC = () => {
           </div>
         </div>
       </main>
+
+      {/* Address Form Modal */}
+      <AnimatePresence>
+        {addressModal && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ background: 'white', width: '100%', maxWidth: '500px', borderRadius: '24px', padding: '32px' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '24px' }}>{addressModal.id ? 'Edit Address' : 'Add New Address'}</h3>
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                if (addressModal.id) await updateAddress(addressModal.id, addressModal);
+                else await addAddress(addressModal);
+                setAddressModal(null);
+              }} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <input type="text" placeholder="First Name" value={addressModal.firstName} onChange={e => setAddressModal({...addressModal, firstName: e.target.value})} className="auth-input" required />
+                  <input type="text" placeholder="Last Name" value={addressModal.lastName} onChange={e => setAddressModal({...addressModal, lastName: e.target.value})} className="auth-input" required />
+                </div>
+                <input type="text" placeholder="Street Address" value={addressModal.address} onChange={e => setAddressModal({...addressModal, address: e.target.value})} className="auth-input" required />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <input type="text" placeholder="City" value={addressModal.city} onChange={e => setAddressModal({...addressModal, city: e.target.value})} className="auth-input" required />
+                  <input type="text" placeholder="State" value={addressModal.state} onChange={e => setAddressModal({...addressModal, state: e.target.value})} className="auth-input" required />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <input type="text" placeholder="Zip Code" value={addressModal.zip} onChange={e => setAddressModal({...addressModal, zip: e.target.value})} className="auth-input" required />
+                  <input type="tel" placeholder="Mobile" value={addressModal.mobile} onChange={e => setAddressModal({...addressModal, mobile: e.target.value})} className="auth-input" required />
+                </div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={addressModal.isDefault} onChange={e => setAddressModal({...addressModal, isDefault: e.target.checked})} />
+                  Set as default address
+                </label>
+                <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
+                  <button type="submit" className="btn-primary" style={{ flex: 1 }}>SAVE ADDRESS</button>
+                  <button type="button" onClick={() => setAddressModal(null)} style={{ flex: 1, background: '#eee', border: 'none', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer' }}>CANCEL</button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }

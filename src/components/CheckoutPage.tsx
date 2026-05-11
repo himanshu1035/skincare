@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
-import { ChevronDown, Loader2, User as UserIcon, AtSign, Phone, Mail } from 'lucide-react';
+import { ChevronDown, Loader2, User as UserIcon, AtSign, Phone, Mail, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
@@ -9,8 +9,9 @@ const STATES = [
 ];
 
 export const CheckoutPage: React.FC = () => {
-  const { cart, createOrder, currency, checkUserExists, registerUser, settings, currentUser } = useStore();
+  const { cart, createOrder, currency, checkUserExists, registerUser, settings, currentUser, addresses, fetchAddresses } = useStore();
   const navigate = useNavigate();
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('');
   
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -23,13 +24,13 @@ export const CheckoutPage: React.FC = () => {
   const [zip, setZip] = useState('');
   const [mobile, setMobile] = useState('');
   const [password, setPassword] = useState('');
+  const upiLogoUrl = "https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/upi-payment-icon.png";
   
   useEffect(() => {
     if (cart.length === 0) {
       navigate('/');
     }
   }, [cart, navigate]);
-
   useEffect(() => {
     if (currentUser) {
       setEmail(currentUser.email || '');
@@ -42,8 +43,28 @@ export const CheckoutPage: React.FC = () => {
       setState(currentUser.state || '');
       setZip(currentUser.zip || '');
       setMobile(currentUser.mobile || '');
+      fetchAddresses();
     }
-  }, [currentUser]);
+  }, [currentUser, fetchAddresses]);
+
+  useEffect(() => {
+    if (addresses.length > 0) {
+      const defaultAddr = addresses.find(a => a.isDefault) || addresses[0];
+      setSelectedAddressId(defaultAddr.id);
+      applyAddress(defaultAddr);
+    }
+  }, [addresses]);
+
+  const applyAddress = (addr: any) => {
+    setFirstName(addr.firstName);
+    setLastName(addr.lastName);
+    setAddress(addr.address);
+    setLandmark(addr.landmark || '');
+    setCity(addr.city);
+    setState(addr.state);
+    setZip(addr.zip);
+    setMobile(addr.mobile);
+  };
   
   const [userExists, setUserExists] = useState<boolean | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'Prepaid' | 'COD'>('Prepaid');
@@ -67,7 +88,7 @@ export const CheckoutPage: React.FC = () => {
   const prepayDiscount = paymentMethod === 'Prepaid' ? settings.prepayDiscount : 0;
   
   const finalTotal = itemsTotal + deliveryCharge + codCharge - prepayDiscount;
-  const payNowAmount = (paymentMethod === 'COD' && settings.payDeliveryFirst) ? deliveryCharge : (paymentMethod === 'Prepaid' ? finalTotal : 0);
+  const payNowAmount = (paymentMethod === 'COD' && settings.payDeliveryFirst) ? codCharge : (paymentMethod === 'Prepaid' ? finalTotal : 0);
 
   const handleCompletePurchase = async () => {
     if (!email || !firstName || !lastName || !address || !city || !zip || !mobile) {
@@ -90,7 +111,7 @@ export const CheckoutPage: React.FC = () => {
       if (paymentMethod === 'Prepaid') {
         navigate('/pay', { state: { orderId, totalAmount: finalTotal } });
       } else if (paymentMethod === 'COD' && settings.payDeliveryFirst) {
-        navigate('/pay', { state: { orderId, totalAmount: settings.deliveryCharge, isDeliveryOnly: true } });
+        navigate('/pay', { state: { orderId, totalAmount: codCharge, isDeliveryOnly: true } });
       } else {
         navigate('/order-success', { state: { orderId } });
       }
@@ -149,6 +170,44 @@ export const CheckoutPage: React.FC = () => {
 
             <div style={{ marginBottom: '48px' }}>
               <h2 className="section-title">Shipping Address</h2>
+              
+              {currentUser && addresses.length > 0 && (
+                <div style={{ marginBottom: '24px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#999', textTransform: 'uppercase', marginBottom: '12px' }}>Choose from Saved Addresses</div>
+                  <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '12px' }}>
+                    {addresses.map(addr => (
+                      <div 
+                        key={addr.id}
+                        onClick={() => { setSelectedAddressId(addr.id); applyAddress(addr); }}
+                        style={{ 
+                          flexShrink: 0, width: '220px', padding: '16px', borderRadius: '16px', 
+                          border: `2px solid ${selectedAddressId === addr.id ? 'var(--accent-gold)' : '#eee'}`,
+                          background: selectedAddressId === addr.id ? 'rgba(197,160,89,0.05)' : 'white',
+                          cursor: 'pointer', transition: 'all 0.2s'
+                        }}
+                      >
+                        <div style={{ fontWeight: 'bold', fontSize: '13px', marginBottom: '4px' }}>{addr.firstName} {addr.lastName}</div>
+                        <div style={{ fontSize: '11px', color: '#666', lineHeight: '1.4' }}>
+                          {addr.address}<br />
+                          {addr.city}, {addr.zip}
+                        </div>
+                      </div>
+                    ))}
+                    <div 
+                      onClick={() => { setSelectedAddressId('new'); setFirstName(''); setLastName(''); setAddress(''); setLandmark(''); setCity(''); setState(''); setZip(''); setMobile(''); }}
+                      style={{ 
+                        flexShrink: 0, width: '220px', padding: '16px', borderRadius: '16px', 
+                        border: `2px solid ${selectedAddressId === 'new' ? 'var(--accent-gold)' : '#eee'}`,
+                        background: selectedAddressId === 'new' ? 'rgba(197,160,89,0.05)' : 'white',
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '13px', fontWeight: 'bold'
+                      }}
+                    >
+                      <Plus size={16} /> ADD NEW
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div style={{ position: 'relative' }}>
@@ -203,7 +262,7 @@ export const CheckoutPage: React.FC = () => {
                       <div style={{ fontWeight: '800', fontSize: '16px' }}>UPI</div>
                       <p style={{ fontSize: '11px', color: '#666' }}>Google Pay, PhonePe, Paytm</p>
                     </div>
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Unified_Payments_Interface_logo.svg/1200px-Unified_Payments_Interface_logo.svg.png" alt="UPI" style={{ height: '24px' }} />
+                    <img src={upiLogoUrl} alt="UPI" style={{ height: '32px', objectFit: 'contain' }} />
                   </div>
                 </div>
 

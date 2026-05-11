@@ -18,7 +18,8 @@ export const UPIPaymentPage: React.FC = () => {
   const [copied, setCopied] = useState(false);
   const [copiedAmount, setCopiedAmount] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-
+  const upiLogoUrl = "https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/upi-payment-icon.png";
+ 
   if (!orderId) {
     navigate('/');
     return null;
@@ -47,7 +48,7 @@ export const UPIPaymentPage: React.FC = () => {
       name: 'GPay', 
       icon: 'https://cdn.iconscout.com/icon/free/png-256/free-google-pay-2038779-1721670.png', 
       color: '#4285F4',
-      scheme: `googlepay://pay?pa=${settings.upiId}&pn=${encodedName}&am=${totalAmount.toFixed(2)}&cu=INR&tr=${orderId}`
+      scheme: `intent://pay?pa=${settings.upiId}&pn=${encodedName}&am=${totalAmount.toFixed(2)}&cu=INR&tr=${orderId}#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end`
     },
     { 
       name: 'PhonePe', 
@@ -109,14 +110,14 @@ export const UPIPaymentPage: React.FC = () => {
           style={{ background: 'white', borderRadius: '32px', padding: '32px', boxShadow: 'var(--shadow-lg)', textAlign: 'center' }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '24px' }}>
-            <div style={{ width: '40px', height: '40px', background: 'black', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
-              <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/Unified_Payments_Interface_logo.svg" alt="UPI" style={{ width: '24px', filter: 'brightness(0) invert(1)' }} />
+            <div style={{ width: '40px', height: '40px', background: 'white', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', border: '1px solid #eee' }}>
+              <img src={upiLogoUrl} alt="UPI" style={{ width: '32px' }} />
             </div>
-            <h1 style={{ fontSize: '24px', fontWeight: '800' }}>{isDeliveryOnly ? 'Pay Delivery Fee' : 'UPI Payment'}</h1>
+            <h1 style={{ fontSize: '24px', fontWeight: '800' }}>{isDeliveryOnly ? 'COD Confirmation' : 'UPI Payment'}</h1>
           </div>
 
           <div style={{ background: '#f8f8f8', padding: '20px', borderRadius: '24px', marginBottom: '24px' }}>
-            <div style={{ fontSize: '13px', color: '#666', marginBottom: '4px' }}>{isDeliveryOnly ? 'Delivery Charge to Pay' : 'Amount to Pay'}</div>
+            <div style={{ fontSize: '13px', color: '#666', marginBottom: '4px' }}>{isDeliveryOnly ? 'COD Confirmation Fee' : 'Amount to Pay'}</div>
             <div style={{ fontSize: '32px', fontWeight: '900', color: 'black' }}>{currency}{totalAmount.toFixed(2)}</div>
           </div>
 

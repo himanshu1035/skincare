@@ -14,6 +14,8 @@ export const TrackOrderPage: React.FC = () => {
     const params = new URLSearchParams(window.location.search);
     const id = params.get('id');
     if (id) {
+      // If it's a full UUID and we have it, we'll keep it for the search but maybe shorten it for display?
+      // Actually, let's keep the value for the search but perform it immediately
       setOrderId(id);
       performTrack(id);
     }
@@ -32,6 +34,8 @@ export const TrackOrderPage: React.FC = () => {
 
     if (foundOrder) {
       setTrackingInfo(foundOrder);
+      // Update the input field to show the better ID (Tracking ID preferred)
+      setOrderId(foundOrder.trackingId || foundOrder.id.slice(0, 8).toUpperCase());
     } else {
       setError('Order not found. Please check your Order ID or Tracking ID.');
     }

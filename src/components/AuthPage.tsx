@@ -14,8 +14,14 @@ export const AuthPage: React.FC = () => {
   const [username, setUsername] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const { login, registerUser } = useStore();
+  const { login, registerUser, currentUser } = useStore();
   const navigate = useNavigate();
+
+  React.useEffect(() => {
+    if (currentUser) {
+      navigate('/account', { replace: true });
+    }
+  }, [currentUser, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +30,7 @@ export const AuthPage: React.FC = () => {
     try {
       if (isLogin) {
         const success = await login(email, password);
-        if (success) navigate('/account');
+        if (success) navigate('/account', { replace: true });
         else alert('Invalid credentials');
       } else {
         const userId = await registerUser(email, mobile, password, { 
@@ -32,7 +38,7 @@ export const AuthPage: React.FC = () => {
           lastName, 
           username 
         });
-        if (userId) navigate('/account');
+        if (userId) navigate('/account', { replace: true });
         else alert('Registration failed');
       }
     } catch (err) {
