@@ -1,6 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { Check, Star, Award, Heart, ShieldCheck } from 'lucide-react';
+import { Check, Award, ShieldCheck } from 'lucide-react';
 
 export const ProductSection: React.FC = () => {
   const benefits = [

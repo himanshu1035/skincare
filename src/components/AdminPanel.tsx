@@ -3,7 +3,7 @@ import { useStore } from '../store/useStore';
 import { Settings, BarChart3, ToggleLeft, ToggleRight, X } from 'lucide-react';
 
 export const AdminPanel: React.FC = () => {
-  const { isBogoActive, setBogoActive, cart } = useStore();
+  const { isBogoActive, setBogoActive } = useStore();
   const [isOpen, setIsOpen] = useState(false);
 
   // Mock analytics

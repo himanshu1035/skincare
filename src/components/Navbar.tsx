@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingBag, Timer, ShieldCheck, Zap } from 'lucide-react';
+import { ShoppingBag, ShieldCheck, Zap } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 export const Navbar: React.FC = () => {
