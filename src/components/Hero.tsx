@@ -6,19 +6,24 @@ import { useStore } from '../store/useStore';
 export const Hero: React.FC = () => {
   const { addToCart, stockLeft, currency, product, isBogoActive } = useStore();
 
-  const handleAddToCart = () => {
-    if (product) {
-      addToCart({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        originalPrice: product.originalPrice,
-        image: product.image
-      });
-    }
+  // Fallback data if product isn't loaded from Supabase yet
+  const displayProduct = product || {
+    id: 'cosrx-snail-96',
+    name: 'COSRX Advanced Snail 96 Mucin Power Essence',
+    price: 25.0,
+    originalPrice: 50.0,
+    image: '/assets/product.png'
   };
 
-  if (!product) return null;
+  const handleAddToCart = () => {
+    addToCart({
+      id: displayProduct.id,
+      name: displayProduct.name,
+      price: displayProduct.price,
+      originalPrice: displayProduct.originalPrice,
+      image: displayProduct.image
+    });
+  };
 
   return (
     <section style={{ padding: '60px 0', background: 'linear-gradient(180deg, var(--secondary-ivory) 0%, var(--primary-cream) 100%)' }}>
@@ -48,8 +53,8 @@ export const Hero: React.FC = () => {
             )}
             
             <img 
-              src={product.image} 
-              alt={product.name} 
+              src={displayProduct.image} 
+              alt={displayProduct.name} 
               style={{ width: '100%', borderRadius: '12px', boxShadow: 'var(--shadow-lg)' }} 
             />
             
@@ -83,7 +88,7 @@ export const Hero: React.FC = () => {
             </h1>
             
             <p style={{ fontSize: '18px', color: 'var(--text-muted)', marginBottom: '32px' }}>
-              {product.name}. The #1 Korean skincare secret for hydration and that legendary "slugging" glow. 
+              {displayProduct.name}. The #1 Korean skincare secret for hydration and that legendary "slugging" glow. 
             </p>
 
             <div style={{ background: 'rgba(197, 160, 89, 0.1)', borderLeft: '4px solid var(--accent-gold)', padding: '20px', marginBottom: '32px' }}>
@@ -92,10 +97,10 @@ export const Hero: React.FC = () => {
                 {isBogoActive ? 'BUY 1 GET 1 FREE' : 'SPECIAL DISCOUNT'}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <span style={{ fontSize: '32px', fontWeight: 'bold' }}>{currency}{product.price.toFixed(2)}</span>
-                <span style={{ fontSize: '20px', textDecoration: 'line-through', color: 'var(--text-muted)' }}>{currency}{product.originalPrice.toFixed(2)}</span>
+                <span style={{ fontSize: '32px', fontWeight: 'bold' }}>{currency}{displayProduct.price.toFixed(2)}</span>
+                <span style={{ fontSize: '20px', textDecoration: 'line-through', color: 'var(--text-muted)' }}>{currency}{displayProduct.originalPrice.toFixed(2)}</span>
                 <span style={{ background: 'var(--bogo-badge)', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold' }}>
-                  SAVE {Math.round((1 - product.price / product.originalPrice) * 100)}%
+                  SAVE {Math.round((1 - displayProduct.price / displayProduct.originalPrice) * 100)}%
                 </span>
               </div>
             </div>

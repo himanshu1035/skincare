@@ -6,23 +6,32 @@ import { CartDrawer } from './CartDrawer';
 import { MarketingPopups } from './MarketingPopups';
 import { useStore } from '../store/useStore';
 import { Star, ShieldCheck, Truck, RefreshCw, ShoppingCart } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 import { useEffect } from 'react';
 
 export const LandingPage: React.FC = () => {
-  const { addToCart, fetchData } = useStore();
+  const { addToCart, fetchData, product } = useStore();
 
   useEffect(() => {
     fetchData();
   }, []);
 
   const handleAddToCart = () => {
-    addToCart({
+    const item = product || {
       id: 'cosrx-snail-96',
       name: 'COSRX Advanced Snail 96 Mucin Power Essence',
       price: 25.0,
       originalPrice: 50.0,
       image: '/assets/product.png'
+    };
+    
+    addToCart({
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      originalPrice: item.originalPrice,
+      image: item.image
     });
   };
 
@@ -89,7 +98,7 @@ export const LandingPage: React.FC = () => {
                 <li>Best Sellers</li>
                 <li>New Arrivals</li>
                 <li>BOGO Offers</li>
-                <li>Gift Cards</li>
+                <li style={{ opacity: 0.1 }}><Link to="/admin" style={{ color: 'inherit', textDecoration: 'none' }}>Admin</Link></li>
               </ul>
             </div>
             <div>
