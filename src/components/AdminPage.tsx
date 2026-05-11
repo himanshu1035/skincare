@@ -143,7 +143,7 @@ export const AdminPage: React.FC = () => {
     o.customerMobile?.includes(searchTerm)
   );
 
-  const pendingPayments = orders.filter(o => o.status === 'Pending Payment' || (o.paymentMethod === 'Prepaid' && o.utrId && o.status === 'Processing'));
+  const pendingPayments = orders.filter(o => o.status === 'Pending Payment');
 
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex' }}>

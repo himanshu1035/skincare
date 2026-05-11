@@ -11,10 +11,12 @@ export const UPIPaymentPage: React.FC = () => {
   
   const orderId = location.state?.orderId;
   const totalAmount = location.state?.totalAmount || 0;
+  const isDeliveryOnly = location.state?.isDeliveryOnly || false;
   
   const [utr, setUtr] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedAmount, setCopiedAmount] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   if (!orderId) {
@@ -28,7 +30,7 @@ export const UPIPaymentPage: React.FC = () => {
 
   const upiApps = [
     { name: 'GPay', icon: 'https://cdn.iconscout.com/icon/free/png-256/free-google-pay-2038779-1721670.png', color: '#4285F4' },
-    { name: 'PhonePe', icon: 'https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/phonepe-logo-icon.png', color: '#5f259f' },
+    { name: 'PhonePe', icon: 'https://download.logo.wine/logo/PhonePe/PhonePe-Logo.wine.png', color: '#5f259f' },
     { name: 'Paytm', icon: 'https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/paytm-icon.png', color: '#00BAF2' }
   ];
 
@@ -81,11 +83,11 @@ export const UPIPaymentPage: React.FC = () => {
             <div style={{ width: '40px', height: '40px', background: 'black', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
               <QrCode size={20} />
             </div>
-            <h1 style={{ fontSize: '24px', fontWeight: '800' }}>UPI Payment</h1>
+            <h1 style={{ fontSize: '24px', fontWeight: '800' }}>{isDeliveryOnly ? 'Pay Delivery Fee' : 'UPI Payment'}</h1>
           </div>
 
           <div style={{ background: '#f8f8f8', padding: '20px', borderRadius: '24px', marginBottom: '24px' }}>
-            <div style={{ fontSize: '13px', color: '#666', marginBottom: '4px' }}>Amount to Pay</div>
+            <div style={{ fontSize: '13px', color: '#666', marginBottom: '4px' }}>{isDeliveryOnly ? 'Delivery Charge to Pay' : 'Amount to Pay'}</div>
             <div style={{ fontSize: '32px', fontWeight: '900', color: 'black' }}>{currency}{totalAmount.toFixed(2)}</div>
           </div>
 
@@ -129,21 +131,53 @@ export const UPIPaymentPage: React.FC = () => {
             <div style={{ marginTop: '12px', fontSize: '12px', color: '#999', fontWeight: '600' }}>Or scan QR code</div>
           </div>
 
-          <div style={{ marginBottom: '24px' }}>
-            <div style={{ fontSize: '12px', color: '#999', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Copy UPI ID</div>
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'space-between', 
-              background: '#f9f9f9', 
-              padding: '12px 16px', 
-              borderRadius: '12px',
-              border: '1px solid #eee'
-            }}>
-              <span style={{ fontWeight: '700', color: 'black', fontSize: '14px' }}>{settings.upiId}</span>
-              <button onClick={handleCopy} style={{ background: 'none', border: 'none', color: copied ? 'var(--success-green)' : 'black', cursor: 'pointer' }}>
-                {copied ? <CheckCircle2 size={18} /> : <Copy size={18} />}
-              </button>
+          <div style={{ marginBottom: '12px' }}>
+            <div style={{ fontSize: '12px', color: '#999', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Copy Details</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {/* Copy UPI ID */}
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between', 
+                background: '#f9f9f9', 
+                padding: '12px 16px', 
+                borderRadius: '12px',
+                border: '1px solid #eee'
+              }}>
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontSize: '10px', color: '#999', fontWeight: 'bold' }}>UPI ID</div>
+                  <span style={{ fontWeight: '700', color: 'black', fontSize: '14px' }}>{settings.upiId}</span>
+                </div>
+                <button onClick={handleCopy} style={{ background: 'none', border: 'none', color: copied ? 'var(--success-green)' : 'black', cursor: 'pointer' }}>
+                  {copied ? <CheckCircle2 size={18} /> : <Copy size={18} />}
+                </button>
+              </div>
+
+              {/* Copy Amount */}
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between', 
+                background: '#f9f9f9', 
+                padding: '12px 16px', 
+                borderRadius: '12px',
+                border: '1px solid #eee'
+              }}>
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontSize: '10px', color: '#999', fontWeight: 'bold' }}>Amount</div>
+                  <span style={{ fontWeight: '700', color: 'black', fontSize: '14px' }}>{totalAmount.toFixed(2)}</span>
+                </div>
+                <button 
+                  onClick={() => {
+                    navigator.clipboard.writeText(totalAmount.toFixed(2));
+                    setCopiedAmount(true);
+                    setTimeout(() => setCopiedAmount(false), 2000);
+                  }} 
+                  style={{ background: 'none', border: 'none', color: copiedAmount ? 'var(--success-green)' : 'black', cursor: 'pointer' }}
+                >
+                  {copiedAmount ? <CheckCircle2 size={18} /> : <Copy size={18} />}
+                </button>
+              </div>
             </div>
           </div>
 

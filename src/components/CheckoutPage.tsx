@@ -80,10 +80,13 @@ export const CheckoutPage: React.FC = () => {
     });
 
     if (result) {
+      const orderId = typeof result === 'string' ? result : null;
       if (paymentMethod === 'Prepaid') {
-        navigate('/pay', { state: { orderId: typeof result === 'string' ? result : null, totalAmount: finalTotal } });
+        navigate('/pay', { state: { orderId, totalAmount: finalTotal } });
+      } else if (paymentMethod === 'COD' && settings.payDeliveryFirst) {
+        navigate('/pay', { state: { orderId, totalAmount: settings.deliveryCharge, isDeliveryOnly: true } });
       } else {
-        navigate('/order-success', { state: { orderId: typeof result === 'string' ? result : null } });
+        navigate('/order-success', { state: { orderId } });
       }
     } else {
       alert('Failed to place order.');
