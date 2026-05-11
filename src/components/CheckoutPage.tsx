@@ -163,11 +163,6 @@ export const CheckoutPage: React.FC = () => {
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                       <span style={{ fontWeight: '600' }}>Pay Now - UPI, Cards, Wallets</span>
-                      <div style={{ display: 'flex', gap: '4px' }}>
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo.png" style={{ height: '12px' }} alt="UPI" />
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/Visa.svg" style={{ height: '12px' }} alt="Visa" />
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" style={{ height: '12px' }} alt="MC" />
-                      </div>
                     </div>
                     <p style={{ fontSize: '12px', color: '#666' }}>Get extra {currency}{settings.prepayDiscount} discount instantly on prepaying.</p>
                   </div>

@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '../store/useStore';
-import { BarChart3, ToggleLeft, ToggleRight, LogOut, Package, Settings, RefreshCw, Users, ShoppingCart, Edit2, Check, X, CreditCard, Truck, DollarSign } from 'lucide-react';
-
+import { BarChart3, ToggleLeft, ToggleRight, LogOut, Package, Settings, RefreshCw, Users, ShoppingCart, Edit2, Check, X, CreditCard, Truck, DollarSign, MapPin, Phone, Mail } from 'lucide-react';
 
 const CURRENCIES = [
   { label: 'US Dollar ($)', value: '$' },
@@ -10,6 +9,16 @@ const CURRENCIES = [
   { label: 'British Pound (£)', value: '£' },
   { label: 'UAE Dirham (AED)', value: 'AED ' },
   { label: 'Australian Dollar (A$)', value: 'A$' }
+];
+
+const ORDER_STATUSES = [
+  "Processing",
+  "Shipped",
+  "In Transit",
+  "Out for Delivery",
+  "Delivered",
+  "Cancelled",
+  "Returned"
 ];
 
 export const AdminPage: React.FC = () => {
@@ -25,45 +34,49 @@ export const AdminPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [tab, setTab] = useState<'settings' | 'orders' | 'users' | 'payment'>('settings');
 
-  // Data states
-  const [orders, setOrders] = useState<any[]>([]);
-  const [users, setUsers] = useState<any[]>([]);
+  // Local Form States
   const [price, setPrice] = useState(0);
   const [origPrice, setOrigPrice] = useState(0);
-
-  // Payment states
   const [codCharge, setCodCharge] = useState(0);
   const [prepayDiscount, setPrepayDiscount] = useState(0);
   const [deliveryCharge, setDeliveryCharge] = useState(0);
 
-  // Edit states
+  // Edit states for Orders
   const [editingOrder, setEditingOrder] = useState<string | null>(null);
-  const [editStatus, setEditStatus] = useState('');
-  const [editTracking, setEditTracking] = useState('');
+  const [editOrderData, setEditOrderData] = useState<any>(null);
 
+  // Edit states for Users
   const [editingUser, setEditingUser] = useState<string | null>(null);
   const [editEmail, setEditEmail] = useState('');
   const [editMobile, setEditMobile] = useState('');
 
+  // Data states
+  const [orders, setOrders] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+  
+  const hasLoadedInitially = useRef(false);
+
   useEffect(() => {
-    fetchData();
-    loadAdminData();
+    const init = async () => {
+      await fetchData();
+      if (tab === 'orders') setOrders(await fetchAllOrders());
+      if (tab === 'users') setUsers(await fetchAllUsers());
+    };
+    init();
   }, [tab]);
 
-  const loadAdminData = async () => {
-    if (tab === 'orders') setOrders(await fetchAllOrders());
-    if (tab === 'users') setUsers(await fetchAllUsers());
-  };
-
   useEffect(() => {
-    if (product) {
-      setPrice(product.price);
-      setOrigPrice(product.originalPrice);
-    }
-    if (settings) {
-      setCodCharge(settings.codCharge);
-      setPrepayDiscount(settings.prepayDiscount);
-      setDeliveryCharge(settings.deliveryCharge);
+    if ((product || settings) && !hasLoadedInitially.current) {
+      if (product) {
+        setPrice(product.price);
+        setOrigPrice(product.originalPrice);
+      }
+      if (settings) {
+        setCodCharge(settings.codCharge);
+        setPrepayDiscount(settings.prepayDiscount);
+        setDeliveryCharge(settings.deliveryCharge);
+      }
+      hasLoadedInitially.current = true;
     }
   }, [product, settings]);
 
@@ -73,16 +86,31 @@ export const AdminPage: React.FC = () => {
     else alert('Invalid credentials');
   };
 
-  const handleUpdateOrderStatus = async (id: string) => {
-    await updateOrderStatus(id, editStatus, editTracking);
+  const handleSaveProduct = async () => {
+    const success = await updateProduct({ price, originalPrice: origPrice });
+    if (success) alert('Product updated successfully!');
+    else alert('Failed to update product');
+  };
+
+  const handleSaveSettings = async (updates: any) => {
+    const success = await updateSettings(updates);
+    if (success) alert('Settings saved successfully!');
+    else alert('Failed to save settings');
+  };
+
+  const handleUpdateOrder = async () => {
+    await updateOrderStatus(editOrderData.id, editOrderData.status, editOrderData.trackingId);
+    // In a real app we'd have a full updateOrder function, for now we reuse updateOrderStatus
+    alert('Order updated!');
     setEditingOrder(null);
-    loadAdminData();
+    setOrders(await fetchAllOrders());
   };
 
   const handleUpdateUser = async (id: string) => {
     await updateUserDetails(id, { email: editEmail, mobile: editMobile });
+    alert('User details updated!');
     setEditingUser(null);
-    loadAdminData();
+    setUsers(await fetchAllUsers());
   };
 
   if (!isAuthenticated) {
@@ -128,7 +156,6 @@ export const AdminPage: React.FC = () => {
         </div>
       </aside>
 
-      {/* Main Content */}
       <main style={{ flex: 1, padding: '40px', overflowY: 'auto' }}>
         {tab === 'settings' && (
           <div style={{ maxWidth: '900px' }}>
@@ -141,7 +168,7 @@ export const AdminPage: React.FC = () => {
                   <input type="number" value={price} onChange={(e) => setPrice(Number(e.target.value))} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
                   <label style={{ fontSize: '14px' }}>Original Price ({currency})</label>
                   <input type="number" value={origPrice} onChange={(e) => setOrigPrice(Number(e.target.value))} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
-                  <button onClick={async () => { await updateProduct({ price, originalPrice: origPrice }); alert('Product details updated successfully!'); }} className="btn-primary" style={{ justifyContent: 'center' }}>SAVE CHANGES</button>
+                  <button onClick={handleSaveProduct} className="btn-primary" style={{ justifyContent: 'center' }}>SAVE CHANGES</button>
                 </div>
               </div>
 
@@ -183,7 +210,7 @@ export const AdminPage: React.FC = () => {
                       {settings.payDeliveryFirst ? <ToggleRight size={40} /> : <ToggleLeft size={40} />}
                     </button>
                   </div>
-                  <button onClick={async () => { await updateSettings({ deliveryCharge }); alert('Delivery settings saved!'); }} className="btn-primary" style={{ justifyContent: 'center' }}>SAVE DELIVERY</button>
+                  <button onClick={() => handleSaveSettings({ deliveryCharge })} className="btn-primary" style={{ justifyContent: 'center' }}>SAVE DELIVERY</button>
                 </div>
               </div>
 
@@ -196,7 +223,7 @@ export const AdminPage: React.FC = () => {
                   <label style={{ fontSize: '14px' }}>Prepayment Discount ({currency})</label>
                   <input type="number" value={prepayDiscount} onChange={(e) => setPrepayDiscount(Number(e.target.value))} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
                   
-                  <button onClick={async () => { await updateSettings({ codCharge, prepayDiscount }); alert('Payment rules saved successfully!'); }} className="btn-primary" style={{ justifyContent: 'center', marginTop: '10px' }}>SAVE RULES</button>
+                  <button onClick={() => handleSaveSettings({ codCharge, prepayDiscount })} className="btn-primary" style={{ justifyContent: 'center', marginTop: '10px' }}>SAVE RULES</button>
                 </div>
               </div>
             </div>
@@ -210,53 +237,52 @@ export const AdminPage: React.FC = () => {
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                 <thead style={{ background: '#f9f9f9' }}>
                   <tr>
-                    <th style={{ padding: '20px' }}>Order</th>
-                    <th style={{ padding: '20px' }}>Customer</th>
-                    <th style={{ padding: '20px' }}>Method</th>
-                    <th style={{ padding: '20px' }}>Status</th>
-                    <th style={{ padding: '20px' }}>Tracking</th>
+                    <th style={{ padding: '20px' }}>Order Info</th>
+                    <th style={{ padding: '20px' }}>Shipping Details</th>
+                    <th style={{ padding: '20px' }}>Payment</th>
+                    <th style={{ padding: '20px' }}>Status & Tracking</th>
                     <th style={{ padding: '20px' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {orders.map(order => (
                     <tr key={order.id} style={{ borderTop: '1px solid #eee' }}>
-                      <td style={{ padding: '20px', fontWeight: 'bold' }}>#{order.id.slice(0, 8).toUpperCase()}</td>
                       <td style={{ padding: '20px' }}>
-                        <div style={{ fontWeight: '500' }}>{order.customerEmail}</div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{order.customerMobile}</div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{order.city}, {order.state}</div>
+                        <div style={{ fontWeight: 'bold' }}>#{order.id.slice(0, 8).toUpperCase()}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{new Date(order.createdAt).toLocaleDateString()}</div>
                       </td>
                       <td style={{ padding: '20px' }}>
-                        <span style={{ fontSize: '12px', fontWeight: 'bold', color: order.paymentMethod === 'Prepaid' ? 'var(--success-green)' : 'var(--accent-gold)' }}>{order.paymentMethod}</span>
+                        <div style={{ fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}><Users size={14} /> {order.firstName} {order.lastName}</div>
+                        <div style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px' }}><Phone size={14} /> {order.customerMobile}</div>
+                        <div style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px' }}><MapPin size={14} /> {order.city}, {order.state}</div>
                       </td>
                       <td style={{ padding: '20px' }}>
-                        {editingOrder === order.id ? (
-                          <select value={editStatus} onChange={(e) => setEditStatus(e.target.value)} style={{ padding: '8px', borderRadius: '4px' }}>
-                            <option value="Processing">Processing</option>
-                            <option value="Shipped">Shipped</option>
-                            <option value="Delivered">Delivered</option>
-                            <option value="Cancelled">Cancelled</option>
-                          </select>
-                        ) : (
-                          <span style={{ padding: '6px 12px', borderRadius: '50px', background: 'rgba(197,160,89,0.1)', color: 'var(--accent-gold)', fontSize: '12px', fontWeight: 'bold' }}>{order.status}</span>
-                        )}
+                        <div style={{ fontWeight: 'bold' }}>{currency}{order.totalAmount.toFixed(2)}</div>
+                        <span style={{ fontSize: '11px', fontWeight: 'bold', color: order.paymentMethod === 'Prepaid' ? 'var(--success-green)' : 'var(--accent-gold)' }}>{order.paymentMethod}</span>
                       </td>
                       <td style={{ padding: '20px' }}>
                         {editingOrder === order.id ? (
-                          <input type="text" value={editTracking} onChange={(e) => setEditTracking(e.target.value)} placeholder="Tracking ID" style={{ padding: '8px', borderRadius: '4px', border: '1px solid #eee' }} />
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <select value={editOrderData.status} onChange={(e) => setEditOrderData({ ...editOrderData, status: e.target.value })} style={{ padding: '8px', borderRadius: '8px', border: '1px solid #eee' }}>
+                              {ORDER_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                            <input type="text" value={editOrderData.trackingId} onChange={(e) => setEditOrderData({ ...editOrderData, trackingId: e.target.value })} placeholder="Tracking ID" style={{ padding: '8px', borderRadius: '8px', border: '1px solid #eee' }} />
+                          </div>
                         ) : (
-                          <span style={{ color: order.trackingId ? 'inherit' : '#ccc' }}>{order.trackingId || 'Not assigned'}</span>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <span style={{ padding: '4px 10px', borderRadius: '50px', background: 'rgba(197,160,89,0.1)', color: 'var(--accent-gold)', fontSize: '11px', fontWeight: 'bold', width: 'fit-content' }}>{order.status}</span>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{order.trackingId || 'No tracking ID'}</div>
+                          </div>
                         )}
                       </td>
                       <td style={{ padding: '20px' }}>
                         {editingOrder === order.id ? (
                           <div style={{ display: 'flex', gap: '8px' }}>
-                            <button onClick={() => handleUpdateOrderStatus(order.id)} style={{ background: 'var(--success-green)', color: 'white', padding: '8px', borderRadius: '4px' }}><Check size={16} /></button>
-                            <button onClick={() => setEditingOrder(null)} style={{ background: '#eee', padding: '8px', borderRadius: '4px' }}><X size={16} /></button>
+                            <button onClick={handleUpdateOrder} style={{ background: 'var(--success-green)', color: 'white', padding: '8px', borderRadius: '8px' }}><Check size={16} /></button>
+                            <button onClick={() => setEditingOrder(null)} style={{ background: '#eee', padding: '8px', borderRadius: '8px' }}><X size={16} /></button>
                           </div>
                         ) : (
-                          <button onClick={() => { setEditingOrder(order.id); setEditStatus(order.status); setEditTracking(order.trackingId || ''); }} style={{ background: 'none', color: 'var(--accent-gold)' }}><Edit2 size={18} /></button>
+                          <button onClick={() => { setEditingOrder(order.id); setEditOrderData(order); }} style={{ background: 'none', color: 'var(--accent-gold)' }}><Edit2 size={18} /></button>
                         )}
                       </td>
                     </tr>
@@ -274,8 +300,7 @@ export const AdminPage: React.FC = () => {
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                 <thead style={{ background: '#f9f9f9' }}>
                   <tr>
-                    <th style={{ padding: '20px' }}>Email</th>
-                    <th style={{ padding: '20px' }}>Mobile</th>
+                    <th style={{ padding: '20px' }}>User Details</th>
                     <th style={{ padding: '20px' }}>Actions</th>
                   </tr>
                 </thead>
@@ -284,19 +309,28 @@ export const AdminPage: React.FC = () => {
                     <tr key={user.id} style={{ borderTop: '1px solid #eee' }}>
                       <td style={{ padding: '20px' }}>
                         {editingUser === user.id ? (
-                          <input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid #eee' }} />
-                        ) : user.email}
-                      </td>
-                      <td style={{ padding: '20px' }}>
-                        {editingUser === user.id ? (
-                          <input type="tel" value={editMobile} onChange={(e) => setEditMobile(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid #eee' }} />
-                        ) : user.mobile}
+                          <div style={{ display: 'flex', gap: '16px' }}>
+                            <div style={{ flex: 1 }}>
+                              <label style={{ fontSize: '11px', color: '#999' }}>Email</label>
+                              <input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                              <label style={{ fontSize: '11px', color: '#999' }}>Mobile</label>
+                              <input type="tel" value={editMobile} onChange={(e) => setEditMobile(e.target.value)} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', gap: '32px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}><Mail size={16} color="#999" /> {user.email}</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}><Phone size={16} color="#999" /> {user.mobile}</div>
+                          </div>
+                        )}
                       </td>
                       <td style={{ padding: '20px' }}>
                         {editingUser === user.id ? (
                           <div style={{ display: 'flex', gap: '8px' }}>
-                            <button onClick={() => handleUpdateUser(user.id)} style={{ background: 'var(--success-green)', color: 'white', padding: '8px', borderRadius: '4px' }}><Check size={16} /></button>
-                            <button onClick={() => setEditingUser(null)} style={{ background: '#eee', padding: '8px', borderRadius: '4px' }}><X size={16} /></button>
+                            <button onClick={() => handleUpdateUser(user.id)} style={{ background: 'var(--success-green)', color: 'white', padding: '8px', borderRadius: '8px' }}><Check size={16} /></button>
+                            <button onClick={() => setEditingUser(null)} style={{ background: '#eee', padding: '8px', borderRadius: '8px' }}><X size={16} /></button>
                           </div>
                         ) : (
                           <button onClick={() => { setEditingUser(user.id); setEditEmail(user.email); setEditMobile(user.mobile); }} style={{ background: 'none', color: 'var(--accent-gold)' }}><Edit2 size={18} /></button>

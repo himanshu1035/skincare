@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShoppingCart, User } from 'lucide-react';
+import { ShoppingCart, User, Truck } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { Link } from 'react-router-dom';
 
@@ -16,6 +16,12 @@ export const Navbar: React.FC = () => {
         </Link>
         
         <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
+            <Link to="/" style={{ color: 'var(--text-dark)', fontWeight: '500' }}>Shop</Link>
+            <Link to="/track" style={{ color: 'var(--text-dark)', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Truck size={18} color="var(--accent-gold)" /> Track Order
+            </Link>
+          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '12px', fontWeight: 'bold' }}>
             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success-green)' }} />
             DERMATOLOGIST TESTED
