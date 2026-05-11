@@ -96,6 +96,11 @@ export const AdminPage: React.FC = () => {
     if (success) alert('Product updated successfully!');
   };
 
+  const handleSaveSettings = async (updates: any) => {
+    const success = await updateSettings(updates);
+    if (success) alert('Settings saved successfully!');
+  };
+
   const handleCreateReview = async () => {
     await addReview(newReview);
     alert('Review created successfully!');
@@ -203,6 +208,159 @@ export const AdminPage: React.FC = () => {
           </div>
         )}
 
+        {tab === 'payment' && (
+          <div style={{ maxWidth: '900px' }}>
+            <h1 style={{ fontSize: '32px', marginBottom: '32px' }}>Payment & Delivery</h1>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+              <div style={{ background: 'white', padding: '32px', borderRadius: '20px', boxShadow: 'var(--shadow-sm)' }}>
+                <h3 style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}><Truck color="var(--accent-gold)" /> Delivery Settings</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <label style={{ fontSize: '14px' }}>Standard Delivery Charge ({currency})</label>
+                  <input type="number" value={deliveryCharge} onChange={(e) => setDeliveryCharge(Number(e.target.value))} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
+                  
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: '#f9f9f9', borderRadius: '12px', marginTop: '10px' }}>
+                    <div>
+                      <div style={{ fontWeight: 'bold', fontSize: '14px' }}>Pay Delivery First?</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Customer pays delivery charge before COD</div>
+                    </div>
+                    <button onClick={() => updateSettings({ payDeliveryFirst: !settings.payDeliveryFirst })} style={{ background: 'none', color: settings.payDeliveryFirst ? 'var(--success-green)' : '#ccc' }}>
+                      {settings.payDeliveryFirst ? <ToggleRight size={40} /> : <ToggleLeft size={40} />}
+                    </button>
+                  </div>
+                  <button onClick={() => handleSaveSettings({ deliveryCharge })} className="btn-primary" style={{ justifyContent: 'center' }}>SAVE DELIVERY</button>
+                </div>
+              </div>
+
+              <div style={{ background: 'white', padding: '32px', borderRadius: '20px', boxShadow: 'var(--shadow-sm)' }}>
+                <h3 style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}><DollarSign color="var(--accent-gold)" /> Payment Rules</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <label style={{ fontSize: '14px' }}>COD Extra Charge ({currency})</label>
+                  <input type="number" value={codCharge} onChange={(e) => setCodCharge(Number(e.target.value))} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
+                  
+                  <label style={{ fontSize: '14px' }}>Prepayment Discount ({currency})</label>
+                  <input type="number" value={prepayDiscount} onChange={(e) => setPrepayDiscount(Number(e.target.value))} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
+                  
+                  <button onClick={() => handleSaveSettings({ codCharge, prepayDiscount })} className="btn-primary" style={{ justifyContent: 'center', marginTop: '10px' }}>SAVE RULES</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab === 'orders' && (
+          <div>
+            <h1 style={{ fontSize: '32px', marginBottom: '32px' }}>Manage Orders</h1>
+            <div style={{ background: 'white', borderRadius: '20px', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <thead style={{ background: '#f9f9f9' }}>
+                  <tr>
+                    <th style={{ padding: '20px' }}>Order Info</th>
+                    <th style={{ padding: '20px' }}>Shipping Details</th>
+                    <th style={{ padding: '20px' }}>Payment</th>
+                    <th style={{ padding: '20px' }}>Status & Tracking</th>
+                    <th style={{ padding: '20px' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orders.map(order => (
+                    <tr key={order.id} style={{ borderTop: '1px solid #eee' }}>
+                      <td style={{ padding: '20px' }}>
+                        <div style={{ fontWeight: 'bold' }}>#{order.id.slice(0, 8).toUpperCase()}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{new Date(order.createdAt).toLocaleDateString()}</div>
+                      </td>
+                      <td style={{ padding: '20px' }}>
+                        <div style={{ fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}><Users size={14} /> {order.firstName} {order.lastName}</div>
+                        <div style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px' }}><Phone size={14} /> {order.customerMobile}</div>
+                        <div style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px' }}><MapPin size={14} /> {order.city}, {order.state}</div>
+                      </td>
+                      <td style={{ padding: '20px' }}>
+                        <div style={{ fontWeight: 'bold' }}>{currency}{order.totalAmount.toFixed(2)}</div>
+                        <span style={{ fontSize: '11px', fontWeight: 'bold', color: order.paymentMethod === 'Prepaid' ? 'var(--success-green)' : 'var(--accent-gold)' }}>{order.paymentMethod}</span>
+                      </td>
+                      <td style={{ padding: '20px' }}>
+                        {editingOrder === order.id ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <select value={editOrderData.status} onChange={(e) => setEditOrderData({ ...editOrderData, status: e.target.value })} style={{ padding: '8px', borderRadius: '8px', border: '1px solid #eee' }}>
+                              {ORDER_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                            <input type="text" value={editOrderData.trackingId} onChange={(e) => setEditOrderData({ ...editOrderData, trackingId: e.target.value })} placeholder="Tracking ID" style={{ padding: '8px', borderRadius: '8px', border: '1px solid #eee' }} />
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <span style={{ padding: '4px 10px', borderRadius: '50px', background: 'rgba(197,160,89,0.1)', color: 'var(--accent-gold)', fontSize: '11px', fontWeight: 'bold', width: 'fit-content' }}>{order.status}</span>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{order.trackingId || 'No tracking ID'}</div>
+                          </div>
+                        )}
+                      </td>
+                      <td style={{ padding: '20px' }}>
+                        {editingOrder === order.id ? (
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button onClick={handleUpdateOrder} style={{ background: 'var(--success-green)', color: 'white', padding: '8px', borderRadius: '8px' }}><Check size={16} /></button>
+                            <button onClick={() => setEditingOrder(null)} style={{ background: '#eee', padding: '8px', borderRadius: '8px' }}><X size={16} /></button>
+                          </div>
+                        ) : (
+                          <button onClick={() => { setEditingOrder(order.id); setEditOrderData(order); }} style={{ background: 'none', color: 'var(--accent-gold)' }}><Edit2 size={18} /></button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {tab === 'users' && (
+          <div>
+            <h1 style={{ fontSize: '32px', marginBottom: '32px' }}>Manage Users</h1>
+            <div style={{ background: 'white', borderRadius: '20px', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <thead style={{ background: '#f9f9f9' }}>
+                  <tr>
+                    <th style={{ padding: '20px' }}>User Details</th>
+                    <th style={{ padding: '20px' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map(user => (
+                    <tr key={user.id} style={{ borderTop: '1px solid #eee' }}>
+                      <td style={{ padding: '20px' }}>
+                        {editingUser === user.id ? (
+                          <div style={{ display: 'flex', gap: '16px' }}>
+                            <div style={{ flex: 1 }}>
+                              <label style={{ fontSize: '11px', color: '#999' }}>Email</label>
+                              <input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                              <label style={{ fontSize: '11px', color: '#999' }}>Mobile</label>
+                              <input type="tel" value={editMobile} onChange={(e) => setEditMobile(e.target.value)} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', gap: '32px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}><Mail size={16} color="#999" /> {user.email}</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}><Phone size={16} color="#999" /> {user.mobile}</div>
+                          </div>
+                        )}
+                      </td>
+                      <td style={{ padding: '20px' }}>
+                        {editingUser === user.id ? (
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button onClick={() => handleUpdateUser(user.id)} style={{ background: 'var(--success-green)', color: 'white', padding: '8px', borderRadius: '8px' }}><Check size={16} /></button>
+                            <button onClick={() => setEditingUser(null)} style={{ background: '#eee', padding: '8px', borderRadius: '8px' }}><X size={16} /></button>
+                          </div>
+                        ) : (
+                          <button onClick={() => { setEditingUser(user.id); setEditEmail(user.email); setEditMobile(user.mobile); }} style={{ background: 'none', color: 'var(--accent-gold)' }}><Edit2 size={18} /></button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {tab === 'reviews' && (
           <div style={{ maxWidth: '1000px' }}>
             <h1 style={{ fontSize: '32px', marginBottom: '32px' }}>Manage Reviews</h1>
@@ -303,77 +461,6 @@ export const AdminPage: React.FC = () => {
                 </tbody>
               </table>
             </div>
-          </div>
-        )}
-
-        {tab === 'orders' && (
-          <div>
-            <h1 style={{ fontSize: '32px', marginBottom: '32px' }}>Manage Orders</h1>
-            <div style={{ background: 'white', borderRadius: '20px', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                <thead style={{ background: '#f9f9f9' }}>
-                  <tr>
-                    <th style={{ padding: '20px' }}>Order Info</th>
-                    <th style={{ padding: '20px' }}>Shipping Details</th>
-                    <th style={{ padding: '20px' }}>Payment</th>
-                    <th style={{ padding: '20px' }}>Status & Tracking</th>
-                    <th style={{ padding: '20px' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orders.map(order => (
-                    <tr key={order.id} style={{ borderTop: '1px solid #eee' }}>
-                      <td style={{ padding: '20px' }}>
-                        <div style={{ fontWeight: 'bold' }}>#{order.id.slice(0, 8).toUpperCase()}</div>
-                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{new Date(order.createdAt).toLocaleDateString()}</div>
-                      </td>
-                      <td style={{ padding: '20px' }}>
-                        <div style={{ fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}><Users size={14} /> {order.firstName} {order.lastName}</div>
-                        <div style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px' }}><Phone size={14} /> {order.customerMobile}</div>
-                        <div style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px' }}><MapPin size={14} /> {order.city}, {order.state}</div>
-                      </td>
-                      <td style={{ padding: '20px' }}>
-                        <div style={{ fontWeight: 'bold' }}>{currency}{order.totalAmount.toFixed(2)}</div>
-                        <span style={{ fontSize: '11px', fontWeight: 'bold', color: order.paymentMethod === 'Prepaid' ? 'var(--success-green)' : 'var(--accent-gold)' }}>{order.paymentMethod}</span>
-                      </td>
-                      <td style={{ padding: '20px' }}>
-                        {editingOrder === order.id ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <select value={editOrderData.status} onChange={(e) => setEditOrderData({ ...editOrderData, status: e.target.value })} style={{ padding: '8px', borderRadius: '8px', border: '1px solid #eee' }}>
-                              {ORDER_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                            </select>
-                            <input type="text" value={editOrderData.trackingId} onChange={(e) => setEditOrderData({ ...editOrderData, trackingId: e.target.value })} placeholder="Tracking ID" style={{ padding: '8px', borderRadius: '8px', border: '1px solid #eee' }} />
-                          </div>
-                        ) : (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <span style={{ padding: '4px 10px', borderRadius: '50px', background: 'rgba(197,160,89,0.1)', color: 'var(--accent-gold)', fontSize: '11px', fontWeight: 'bold', width: 'fit-content' }}>{order.status}</span>
-                            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{order.trackingId || 'No tracking ID'}</div>
-                          </div>
-                        )}
-                      </td>
-                      <td style={{ padding: '20px' }}>
-                        {editingOrder === order.id ? (
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            <button onClick={handleUpdateOrder} style={{ background: 'var(--success-green)', color: 'white', padding: '8px', borderRadius: '8px' }}><Check size={16} /></button>
-                            <button onClick={() => setEditingOrder(null)} style={{ background: '#eee', padding: '8px', borderRadius: '8px' }}><X size={16} /></button>
-                          </div>
-                        ) : (
-                          <button onClick={() => { setEditingOrder(order.id); setEditOrderData(order); }} style={{ background: 'none', color: 'var(--accent-gold)' }}><Edit2 size={18} /></button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* ... (Users tab remains same) ... */}
-        {tab === 'users' && (
-          <div>
-            <h1 style={{ fontSize: '32px', marginBottom: '32px' }}>Manage Users</h1>
-            {/* ... users table code ... */}
           </div>
         )}
       </main>
