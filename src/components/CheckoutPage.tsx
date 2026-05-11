@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
-import { ArrowLeft, ShieldCheck, Lock, Truck, CreditCard, UserPlus, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Lock, CreditCard, UserPlus, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const CheckoutPage: React.FC = () => {
