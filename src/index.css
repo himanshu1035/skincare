@@ -1,0 +1,137 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+:root {
+  --primary-cream: #FDFBF7;
+  --secondary-ivory: #F8F5F0;
+  --accent-gold: #C5A059;
+  --text-dark: #1A1A1A;
+  --text-muted: #666666;
+  --success-green: #4A6741;
+  --error-red: #D9534F;
+  --bogo-badge: #FF4D4D;
+  
+  --font-heading: 'Outfit', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  
+  --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+  
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--primary-cream);
+  color: var(--text-dark);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  outline: none;
+  font-family: var(--font-heading);
+  transition: var(--transition);
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Luxury Glassmorphism */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Animations */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes pulse-gold {
+  0% { box-shadow: 0 0 0 0 rgba(197, 160, 89, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(197, 160, 89, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(197, 160, 89, 0); }
+}
+
+@keyframes slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.bogo-badge-animate {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Scarcity Banner */
+.scarcity-banner {
+  background: var(--text-dark);
+  color: white;
+  text-align: center;
+  padding: 8px 0;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* CTA Button Styles */
+.btn-primary {
+  background: var(--text-dark);
+  color: white;
+  padding: 16px 32px;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-primary:hover {
+  background: var(--accent-gold);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Sticky Mobile CTA */
+.mobile-sticky-cta {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px;
+  background: white;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+  display: none;
+  z-index: 1000;
+}
+
+@media (max-width: 768px) {
+  .mobile-sticky-cta {
+    display: block;
+  }
+}
