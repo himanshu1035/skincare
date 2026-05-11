@@ -133,6 +133,8 @@ export const useStore = create<State>((set, get) => ({
   isLoading: true,
   currentUser: null,
   settings: {
+    codCharge: 0,
+    prepayDiscount: 0,
     deliveryCharge: 0,
     payDeliveryFirst: false,
     displayReviewCount: '1,240+',
@@ -142,6 +144,7 @@ export const useStore = create<State>((set, get) => ({
   
   fetchData: async () => {
     try {
+      await get().fetchReviews();
       const { data: settingsData } = await supabase.from('skin_campaign_settings').select('*').eq('skin_id', 'bogo_campaign').single();
       const { data: products } = await supabase.from('skin_products').select('*').limit(1).maybeSingle();
 

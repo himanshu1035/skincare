@@ -6,11 +6,12 @@ import { CartDrawer } from './CartDrawer';
 import { useStore } from '../store/useStore';
 import { Star, ShieldCheck, Truck, RefreshCw, ShoppingCart } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 
 import { useEffect } from 'react';
 
 export const LandingPage: React.FC = () => {
-  const { addToCart, fetchData, product } = useStore();
+  const { addToCart, fetchData, product, reviews, settings } = useStore();
 
   useEffect(() => {
     fetchData();
