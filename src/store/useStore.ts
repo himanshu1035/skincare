@@ -123,6 +123,10 @@ interface State {
   fetchAllOrders: () => Promise<Order[]>;
   fetchAllUsers: () => Promise<User[]>;
   updateOrderStatus: (orderId: string, status: string, trackingId?: string) => Promise<void>;
+  adminUpdateOrder: (orderId: string, updates: any) => Promise<boolean>;
+  deleteOrder: (orderId: string) => Promise<boolean>;
+  adminUpdateUser: (userId: string, updates: any) => Promise<boolean>;
+  deleteUser: (userId: string) => Promise<boolean>;
   submitUtr: (orderId: string, utrId: string) => Promise<boolean>;
 }
 
@@ -494,6 +498,41 @@ export const useStore = create<State>()(
       skin_first_name: updates.firstName,
       skin_last_name: updates.lastName
     }).eq('skin_id', userId);
+  },
+
+  adminUpdateUser: async (userId, updates) => {
+    const { error } = await supabase.from('skin_users').update({
+      skin_first_name: updates.firstName,
+      skin_last_name: updates.lastName,
+      skin_email: updates.email,
+      skin_mobile: updates.mobile
+    }).eq('skin_id', userId);
+    return !error;
+  },
+
+  deleteUser: async (userId) => {
+    const { error } = await supabase.from('skin_users').delete().eq('skin_id', userId);
+    return !error;
+  },
+
+  adminUpdateOrder: async (orderId, updates) => {
+    const { error } = await supabase.from('skin_orders').update({
+      skin_customer_first_name: updates.firstName,
+      skin_customer_last_name: updates.lastName,
+      skin_customer_mobile: updates.customerMobile,
+      skin_customer_address: updates.customerAddress,
+      skin_customer_city: updates.city,
+      skin_customer_state: updates.state,
+      skin_customer_zip: updates.zip,
+      skin_status: updates.status,
+      skin_tracking_id: updates.trackingId
+    }).eq('skin_id', orderId);
+    return !error;
+  },
+
+  deleteOrder: async (orderId) => {
+    const { error } = await supabase.from('skin_orders').delete().eq('skin_id', orderId);
+    return !error;
   },
 
   submitUtr: async (orderId, utrId) => {
