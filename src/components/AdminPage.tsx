@@ -14,7 +14,7 @@ const ORDER_STATUSES = [
 
 export const AdminPage: React.FC = () => {
   const { 
-    isBogoActive, setBogoActive, currency, 
+    isBogoActive, setBogoActive, currency, updateCurrency,
     product, updateProduct, fetchData, 
     fetchAllOrders, fetchAllUsers, updateOrderStatus, updateUserDetails,
     settings, updateSettings,

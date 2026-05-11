@@ -114,7 +114,7 @@ export const CheckoutPage: React.FC = () => {
         <div className="checkout-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 420px', gap: '60px' }}>
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
-              <div style={{ fontSize: '24px', fontWeight: 'bold', letterSpacing: '2px' }}>COSRX<span style={{ color: 'var(--accent-gold)' }}>.</span></div>
+              <div style={{ fontSize: '24px', fontWeight: 'bold', letterSpacing: '2px' }}>COSRX INDIA<span style={{ color: 'var(--accent-gold)' }}>.</span></div>
               {currentUser ? (
                 <div style={{ fontSize: '13px', color: '#666', background: '#f5f5f7', padding: '6px 12px', borderRadius: '50px' }}>
                   Logged in as <b>{currentUser.firstName}</b>

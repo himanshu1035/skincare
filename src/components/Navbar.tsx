@@ -46,7 +46,7 @@ export const Navbar: React.FC = () => {
 
         {/* Center: Logo */}
         <Link to="/" style={{ fontSize: '26px', fontWeight: '900', letterSpacing: '4px', textDecoration: 'none', color: 'black', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
-          COSRX<span style={{ color: 'var(--accent-gold)' }}>.</span>
+          COSRX INDIA<span style={{ color: 'var(--accent-gold)' }}>.</span>
         </Link>
 
         {/* Right: Actions */}

@@ -117,7 +117,7 @@ export const LandingPage: React.FC = () => {
         <div className="container">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '60px', marginBottom: '60px' }}>
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '28px', fontWeight: '900', letterSpacing: '4px', marginBottom: '24px' }}>COSRX<span style={{ color: 'var(--accent-gold)' }}>.</span></div>
+              <div style={{ fontSize: '28px', fontWeight: '900', letterSpacing: '4px', marginBottom: '24px' }}>COSRX INDIA<span style={{ color: 'var(--accent-gold)' }}>.</span></div>
               <p style={{ color: '#666', fontSize: '14px', lineHeight: '1.6' }}>The global leader in minimalist, high-performance skincare. Direct from the source.</p>
             </div>
             <div style={{ textAlign: 'center' }}>

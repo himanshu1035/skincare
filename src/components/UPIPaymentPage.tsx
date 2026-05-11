@@ -22,8 +22,8 @@ export const UPIPaymentPage: React.FC = () => {
   }
 
   // Generate UPI URI
-  // format: upi://pay?pa=recipient@upi&pn=COSRX&am=100.00&cu=INR
-  const upiUri = `upi://pay?pa=${settings.upiId}&pn=COSRX&am=${totalAmount.toFixed(2)}&cu=INR`;
+  // format: upi://pay?pa=recipient@upi&pn=COSRX+INDIA&am=100.00&cu=INR
+  const upiUri = `upi://pay?pa=${settings.upiId}&pn=COSRX+INDIA&am=${totalAmount.toFixed(2)}&cu=INR`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(upiUri)}`;
 
   const handleCopy = () => {
