@@ -51,6 +51,8 @@ interface CampaignSettings {
   prepayDiscount: number;
   deliveryCharge: number;
   payDeliveryFirst: boolean;
+  displayReviewCount: string;
+  displayRating: string;
 }
 
 interface Review {
@@ -131,10 +133,10 @@ export const useStore = create<State>((set, get) => ({
   isLoading: true,
   currentUser: null,
   settings: {
-    codCharge: 0,
-    prepayDiscount: 0,
     deliveryCharge: 0,
-    payDeliveryFirst: false
+    payDeliveryFirst: false,
+    displayReviewCount: '1,240+',
+    displayRating: '4.9'
   },
   reviews: [],
   
@@ -151,7 +153,9 @@ export const useStore = create<State>((set, get) => ({
             codCharge: Number(settingsData.skin_cod_charge),
             prepayDiscount: Number(settingsData.skin_prepay_discount),
             deliveryCharge: Number(settingsData.skin_delivery_charge),
-            payDeliveryFirst: settingsData.skin_pay_delivery_first
+            payDeliveryFirst: settingsData.skin_pay_delivery_first,
+            displayReviewCount: settingsData.skin_display_review_count || '1,240+',
+            displayRating: settingsData.skin_display_rating || '4.9'
           }
         });
       }
@@ -262,7 +266,9 @@ export const useStore = create<State>((set, get) => ({
       skin_cod_charge: updates.codCharge ?? settings.codCharge,
       skin_prepay_discount: updates.prepayDiscount ?? settings.prepayDiscount,
       skin_delivery_charge: updates.deliveryCharge ?? settings.deliveryCharge,
-      skin_pay_delivery_first: updates.payDeliveryFirst ?? settings.payDeliveryFirst
+      skin_pay_delivery_first: updates.payDeliveryFirst ?? settings.payDeliveryFirst,
+      skin_display_review_count: updates.displayReviewCount ?? settings.displayReviewCount,
+      skin_display_rating: updates.displayRating ?? settings.displayRating
     });
     if (!error) {
       set({ settings: { ...settings, ...updates } });

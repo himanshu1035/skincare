@@ -53,26 +53,47 @@ export const LandingPage: React.FC = () => {
         <ProductSection />
 
         {/* Customer Reviews Section */}
-        <section style={{ padding: '80px 0', background: 'var(--secondary-ivory)' }}>
+        <section id="reviews" style={{ padding: '80px 0', background: 'var(--secondary-ivory)' }}>
           <div className="container">
-            <h2 style={{ textAlign: 'center', fontSize: '32px', marginBottom: '48px' }}>What Our Community Says</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
-              {[
-                { name: "Sarah M.", text: "This literally changed my skin overnight. The glow is insane! And the BOGO deal is such a steal.", rating: 5 },
-                { name: "Jessica K.", text: "I've tried everything for my acne scars, but this is the only thing that worked. Hydrating but not oily.", rating: 5 },
-                { name: "Emma R.", text: "Best Korean skincare purchase ever. I'm stocked up for months thanks to the buy 1 get 1 free offer!", rating: 5 }
-              ].map((review, i) => (
-                <div key={i} style={{ background: 'white', padding: '30px', borderRadius: '12px', boxShadow: 'var(--shadow-sm)' }}>
-                  <div style={{ display: 'flex', marginBottom: '16px' }}>
-                    {[...Array(review.rating)].map((_, i) => <Star key={i} size={16} fill="var(--accent-gold)" color="var(--accent-gold)" />)}
-                  </div>
-                  <p style={{ fontStyle: 'italic', marginBottom: '20px', color: 'var(--text-dark)' }}>"{review.text}"</p>
-                  <div style={{ fontWeight: 'bold', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--accent-gold)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>{review.name[0]}</div>
-                    {review.name} <span style={{ color: 'var(--success-green)', fontSize: '12px', fontWeight: 'normal' }}>• Verified Buyer</span>
-                  </div>
+            <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+              <h2 style={{ fontSize: '32px', marginBottom: '12px' }}>What Our Community Says</h2>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', fontSize: '18px', fontWeight: 'bold', color: 'var(--accent-gold)' }}>
+                <div style={{ display: 'flex' }}>
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} size={20} fill={i < Math.round(Number(settings.displayRating || 4.9)) ? "currentColor" : "none"} />
+                  ))}
                 </div>
-              ))}
+                <span>{settings.displayRating || '4.9'}/5</span>
+                <span style={{ color: 'var(--text-muted)', fontWeight: 'normal', fontSize: '14px' }}>Based on {settings.displayReviewCount || '1,240+'} reviews</span>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+              {reviews.length > 0 ? reviews.map((review, i) => (
+                <motion.div 
+                  key={review.id} 
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1 }}
+                  style={{ background: 'white', padding: '30px', borderRadius: '12px', boxShadow: 'var(--shadow-sm)' }}
+                >
+                  <div style={{ display: 'flex', marginBottom: '16px' }}>
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} size={16} fill={i < review.rating ? "var(--accent-gold)" : "none"} color="var(--accent-gold)" />
+                    ))}
+                  </div>
+                  <p style={{ fontStyle: 'italic', marginBottom: '20px', color: 'var(--text-dark)' }}>"{review.comment}"</p>
+                  <div style={{ fontWeight: 'bold', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--accent-gold)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>{review.userName[0]}</div>
+                    {review.userName} <span style={{ color: 'var(--success-green)', fontSize: '12px', fontWeight: 'normal' }}>• Verified Buyer</span>
+                  </div>
+                </motion.div>
+              )) : (
+                <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: '#999' }}>
+                  Loading reviews...
+                </div>
+              )}
             </div>
           </div>
         </section>

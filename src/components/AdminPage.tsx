@@ -365,6 +365,22 @@ export const AdminPage: React.FC = () => {
           <div style={{ maxWidth: '1000px' }}>
             <h1 style={{ fontSize: '32px', marginBottom: '32px' }}>Manage Reviews</h1>
             
+            {/* Review Stats Manipulation */}
+            <div style={{ background: 'white', padding: '32px', borderRadius: '20px', boxShadow: 'var(--shadow-sm)', marginBottom: '32px' }}>
+              <h3 style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}><Settings color="var(--accent-gold)" /> Manipulation: Review Stats</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '24px', alignItems: 'end' }}>
+                <div>
+                  <label style={{ fontSize: '12px', color: '#999' }}>Display Review Count (e.g. 10,000+)</label>
+                  <input type="text" value={settings.displayReviewCount} onChange={(e) => updateSettings({ displayReviewCount: e.target.value })} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', color: '#999' }}>Display Average Rating (e.g. 4.9)</label>
+                  <input type="text" value={settings.displayRating} onChange={(e) => updateSettings({ displayRating: e.target.value })} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
+                </div>
+                <button onClick={() => alert('Stats updated globally!')} className="btn-primary" style={{ padding: '12px 24px' }}>UPDATE GLOBAL STATS</button>
+              </div>
+            </div>
+
             {/* Create Review */}
             <div style={{ background: 'white', padding: '32px', borderRadius: '20px', boxShadow: 'var(--shadow-sm)', marginBottom: '32px' }}>
               <h3 style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}><Plus color="var(--accent-gold)" /> Create New Public Review</h3>
