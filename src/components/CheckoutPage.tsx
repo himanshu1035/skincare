@@ -75,13 +75,16 @@ export const CheckoutPage: React.FC = () => {
       userId = await registerUser(email, mobile, password, { firstName, lastName, username });
     }
 
-    const success = await createOrder({ 
+    const result = await createOrder({ 
       email, mobile, firstName, lastName, address, landmark, city, state, zip, paymentMethod, totalAmount: finalTotal, userId: userId || currentUser?.id 
     });
 
-    if (success) {
-      alert('Order placed successfully!');
-      navigate('/');
+    if (result) {
+      if (paymentMethod === 'Prepaid') {
+        navigate('/pay', { state: { orderId: typeof result === 'string' ? result : null, totalAmount: finalTotal } });
+      } else {
+        navigate('/order-success', { state: { orderId: typeof result === 'string' ? result : null } });
+      }
     } else {
       alert('Failed to place order.');
     }
@@ -189,15 +192,22 @@ export const CheckoutPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className={`payment-card ${paymentMethod === 'COD' ? 'active' : ''}`} onClick={() => setPaymentMethod('COD')}>
-                  <div className="radio-circle">{paymentMethod === 'COD' && <div className="radio-dot" />}</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ fontWeight: '600' }}>Cash on Delivery (COD)</span>
+                {settings.isCodEnabled && (
+                  <div className={`payment-card ${paymentMethod === 'COD' ? 'active' : ''}`} onClick={() => setPaymentMethod('COD')}>
+                    <div className="radio-circle">{paymentMethod === 'COD' && <div className="radio-dot" />}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ fontWeight: '600' }}>Cash on Delivery (COD)</span>
+                      </div>
+                      <p style={{ fontSize: '12px', color: '#666' }}>Additional {currency}{settings.codCharge} handling fee applies.</p>
+                      {settings.payDeliveryFirst && (
+                        <p style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: 'bold', marginTop: '4px' }}>
+                          Note: {currency}{settings.deliveryCharge} delivery fee must be paid online to confirm COD.
+                        </p>
+                      )}
                     </div>
-                    <p style={{ fontSize: '12px', color: '#666' }}>Additional {currency}{settings.codCharge} handling fee applies.</p>
                   </div>
-                </div>
+                )}
               </div>
             </div>
 

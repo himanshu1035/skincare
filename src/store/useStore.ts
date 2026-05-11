@@ -51,6 +51,7 @@ interface Order {
   items: CartItem[];
   status: string;
   trackingId?: string;
+  utrId?: string;
   createdAt: string;
   userId?: string;
 }
@@ -60,6 +61,8 @@ interface CampaignSettings {
   prepayDiscount: number;
   deliveryCharge: number;
   payDeliveryFirst: boolean;
+  isCodEnabled: boolean;
+  upiId: string;
   displayReviewCount: string;
   displayRating: string;
 }
@@ -113,13 +116,14 @@ interface State {
   updateUserDetails: (userId: string, updates: Partial<User>) => Promise<void>;
   
   // Order Actions
-  createOrder: (orderData: any) => Promise<boolean>;
+  createOrder: (orderData: any) => Promise<string | boolean>;
   fetchUserOrders: () => Promise<Order[]>;
   
   // Admin Actions
   fetchAllOrders: () => Promise<Order[]>;
   fetchAllUsers: () => Promise<User[]>;
   updateOrderStatus: (orderId: string, status: string, trackingId?: string) => Promise<void>;
+  submitUtr: (orderId: string, utrId: string) => Promise<boolean>;
 }
 
 const DEFAULT_PRODUCT: Product = {
@@ -139,7 +143,7 @@ export const useStore = create<State>()(
   isCartOpen: false,
   offerExpiresAt: Date.now() + 1000 * 60 * 60 * 2,
   stockLeft: 42,
-  currency: '$',
+  currency: '₹',
   product: null,
   isLoading: true,
   currentUser: null,
@@ -148,6 +152,8 @@ export const useStore = create<State>()(
     prepayDiscount: 0,
     deliveryCharge: 0,
     payDeliveryFirst: false,
+    isCodEnabled: true,
+    upiId: 'admin@upi',
     displayReviewCount: '1,240+',
     displayRating: '4.9'
   },
@@ -168,6 +174,8 @@ export const useStore = create<State>()(
             prepayDiscount: Number(settingsData.skin_prepay_discount),
             deliveryCharge: Number(settingsData.skin_delivery_charge),
             payDeliveryFirst: settingsData.skin_pay_delivery_first,
+            isCodEnabled: settingsData.skin_cod_enabled ?? true,
+            upiId: settingsData.skin_upi_id || 'admin@upi',
             displayReviewCount: settingsData.skin_display_review_count || '1,240+',
             displayRating: settingsData.skin_display_rating || '4.9'
           }
@@ -281,6 +289,8 @@ export const useStore = create<State>()(
       skin_prepay_discount: updates.prepayDiscount ?? settings.prepayDiscount,
       skin_delivery_charge: updates.deliveryCharge ?? settings.deliveryCharge,
       skin_pay_delivery_first: updates.payDeliveryFirst ?? settings.payDeliveryFirst,
+      skin_cod_enabled: updates.isCodEnabled ?? settings.isCodEnabled,
+      skin_upi_id: updates.upiId ?? settings.upiId,
       skin_display_review_count: updates.displayReviewCount ?? settings.displayReviewCount,
       skin_display_rating: updates.displayRating ?? settings.displayRating
     });
@@ -382,8 +392,9 @@ export const useStore = create<State>()(
       skin_total_amount: orderData.totalAmount,
       skin_items: store.cart,
       skin_user_id: orderData.userId || store.currentUser?.id || null,
+      skin_status: orderData.paymentMethod === 'Prepaid' ? 'Pending Payment' : 'Processing',
       skin_tracking_id: randomTrackingId
-    });
+    }).select('skin_id').single();
 
     // Save/Update address to user profile if logged in
     if (!error && (orderData.userId || store.currentUser?.id)) {
@@ -404,7 +415,11 @@ export const useStore = create<State>()(
       }
     }
 
-    if (!error) { store.clearCart(); return true; }
+    if (!error) { 
+      const orderId = (await supabase.from('skin_orders').select('skin_id').eq('skin_customer_email', orderData.email).order('skin_created_at', { ascending: false }).limit(1).single()).data?.skin_id;
+      store.clearCart(); 
+      return orderId || true; 
+    }
     return false;
   },
 
@@ -428,6 +443,7 @@ export const useStore = create<State>()(
       items: o.skin_items,
       status: o.skin_status,
       trackingId: o.skin_tracking_id,
+      utrId: o.skin_utr_id,
       createdAt: o.skin_created_at
     }));
   },
@@ -450,6 +466,7 @@ export const useStore = create<State>()(
       items: o.skin_items,
       status: o.skin_status,
       trackingId: o.skin_tracking_id,
+      utrId: o.skin_utr_id,
       createdAt: o.skin_created_at,
       userId: o.skin_user_id
     }));
@@ -477,6 +494,11 @@ export const useStore = create<State>()(
       skin_first_name: updates.firstName,
       skin_last_name: updates.lastName
     }).eq('skin_id', userId);
+  },
+
+  submitUtr: async (orderId, utrId) => {
+    const { error } = await supabase.from('skin_orders').update({ skin_utr_id: utrId }).eq('skin_id', orderId);
+    return !error;
   }
     }),
     {

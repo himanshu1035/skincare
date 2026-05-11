@@ -123,9 +123,9 @@ export const LandingPage: React.FC = () => {
             <div style={{ textAlign: 'center' }}>
               <h4 style={{ fontSize: '14px', fontWeight: '900', letterSpacing: '2px', marginBottom: '32px' }}>CUSTOMER CARE</h4>
               <ul style={{ listStyle: 'none', color: '#666', fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <li>Shipping Policy</li>
-                <li>Refund Policy</li>
-                <li>Terms of Service</li>
+                <li><Link to="/shipping-policy" style={{ color: 'inherit', textDecoration: 'none' }}>Shipping Policy</Link></li>
+                <li><Link to="/privacy-policy" style={{ color: 'inherit', textDecoration: 'none' }}>Privacy Policy</Link></li>
+                <li><Link to="/terms" style={{ color: 'inherit', textDecoration: 'none' }}>Terms of Service</Link></li>
                 <li style={{ opacity: 0.1 }}><Link to="/admin" style={{ color: 'inherit' }}>Admin</Link></li>
               </ul>
             </div>

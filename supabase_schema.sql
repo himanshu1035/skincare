@@ -19,6 +19,8 @@ CREATE TABLE skin_campaign_settings (
   skin_prepay_discount DECIMAL(10,2) DEFAULT 0,
   skin_delivery_charge DECIMAL(10,2) DEFAULT 0,
   skin_pay_delivery_first BOOLEAN DEFAULT FALSE,
+  skin_cod_enabled BOOLEAN DEFAULT TRUE,
+  skin_upi_id TEXT DEFAULT 'paytmqr281005050101i7z5m1m01901@paytm',
   skin_updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -46,6 +48,7 @@ CREATE TABLE skin_orders (
   skin_user_id UUID REFERENCES skin_users(skin_id),
   skin_status TEXT DEFAULT 'Processing',
   skin_tracking_id TEXT,
+  skin_utr_id TEXT,
   skin_created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

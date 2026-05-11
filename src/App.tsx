@@ -7,16 +7,25 @@ import { AdminPage } from './components/AdminPage';
 import { AuthPage } from './components/AuthPage';
 import { AccountPage } from './components/AccountPage';
 
+import { OrderSuccessPage } from './components/OrderSuccessPage';
+import { UPIPaymentPage } from './components/UPIPaymentPage';
+import { PolicyPage } from './components/PolicyPage';
+
 const App: React.FC = () => {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/pay" element={<UPIPaymentPage />} />
         <Route path="/track" element={<TrackOrderPage />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/login" element={<AuthPage />} />
         <Route path="/account" element={<AccountPage />} />
+        <Route path="/order-success" element={<OrderSuccessPage />} />
+        <Route path="/privacy-policy" element={<PolicyPage title="Privacy Policy" type="privacy" />} />
+        <Route path="/shipping-policy" element={<PolicyPage title="Shipping Policy" type="shipping" />} />
+        <Route path="/terms" element={<PolicyPage title="Terms & Conditions" type="terms" />} />
       </Routes>
     </Router>
   );

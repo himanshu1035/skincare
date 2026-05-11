@@ -177,6 +177,40 @@ export const AdminPage: React.FC = () => {
                     <label style={{ fontSize: '12px', color: '#999' }}>Online Payment Discount ({currency})</label>
                     <input type="number" value={settings.prepayDiscount} onChange={(e) => autoSaveSettings({ prepayDiscount: Number(e.target.value) })} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
                   </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div>
+                      <label style={{ fontSize: '12px', color: '#999' }}>Admin UPI ID (for QR generation)</label>
+                      <input type="text" value={settings.upiId} onChange={(e) => autoSaveSettings({ upiId: e.target.value })} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', color: '#999' }}>Currency Symbol</label>
+                      <select value={currency} onChange={(e) => updateCurrency(e.target.value)} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #eee' }}>
+                        <option value="₹">₹ (Rupee)</option>
+                        <option value="$">$ (Dollar)</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: '#f9f9f9', borderRadius: '12px' }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: '600' }}>Enable Cash on Delivery</div>
+                      <div style={{ fontSize: '11px', color: '#666' }}>Allow users to pay after delivery</div>
+                    </div>
+                    <button onClick={() => autoSaveSettings({ isCodEnabled: !settings.isCodEnabled })} style={{ background: 'none', color: settings.isCodEnabled ? 'var(--success-green)' : '#ccc' }}>
+                      {settings.isCodEnabled ? <ToggleRight size={40} /> : <ToggleLeft size={40} />}
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: '#f9f9f9', borderRadius: '12px' }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: '600' }}>Pay Delivery First (COD)</div>
+                      <div style={{ fontSize: '11px', color: '#666' }}>User must pay {currency}{settings.deliveryCharge} upfront even for COD</div>
+                    </div>
+                    <button onClick={() => autoSaveSettings({ payDeliveryFirst: !settings.payDeliveryFirst })} style={{ background: 'none', color: settings.payDeliveryFirst ? 'var(--success-green)' : '#ccc' }}>
+                      {settings.payDeliveryFirst ? <ToggleRight size={40} /> : <ToggleLeft size={40} />}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -345,6 +379,11 @@ export const AdminPage: React.FC = () => {
                           <CreditCard size={12} color="#666" />
                           <span style={{ fontSize: '11px', fontWeight: 'bold', color: order.paymentMethod === 'Prepaid' ? 'var(--success-green)' : 'var(--accent-gold)' }}>{order.paymentMethod}</span>
                         </div>
+                        {order.utrId && (
+                          <div style={{ fontSize: '10px', background: '#f0f0f0', padding: '4px 8px', borderRadius: '4px', marginTop: '4px', width: 'fit-content' }}>
+                            <b>UTR:</b> {order.utrId}
+                          </div>
+                        )}
                       </td>
                       <td style={{ padding: '20px' }}>
                         {editingOrder === order.id ? (
@@ -368,7 +407,15 @@ export const AdminPage: React.FC = () => {
                             <button onClick={() => setEditingOrder(null)} style={{ background: '#eee', padding: '8px', borderRadius: '8px' }}><X size={16} /></button>
                           </div>
                         ) : (
-                          <button onClick={() => { setEditingOrder(order.id); setEditOrderData(order); }} style={{ color: 'var(--accent-gold)' }}><Edit2 size={18} /></button>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            {order.status === 'Pending Payment' && (
+                              <>
+                                <button onClick={() => { updateOrderStatus(order.id, 'Processing'); fetchAllOrders().then(setOrders); }} style={{ background: 'var(--success-green)', color: 'white', padding: '8px 12px', borderRadius: '8px', fontSize: '10px', fontWeight: 'bold' }}>ACCEPT PAYMENT</button>
+                                <button onClick={() => { updateOrderStatus(order.id, 'Payment Failed'); fetchAllOrders().then(setOrders); }} style={{ background: '#ff4d4d', color: 'white', padding: '8px 12px', borderRadius: '8px', fontSize: '10px', fontWeight: 'bold' }}>REJECT</button>
+                              </>
+                            )}
+                            <button onClick={() => { setEditingOrder(order.id); setEditOrderData(order); }} style={{ color: 'var(--accent-gold)' }}><Edit2 size={18} /></button>
+                          </div>
                         )}
                       </td>
                     </tr>
