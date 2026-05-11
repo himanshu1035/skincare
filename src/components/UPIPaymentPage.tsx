@@ -30,15 +30,24 @@ export const UPIPaymentPage: React.FC = () => {
   const upiUri = `upi://pay?pa=${settings.upiId}&pn=${encodedName}&am=${totalAmount.toFixed(2)}&cu=INR&tr=${orderId}&mode=02&purpose=00`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(upiUri)}`;
 
+  const isCompleted = React.useRef(false);
+  
   // Handle Cancel on Back
   useEffect(() => {
     return () => {
       // If the component unmounts and we haven't shown success, mark order as failed
-      if (!showSuccessModal && orderId) {
+      if (!isCompleted.current && orderId) {
         useStore.getState().updateOrderStatus(orderId, 'Payment Failed');
       }
     };
-  }, [showSuccessModal, orderId]);
+  }, [orderId]);
+
+  // Update ref when success modal shows
+  useEffect(() => {
+    if (showSuccessModal) {
+      isCompleted.current = true;
+    }
+  }, [showSuccessModal]);
 
   const upiApps = [
     { 

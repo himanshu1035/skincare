@@ -357,6 +357,7 @@ export const useStore = create<State>()(
         mobile: data.skin_mobile,
         firstName: data.skin_first_name,
         lastName: data.skin_last_name,
+        username: data.skin_username,
         address: data.skin_address,
         addressLine2: data.skin_address_line2,
         city: data.skin_city,
@@ -428,7 +429,7 @@ export const useStore = create<State>()(
       skin_total_amount: orderData.totalAmount,
       skin_items: store.cart,
       skin_user_id: orderData.userId || store.currentUser?.id || null,
-      skin_status: orderData.paymentMethod === 'Prepaid' ? 'Pending Payment' : 'Processing',
+      skin_status: (orderData.paymentMethod === 'Prepaid' || (orderData.paymentMethod === 'COD' && store.settings.payDeliveryFirst)) ? 'Pending Payment' : 'Processing',
       skin_tracking_id: randomTrackingId
     }).select('skin_id').single();
 
@@ -588,7 +589,10 @@ export const useStore = create<State>()(
   },
 
   submitUtr: async (orderId, utrId) => {
-    const { error } = await supabase.from('skin_orders').update({ skin_utr_id: utrId }).eq('skin_id', orderId);
+    const { error } = await supabase.from('skin_orders').update({ 
+      skin_utr_id: utrId,
+      skin_status: 'Pending Payment' // Ensure it's in pending state for admin to verify
+    }).eq('skin_id', orderId);
     return !error;
   },
 
@@ -617,6 +621,7 @@ export const useStore = create<State>()(
     const userId = get().currentUser?.id;
     if (!userId) return false;
     const { error } = await supabase.from('skin_addresses').insert({
+      skin_id: crypto.randomUUID(),
       skin_user_id: userId,
       skin_first_name: address.firstName,
       skin_last_name: address.lastName,
