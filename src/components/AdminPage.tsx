@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
-import { BarChart3, ToggleLeft, ToggleRight, Save, LogOut, Package, Settings } from 'lucide-react';
+import { BarChart3, ToggleLeft, ToggleRight, Save, LogOut, Package, Settings, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+
+const CURRENCIES = [
+  { label: 'US Dollar ($)', value: '$' },
+  { label: 'Euro (€)', value: '€' },
+  { label: 'Indian Rupee (₹)', value: '₹' },
+  { label: 'British Pound (£)', value: '£' },
+  { label: 'UAE Dirham (AED)', value: 'AED ' },
+  { label: 'Australian Dollar (A$)', value: 'A$' }
+];
 
 export const AdminPage: React.FC = () => {
   const { isBogoActive, setBogoActive, currency, updateCurrency, product, updateProduct, fetchData } = useStore();
@@ -11,9 +20,9 @@ export const AdminPage: React.FC = () => {
   const navigate = useNavigate();
 
   // Form states
-  const [newCurrency, setNewCurrency] = useState(currency);
   const [price, setPrice] = useState(0);
   const [origPrice, setOrigPrice] = useState(0);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -24,8 +33,7 @@ export const AdminPage: React.FC = () => {
       setPrice(product.price);
       setOrigPrice(product.originalPrice);
     }
-    setNewCurrency(currency);
-  }, [product, currency]);
+  }, [product]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,6 +42,19 @@ export const AdminPage: React.FC = () => {
     } else {
       alert('Invalid credentials');
     }
+  };
+
+  const handleUpdatePricing = async () => {
+    setIsUpdating(true);
+    await updateProduct({ price, originalPrice: origPrice });
+    setIsUpdating(false);
+    alert('Pricing updated site-wide!');
+  };
+
+  const handleCurrencyChange = async (newVal: string) => {
+    setIsUpdating(true);
+    await updateCurrency(newVal);
+    setIsUpdating(false);
   };
 
   if (!isAuthenticated) {
@@ -71,23 +92,26 @@ export const AdminPage: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 'bold', fontSize: '20px' }}>
             <Settings size={24} /> SKIN ADMIN
           </div>
-          <button onClick={() => setIsAuthenticated(false)} style={{ background: 'none', color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <LogOut size={18} /> Logout
-          </button>
+          <div style={{ display: 'flex', gap: '16px' }}>
+            <button onClick={() => fetchData()} style={{ background: 'none', color: 'white' }}><RefreshCw size={18} /></button>
+            <button onClick={() => setIsAuthenticated(false)} style={{ background: 'none', color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <LogOut size={18} /> Logout
+            </button>
+          </div>
         </div>
       </nav>
 
       <main className="container" style={{ padding: '40px 24px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
           
-          {/* Campaign Control */}
+          {/* Campaign & Currency */}
           <div style={{ background: 'white', padding: '32px', borderRadius: '12px', boxShadow: 'var(--shadow-sm)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
               <BarChart3 color="var(--accent-gold)" />
-              <h2 style={{ fontSize: '18px' }}>Campaign Management</h2>
+              <h2 style={{ fontSize: '18px' }}>Campaign & Currency</h2>
             </div>
             
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'var(--secondary-ivory)', borderRadius: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'var(--secondary-ivory)', borderRadius: '8px', marginBottom: '24px' }}>
               <div>
                 <div style={{ fontWeight: 'bold' }}>BOGO Offer</div>
                 <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Status: {isBogoActive ? 'ACTIVE' : 'INACTIVE'}</div>
@@ -100,19 +124,17 @@ export const AdminPage: React.FC = () => {
               </button>
             </div>
 
-            <div style={{ marginTop: '24px' }}>
-              <label style={{ display: 'block', fontSize: '14px', marginBottom: '8px', fontWeight: 'bold' }}>Currency Symbol</label>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <input 
-                  type="text" 
-                  value={newCurrency}
-                  onChange={(e) => setNewCurrency(e.target.value)}
-                  style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} 
-                />
-                <button onClick={() => updateCurrency(newCurrency)} style={{ background: 'var(--text-dark)', color: 'white', padding: '0 20px', borderRadius: '8px' }}>
-                  <Save size={18} />
-                </button>
-              </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '14px', marginBottom: '8px', fontWeight: 'bold' }}>Select Store Currency</label>
+              <select 
+                value={currency}
+                onChange={(e) => handleCurrencyChange(e.target.value)}
+                style={{ width: '100%', padding: '16px', borderRadius: '8px', border: '1px solid #eee', appearance: 'none', background: 'white' }}
+              >
+                {CURRENCIES.map(c => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -143,11 +165,12 @@ export const AdminPage: React.FC = () => {
                 />
               </div>
               <button 
-                onClick={() => updateProduct({ price, originalPrice: origPrice })}
+                onClick={handleUpdatePricing}
                 className="btn-primary" 
-                style={{ justifyContent: 'center', gap: '8px' }}
+                style={{ justifyContent: 'center', gap: '8px', opacity: isUpdating ? 0.7 : 1 }}
+                disabled={isUpdating}
               >
-                <Save size={18} /> UPDATE PRICING
+                <Save size={18} /> {isUpdating ? 'UPDATING...' : 'UPDATE PRICING'}
               </button>
             </div>
           </div>

@@ -18,21 +18,15 @@ export const LandingPage: React.FC = () => {
   }, []);
 
   const handleAddToCart = () => {
-    const item = product || {
-      id: 'cosrx-snail-96',
-      name: 'COSRX Advanced Snail 96 Mucin Power Essence',
-      price: 25.0,
-      originalPrice: 50.0,
-      image: '/assets/product.png'
-    };
-    
-    addToCart({
-      id: item.id,
-      name: item.name,
-      price: item.price,
-      originalPrice: item.originalPrice,
-      image: item.image
-    });
+    if (product) {
+      addToCart({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        originalPrice: product.originalPrice,
+        image: product.image
+      });
+    }
   };
 
   return (
@@ -127,8 +121,8 @@ export const LandingPage: React.FC = () => {
 
       {/* Floating Mobile CTA */}
       <div className="mobile-sticky-cta glass">
-        <button className="btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={handleAddToCart}>
-          <ShoppingCart size={20} /> ADD TO CART - BUY 1 GET 1 FREE
+        <button className="btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={handleAddToCart} disabled={!product}>
+          <ShoppingCart size={20} /> {product ? 'ADD TO CART - BUY 1 GET 1 FREE' : 'LOADING...'}
         </button>
       </div>
 

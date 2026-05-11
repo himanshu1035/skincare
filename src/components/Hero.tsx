@@ -1,33 +1,36 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ShoppingCart, Star, CheckCircle2, TrendingUp } from 'lucide-react';
+import { ShoppingCart, Star, CheckCircle2, TrendingUp, Loader2 } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 export const Hero: React.FC = () => {
   const { addToCart, stockLeft, currency, product, isBogoActive } = useStore();
 
-  // Fallback data if product isn't loaded from Supabase yet
-  const displayProduct = product || {
-    id: 'cosrx-snail-96',
-    name: 'COSRX Advanced Snail 96 Mucin Power Essence',
-    price: 25.0,
-    originalPrice: 50.0,
-    image: '/assets/product.png'
-  };
+  // If product is null, it means we are still loading or Supabase is not set up
+  if (!product) {
+    return (
+      <section style={{ padding: '100px 0', textAlign: 'center', background: 'var(--secondary-ivory)' }}>
+        <Loader2 className="animate-spin" size={48} color="var(--accent-gold)" style={{ margin: '0 auto' }} />
+        <p style={{ marginTop: '20px', color: 'var(--text-muted)' }}>Loading Premium Skincare...</p>
+      </section>
+    );
+  }
 
   const handleAddToCart = () => {
     addToCart({
-      id: displayProduct.id,
-      name: displayProduct.name,
-      price: displayProduct.price,
-      originalPrice: displayProduct.originalPrice,
-      image: displayProduct.image
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      originalPrice: product.originalPrice,
+      image: product.image
     });
   };
 
   return (
     <section style={{ padding: '60px 0', background: 'linear-gradient(180deg, var(--secondary-ivory) 0%, var(--primary-cream) 100%)' }}>
       <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .animate-spin { animation: spin 2s linear infinite; }
         @media (max-width: 768px) {
           .hero-grid { grid-template-columns: 1fr !important; gap: 40px !important; }
           .hero-title { font-size: 36px !important; }
@@ -53,8 +56,8 @@ export const Hero: React.FC = () => {
             )}
             
             <img 
-              src={displayProduct.image} 
-              alt={displayProduct.name} 
+              src={product.image} 
+              alt={product.name} 
               style={{ width: '100%', borderRadius: '12px', boxShadow: 'var(--shadow-lg)' }} 
             />
             
@@ -88,7 +91,7 @@ export const Hero: React.FC = () => {
             </h1>
             
             <p style={{ fontSize: '18px', color: 'var(--text-muted)', marginBottom: '32px' }}>
-              {displayProduct.name}. The #1 Korean skincare secret for hydration and that legendary "slugging" glow. 
+              {product.name}. The #1 Korean skincare secret for hydration and that legendary "slugging" glow. 
             </p>
 
             <div style={{ background: 'rgba(197, 160, 89, 0.1)', borderLeft: '4px solid var(--accent-gold)', padding: '20px', marginBottom: '32px' }}>
@@ -97,10 +100,10 @@ export const Hero: React.FC = () => {
                 {isBogoActive ? 'BUY 1 GET 1 FREE' : 'SPECIAL DISCOUNT'}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <span style={{ fontSize: '32px', fontWeight: 'bold' }}>{currency}{displayProduct.price.toFixed(2)}</span>
-                <span style={{ fontSize: '20px', textDecoration: 'line-through', color: 'var(--text-muted)' }}>{currency}{displayProduct.originalPrice.toFixed(2)}</span>
+                <span style={{ fontSize: '32px', fontWeight: 'bold' }}>{currency}{product.price.toFixed(2)}</span>
+                <span style={{ fontSize: '20px', textDecoration: 'line-through', color: 'var(--text-muted)' }}>{currency}{product.originalPrice.toFixed(2)}</span>
                 <span style={{ background: 'var(--bogo-badge)', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold' }}>
-                  SAVE {Math.round((1 - displayProduct.price / displayProduct.originalPrice) * 100)}%
+                  SAVE {Math.round((1 - product.price / product.originalPrice) * 100)}%
                 </span>
               </div>
             </div>

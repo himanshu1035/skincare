@@ -18,12 +18,23 @@ CREATE TABLE skin_campaign_settings (
   skin_updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- SKIN USERS TABLE
+CREATE TABLE skin_users (
+  skin_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  skin_email TEXT UNIQUE NOT NULL,
+  skin_mobile TEXT UNIQUE NOT NULL,
+  skin_password TEXT NOT NULL, -- In a real app, hash this!
+  skin_created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- SKIN ORDERS TABLE
 CREATE TABLE skin_orders (
   skin_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   skin_customer_email TEXT NOT NULL,
+  skin_customer_mobile TEXT,
   skin_total_amount DECIMAL(10,2) NOT NULL,
   skin_items JSONB NOT NULL,
+  skin_user_id UUID REFERENCES skin_users(skin_id),
   skin_created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

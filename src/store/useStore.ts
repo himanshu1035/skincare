@@ -39,7 +39,11 @@ interface State {
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, delta: number) => void;
   clearCart: () => void;
-  createOrder: (email: string) => Promise<boolean>;
+  
+  // User & Order Actions
+  checkUserExists: (email: string, mobile: string) => Promise<boolean>;
+  registerUser: (email: string, mobile: string, password: string) => Promise<string | null>;
+  createOrder: (orderData: { email: string, mobile: string, userId?: string | null }) => Promise<boolean>;
 }
 
 export const useStore = create<State>((set, get) => ({
@@ -53,19 +57,8 @@ export const useStore = create<State>((set, get) => ({
   
   fetchData: async () => {
     try {
-      // Fetch Settings
-      const { data: settings } = await supabase
-        .from('skin_campaign_settings')
-        .select('*')
-        .eq('skin_id', 'bogo_campaign')
-        .single();
-      
-      // Fetch Product
-      const { data: products } = await supabase
-        .from('skin_products')
-        .select('*')
-        .limit(1)
-        .single();
+      const { data: settings } = await supabase.from('skin_campaign_settings').select('*').eq('skin_id', 'bogo_campaign').single();
+      const { data: products } = await supabase.from('skin_products').select('*').limit(1).single();
 
       if (settings) {
         set({ 
@@ -97,110 +90,75 @@ export const useStore = create<State>((set, get) => ({
   
   setBogoActive: async (active) => {
     try {
-      const { error } = await supabase
-        .from('skin_campaign_settings')
-        .update({ skin_is_active: active, skin_updated_at: new Date().toISOString() })
-        .eq('skin_id', 'bogo_campaign');
-      
-      if (!error) {
-        set({ isBogoActive: active });
-      }
-    } catch (err) {
-      console.error('Error updating BOGO status:', err);
-    }
+      const { error } = await supabase.from('skin_campaign_settings').update({ skin_is_active: active, skin_updated_at: new Date().toISOString() }).eq('skin_id', 'bogo_campaign');
+      if (!error) set({ isBogoActive: active });
+    } catch (err) { console.error(err); }
   },
 
   updateCurrency: async (currency) => {
     try {
-      const { error } = await supabase
-        .from('skin_campaign_settings')
-        .update({ skin_currency: currency, skin_updated_at: new Date().toISOString() })
-        .eq('skin_id', 'bogo_campaign');
-      
-      if (!error) {
-        set({ currency });
-      }
-    } catch (err) {
-      console.error('Error updating currency:', err);
-    }
+      const { error } = await supabase.from('skin_campaign_settings').update({ skin_currency: currency, skin_updated_at: new Date().toISOString() }).eq('skin_id', 'bogo_campaign');
+      if (!error) set({ currency });
+    } catch (err) { console.error(err); }
   },
 
   updateProduct: async (updates) => {
     const product = get().product;
     if (!product) return;
-
     try {
-      const { error } = await supabase
-        .from('skin_products')
-        .update({
-          skin_name: updates.name ?? product.name,
-          skin_price: updates.price ?? product.price,
-          skin_original_price: updates.originalPrice ?? product.originalPrice,
-          skin_stock_count: updates.stockCount ?? product.stockCount
-        })
-        .eq('skin_id', product.id);
-      
-      if (!error) {
-        set({ product: { ...product, ...updates } });
-      }
-    } catch (err) {
-      console.error('Error updating product:', err);
-    }
+      const { error } = await supabase.from('skin_products').update({
+        skin_name: updates.name ?? product.name,
+        skin_price: updates.price ?? product.price,
+        skin_original_price: updates.originalPrice ?? product.originalPrice,
+        skin_stock_count: updates.stockCount ?? product.stockCount
+      }).eq('skin_id', product.id);
+      if (!error) set({ product: { ...product, ...updates } });
+    } catch (err) { console.error(err); }
   },
   
   addToCart: (product) => set((state) => {
     const existingMain = state.cart.find(item => item.id === product.id && !item.isFree);
-    
     if (existingMain) {
-      return {
-        cart: state.cart.map(item => 
-          item.id === product.id 
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        ),
-        isCartOpen: true
-      };
+      return { cart: state.cart.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item), isCartOpen: true };
     }
-
     const mainItem: CartItem = { ...product, quantity: 1 };
-    const freeItem: CartItem = { 
-      ...product, 
-      id: `${product.id}-free`, 
-      name: `${product.name} (FREE GIFT)`,
-      price: 0, 
-      quantity: 1, 
-      isFree: true 
-    };
-
-    return { 
-      cart: state.isBogoActive ? [...state.cart, mainItem, freeItem] : [...state.cart, mainItem],
-      isCartOpen: true,
-      stockLeft: Math.max(0, state.stockLeft - (state.isBogoActive ? 2 : 1))
-    };
+    const freeItem: CartItem = { ...product, id: `${product.id}-free`, name: `${product.name} (FREE GIFT)`, price: 0, quantity: 1, isFree: true };
+    return { cart: state.isBogoActive ? [...state.cart, mainItem, freeItem] : [...state.cart, mainItem], isCartOpen: true, stockLeft: Math.max(0, state.stockLeft - (state.isBogoActive ? 2 : 1)) };
   }),
 
   removeFromCart: (id) => set((state) => {
     const baseId = id.replace('-free', '');
-    return {
-      cart: state.cart.filter(item => !item.id.startsWith(baseId))
-    };
+    return { cart: state.cart.filter(item => !item.id.startsWith(baseId)) };
   }),
 
   updateQuantity: (id, delta) => set((state) => {
     const baseId = id.replace('-free', '');
-    const newCart = state.cart.map(item => {
-      if (item.id.startsWith(baseId)) {
-        const newQty = Math.max(1, item.quantity + delta);
-        return { ...item, quantity: newQty };
-      }
-      return item;
-    });
+    const newCart = state.cart.map(item => item.id.startsWith(baseId) ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item);
     return { cart: newCart };
   }),
 
   clearCart: () => set({ cart: [] }),
 
-  createOrder: async (email) => {
+  checkUserExists: async (email, mobile) => {
+    const { data } = await supabase
+      .from('skin_users')
+      .select('skin_id')
+      .or(`skin_email.eq.${email},skin_mobile.eq.${mobile}`)
+      .maybeSingle();
+    return !!data;
+  },
+
+  registerUser: async (email, mobile, password) => {
+    const { data, error } = await supabase
+      .from('skin_users')
+      .insert({ skin_email: email, skin_mobile: mobile, skin_password: password })
+      .select('skin_id')
+      .single();
+    if (error) return null;
+    return data.skin_id;
+  },
+
+  createOrder: async ({ email, mobile, userId }) => {
     const state = get();
     const subtotal = state.cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
     
@@ -209,8 +167,10 @@ export const useStore = create<State>((set, get) => ({
         .from('skin_orders')
         .insert({
           skin_customer_email: email,
+          skin_customer_mobile: mobile,
           skin_total_amount: subtotal,
           skin_items: state.cart,
+          skin_user_id: userId || null,
           skin_created_at: new Date().toISOString()
         });
       
