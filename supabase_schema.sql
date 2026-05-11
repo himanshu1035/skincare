@@ -15,6 +15,10 @@ CREATE TABLE skin_campaign_settings (
   skin_is_active BOOLEAN DEFAULT TRUE,
   skin_expires_at TIMESTAMPTZ,
   skin_currency TEXT DEFAULT '$',
+  skin_cod_charge DECIMAL(10,2) DEFAULT 0,
+  skin_prepay_discount DECIMAL(10,2) DEFAULT 0,
+  skin_delivery_charge DECIMAL(10,2) DEFAULT 0,
+  skin_pay_delivery_first BOOLEAN DEFAULT FALSE,
   skin_updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -32,10 +36,15 @@ CREATE TABLE skin_orders (
   skin_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   skin_customer_email TEXT NOT NULL,
   skin_customer_mobile TEXT,
+  skin_customer_address TEXT,
+  skin_customer_city TEXT,
+  skin_customer_state TEXT,
+  skin_customer_zip TEXT,
+  skin_payment_method TEXT DEFAULT 'Prepaid', -- Prepaid, COD
   skin_total_amount DECIMAL(10,2) NOT NULL,
   skin_items JSONB NOT NULL,
   skin_user_id UUID REFERENCES skin_users(skin_id),
-  skin_status TEXT DEFAULT 'Processing', -- Processing, Shipped, Delivered, Cancelled
+  skin_status TEXT DEFAULT 'Processing',
   skin_tracking_id TEXT,
   skin_created_at TIMESTAMPTZ DEFAULT NOW()
 );

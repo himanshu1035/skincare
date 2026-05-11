@@ -30,12 +30,24 @@ interface Order {
   id: string;
   customerEmail: string;
   customerMobile: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  paymentMethod: string;
   totalAmount: number;
   items: CartItem[];
   status: string;
   trackingId?: string;
   createdAt: string;
   userId?: string;
+}
+
+interface CampaignSettings {
+  codCharge: number;
+  prepayDiscount: number;
+  deliveryCharge: number;
+  payDeliveryFirst: boolean;
 }
 
 interface State {
@@ -48,6 +60,7 @@ interface State {
   product: Product | null;
   isLoading: boolean;
   currentUser: User | null;
+  settings: CampaignSettings;
   
   // Actions
   fetchData: () => Promise<void>;
@@ -55,6 +68,7 @@ interface State {
   setBogoActive: (active: boolean) => Promise<void>;
   updateCurrency: (currency: string) => Promise<void>;
   updateProduct: (updates: Partial<Product>) => Promise<void>;
+  updateSettings: (updates: Partial<CampaignSettings>) => Promise<void>;
   addToCart: (product: Omit<CartItem, 'quantity' | 'isFree'>) => void;
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, delta: number) => void;
@@ -67,7 +81,17 @@ interface State {
   registerUser: (email: string, mobile: string, password: string) => Promise<string | null>;
   
   // Order Actions
-  createOrder: (orderData: { email: string, mobile: string, userId?: string | null }) => Promise<boolean>;
+  createOrder: (orderData: { 
+    email: string, 
+    mobile: string, 
+    address: string, 
+    city: string, 
+    state: string, 
+    zip: string,
+    paymentMethod: string,
+    totalAmount: number,
+    userId?: string | null 
+  }) => Promise<boolean>;
   fetchUserOrders: () => Promise<Order[]>;
   
   // Admin Actions
@@ -96,18 +120,30 @@ export const useStore = create<State>((set, get) => ({
   product: null,
   isLoading: true,
   currentUser: null,
+  settings: {
+    codCharge: 0,
+    prepayDiscount: 0,
+    deliveryCharge: 0,
+    payDeliveryFirst: false
+  },
   
   fetchData: async () => {
     set({ isLoading: true });
     try {
-      const { data: settings } = await supabase.from('skin_campaign_settings').select('*').eq('skin_id', 'bogo_campaign').single();
+      const { data: settingsData } = await supabase.from('skin_campaign_settings').select('*').eq('skin_id', 'bogo_campaign').single();
       const { data: products } = await supabase.from('skin_products').select('*').limit(1).maybeSingle();
 
-      if (settings) {
+      if (settingsData) {
         set({ 
-          isBogoActive: settings.skin_is_active,
-          currency: settings.skin_currency,
-          offerExpiresAt: settings.skin_expires_at ? new Date(settings.skin_expires_at).getTime() : get().offerExpiresAt
+          isBogoActive: settingsData.skin_is_active,
+          currency: settingsData.skin_currency,
+          offerExpiresAt: settingsData.skin_expires_at ? new Date(settingsData.skin_expires_at).getTime() : get().offerExpiresAt,
+          settings: {
+            codCharge: Number(settingsData.skin_cod_charge),
+            prepayDiscount: Number(settingsData.skin_prepay_discount),
+            deliveryCharge: Number(settingsData.skin_delivery_charge),
+            payDeliveryFirst: settingsData.skin_pay_delivery_first
+          }
         });
       }
 
@@ -162,6 +198,19 @@ export const useStore = create<State>((set, get) => ({
       set({ product: { ...product, ...updates } });
     } catch (err) {}
   },
+
+  updateSettings: async (updates) => {
+    const settings = get().settings;
+    try {
+      await supabase.from('skin_campaign_settings').update({
+        skin_cod_charge: updates.codCharge ?? settings.codCharge,
+        skin_prepay_discount: updates.prepayDiscount ?? settings.prepayDiscount,
+        skin_delivery_charge: updates.deliveryCharge ?? settings.deliveryCharge,
+        skin_pay_delivery_first: updates.payDeliveryFirst ?? settings.payDeliveryFirst
+      }).eq('skin_id', 'bogo_campaign');
+      set({ settings: { ...settings, ...updates } });
+    } catch (err) {}
+  },
   
   addToCart: (product) => set((state) => {
     const existingMain = state.cart.find(item => item.id === product.id && !item.isFree);
@@ -200,17 +249,21 @@ export const useStore = create<State>((set, get) => ({
     return data.skin_id;
   },
 
-  createOrder: async ({ email, mobile, userId }) => {
-    const state = get();
-    const subtotal = state.cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+  createOrder: async ({ email, mobile, address, city, state, zip, paymentMethod, totalAmount, userId }) => {
+    const store = get();
     const { error } = await supabase.from('skin_orders').insert({
       skin_customer_email: email,
       skin_customer_mobile: mobile,
-      skin_total_amount: subtotal,
-      skin_items: state.cart,
-      skin_user_id: userId || state.currentUser?.id || null
+      skin_customer_address: address,
+      skin_customer_city: city,
+      skin_customer_state: state,
+      skin_customer_zip: zip,
+      skin_payment_method: paymentMethod,
+      skin_total_amount: totalAmount,
+      skin_items: store.cart,
+      skin_user_id: userId || store.currentUser?.id || null
     });
-    if (!error) { state.clearCart(); return true; }
+    if (!error) { store.clearCart(); return true; }
     return false;
   },
 
@@ -222,6 +275,11 @@ export const useStore = create<State>((set, get) => ({
       id: o.skin_id,
       customerEmail: o.skin_customer_email,
       customerMobile: o.skin_customer_mobile,
+      address: o.skin_customer_address,
+      city: o.skin_customer_city,
+      state: o.skin_customer_state,
+      zip: o.skin_customer_zip,
+      paymentMethod: o.skin_payment_method,
       totalAmount: o.skin_total_amount,
       items: o.skin_items,
       status: o.skin_status,
@@ -236,6 +294,11 @@ export const useStore = create<State>((set, get) => ({
       id: o.skin_id,
       customerEmail: o.skin_customer_email,
       customerMobile: o.skin_customer_mobile,
+      address: o.skin_customer_address,
+      city: o.skin_customer_city,
+      state: o.skin_customer_state,
+      zip: o.skin_customer_zip,
+      paymentMethod: o.skin_payment_method,
       totalAmount: o.skin_total_amount,
       items: o.skin_items,
       status: o.skin_status,

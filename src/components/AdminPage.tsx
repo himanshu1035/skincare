@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
-import { BarChart3, ToggleLeft, ToggleRight, LogOut, Package, Settings, RefreshCw, Users, ShoppingCart, Edit2, Check, X } from 'lucide-react';
+import { BarChart3, ToggleLeft, ToggleRight, LogOut, Package, Settings, RefreshCw, Users, ShoppingCart, Edit2, Check, X, CreditCard, Truck, DollarSign } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const CURRENCIES = [
   { label: 'US Dollar ($)', value: '$' },
@@ -15,19 +16,25 @@ export const AdminPage: React.FC = () => {
   const { 
     isBogoActive, setBogoActive, currency, updateCurrency, 
     product, updateProduct, fetchData, 
-    fetchAllOrders, fetchAllUsers, updateOrderStatus, updateUserDetails 
+    fetchAllOrders, fetchAllUsers, updateOrderStatus, updateUserDetails,
+    settings, updateSettings
   } = useStore();
   
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [tab, setTab] = useState<'settings' | 'orders' | 'users'>('settings');
+  const [tab, setTab] = useState<'settings' | 'orders' | 'users' | 'payment'>('settings');
 
   // Data states
   const [orders, setOrders] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [price, setPrice] = useState(0);
   const [origPrice, setOrigPrice] = useState(0);
+
+  // Payment states
+  const [codCharge, setCodCharge] = useState(0);
+  const [prepayDiscount, setPrepayDiscount] = useState(0);
+  const [deliveryCharge, setDeliveryCharge] = useState(0);
 
   // Edit states
   const [editingOrder, setEditingOrder] = useState<string | null>(null);
@@ -53,7 +60,12 @@ export const AdminPage: React.FC = () => {
       setPrice(product.price);
       setOrigPrice(product.originalPrice);
     }
-  }, [product]);
+    if (settings) {
+      setCodCharge(settings.codCharge);
+      setPrepayDiscount(settings.prepayDiscount);
+      setDeliveryCharge(settings.deliveryCharge);
+    }
+  }, [product, settings]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,6 +110,9 @@ export const AdminPage: React.FC = () => {
         
         <button onClick={() => setTab('settings')} style={{ background: tab === 'settings' ? 'rgba(255,255,255,0.1)' : 'none', color: 'white', padding: '16px', borderRadius: '12px', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '12px' }}>
           <BarChart3 size={20} /> Store Settings
+        </button>
+        <button onClick={() => setTab('payment')} style={{ background: tab === 'payment' ? 'rgba(255,255,255,0.1)' : 'none', color: 'white', padding: '16px', borderRadius: '12px', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <CreditCard size={20} /> Payment & Delivery
         </button>
         <button onClick={() => setTab('orders')} style={{ background: tab === 'orders' ? 'rgba(255,255,255,0.1)' : 'none', color: 'white', padding: '16px', borderRadius: '12px', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '12px' }}>
           <ShoppingCart size={20} /> Manage Orders
@@ -149,6 +164,45 @@ export const AdminPage: React.FC = () => {
           </div>
         )}
 
+        {tab === 'payment' && (
+          <div style={{ maxWidth: '900px' }}>
+            <h1 style={{ fontSize: '32px', marginBottom: '32px' }}>Payment & Delivery</h1>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+              <div style={{ background: 'white', padding: '32px', borderRadius: '20px', boxShadow: 'var(--shadow-sm)' }}>
+                <h3 style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}><Truck color="var(--accent-gold)" /> Delivery Settings</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <label style={{ fontSize: '14px' }}>Standard Delivery Charge ({currency})</label>
+                  <input type="number" value={deliveryCharge} onChange={(e) => setDeliveryCharge(Number(e.target.value))} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
+                  
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: '#f9f9f9', borderRadius: '12px', marginTop: '10px' }}>
+                    <div>
+                      <div style={{ fontWeight: 'bold', fontSize: '14px' }}>Pay Delivery First?</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Customer pays delivery charge before COD</div>
+                    </div>
+                    <button onClick={() => updateSettings({ payDeliveryFirst: !settings.payDeliveryFirst })} style={{ background: 'none', color: settings.payDeliveryFirst ? 'var(--success-green)' : '#ccc' }}>
+                      {settings.payDeliveryFirst ? <ToggleRight size={40} /> : <ToggleLeft size={40} />}
+                    </button>
+                  </div>
+                  <button onClick={() => updateSettings({ deliveryCharge })} className="btn-primary" style={{ justifyContent: 'center' }}>SAVE DELIVERY</button>
+                </div>
+              </div>
+
+              <div style={{ background: 'white', padding: '32px', borderRadius: '20px', boxShadow: 'var(--shadow-sm)' }}>
+                <h3 style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}><DollarSign color="var(--accent-gold)" /> Payment Rules</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <label style={{ fontSize: '14px' }}>COD Extra Charge ({currency})</label>
+                  <input type="number" value={codCharge} onChange={(e) => setCodCharge(Number(e.target.value))} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
+                  
+                  <label style={{ fontSize: '14px' }}>Prepayment Discount ({currency})</label>
+                  <input type="number" value={prepayDiscount} onChange={(e) => setPrepayDiscount(Number(e.target.value))} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
+                  
+                  <button onClick={() => updateSettings({ codCharge, prepayDiscount })} className="btn-primary" style={{ justifyContent: 'center', marginTop: '10px' }}>SAVE RULES</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {tab === 'orders' && (
           <div>
             <h1 style={{ fontSize: '32px', marginBottom: '32px' }}>Manage Orders</h1>
@@ -156,10 +210,11 @@ export const AdminPage: React.FC = () => {
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                 <thead style={{ background: '#f9f9f9' }}>
                   <tr>
-                    <th style={{ padding: '20px' }}>Order ID</th>
+                    <th style={{ padding: '20px' }}>Order</th>
                     <th style={{ padding: '20px' }}>Customer</th>
+                    <th style={{ padding: '20px' }}>Method</th>
                     <th style={{ padding: '20px' }}>Status</th>
-                    <th style={{ padding: '20px' }}>Tracking ID</th>
+                    <th style={{ padding: '20px' }}>Tracking</th>
                     <th style={{ padding: '20px' }}>Actions</th>
                   </tr>
                 </thead>
@@ -169,7 +224,11 @@ export const AdminPage: React.FC = () => {
                       <td style={{ padding: '20px', fontWeight: 'bold' }}>#{order.id.slice(0, 8).toUpperCase()}</td>
                       <td style={{ padding: '20px' }}>
                         <div style={{ fontWeight: '500' }}>{order.customerEmail}</div>
-                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{order.customerMobile}</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{order.customerMobile}</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{order.city}, {order.state}</div>
+                      </td>
+                      <td style={{ padding: '20px' }}>
+                        <span style={{ fontSize: '12px', fontWeight: 'bold', color: order.paymentMethod === 'Prepaid' ? 'var(--success-green)' : 'var(--accent-gold)' }}>{order.paymentMethod}</span>
                       </td>
                       <td style={{ padding: '20px' }}>
                         {editingOrder === order.id ? (
