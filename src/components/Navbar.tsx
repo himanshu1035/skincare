@@ -1,7 +1,7 @@
 import React from 'react';
 import { ShoppingCart, User } from 'lucide-react';
 import { useStore } from '../store/useStore';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 export const Navbar: React.FC = () => {
   const { toggleCart, cart, currentUser } = useStore();
