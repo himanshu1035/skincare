@@ -483,7 +483,13 @@ export const useStore = create<State>()(
       email: u.skin_email, 
       mobile: u.skin_mobile,
       firstName: u.skin_first_name,
-      lastName: u.skin_last_name
+      lastName: u.skin_last_name,
+      address: u.skin_address,
+      landmark: u.skin_landmark,
+      city: u.skin_city,
+      state: u.skin_state,
+      zip: u.skin_zip,
+      createdAt: u.skin_created_at
     }));
   },
 

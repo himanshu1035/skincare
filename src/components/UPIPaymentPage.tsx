@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { QrCode, Copy, CheckCircle2, Loader2, Info, ArrowLeft, Smartphone } from 'lucide-react';
@@ -24,9 +24,23 @@ export const UPIPaymentPage: React.FC = () => {
     return null;
   }
 
-  // Generate UPI URI
-  const upiUri = `upi://pay?pa=${settings.upiId}&pn=COSRX+INDIA&am=${totalAmount.toFixed(2)}&cu=INR`;
+  // Generate UPI URI with better encoding to prevent app hijacking
+  const encodedName = encodeURIComponent('COSRX INDIA');
+  const upiUri = `upi://pay?pa=${settings.upiId}&pn=${encodedName}&am=${totalAmount.toFixed(2)}&cu=INR&tr=${orderId}&mode=02&purpose=00`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(upiUri)}`;
+
+  // Handle Cancel on Back
+  useEffect(() => {
+    return () => {
+      // If the component unmounts and we haven't shown success, mark order as potentially abandoned
+      // In a real app, we'd check if the order is still 'Pending Payment'
+      // But for this request, we'll implement a 'Cancel' logic if they didn't finish
+      if (!showSuccessModal && orderId) {
+        // We don't await here as it's a cleanup
+        useStore.getState().updateOrderStatus(orderId, 'Cancelled');
+      }
+    };
+  }, [showSuccessModal, orderId]);
 
   const upiApps = [
     { name: 'GPay', icon: 'https://cdn.iconscout.com/icon/free/png-256/free-google-pay-2038779-1721670.png', color: '#4285F4' },

@@ -23,6 +23,12 @@ export const CheckoutPage: React.FC = () => {
   const [zip, setZip] = useState('');
   const [mobile, setMobile] = useState('');
   const [password, setPassword] = useState('');
+  
+  useEffect(() => {
+    if (cart.length === 0) {
+      navigate('/');
+    }
+  }, [cart, navigate]);
 
   useEffect(() => {
     if (currentUser) {
@@ -152,7 +158,10 @@ export const CheckoutPage: React.FC = () => {
                   <input type="text" placeholder="Last Name" value={lastName} onChange={(e) => setLastName(e.target.value)} className="input-field" />
                 </div>
 
-                <input type="text" placeholder="House no. / Apartment / Suite" value={address} onChange={(e) => setAddress(e.target.value)} className="input-field" />
+                <div style={{ marginBottom: '8px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#666', marginBottom: '8px', display: 'block' }}>Street Address / House No.</label>
+                  <input type="text" placeholder="House no. / Street / Apartment" value={address} onChange={(e) => setAddress(e.target.value)} className="input-field" />
+                </div>
                 <input type="text" placeholder="Landmark (Optional)" value={landmark} onChange={(e) => setLandmark(e.target.value)} className="input-field" />
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
@@ -189,9 +198,12 @@ export const CheckoutPage: React.FC = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div className={`payment-card ${paymentMethod === 'Prepaid' ? 'active' : ''}`} onClick={() => setPaymentMethod('Prepaid')}>
                   <div className="radio-circle">{paymentMethod === 'Prepaid' && <div className="radio-dot" />}</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: '600', marginBottom: '4px' }}>Secure Online Payment (UPI, Cards, Wallets)</div>
-                    <p style={{ fontSize: '12px', color: '#666' }}>Save {currency}{settings.prepayDiscount} with instant discount.</p>
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div>
+                      <div style={{ fontWeight: '800', fontSize: '16px' }}>UPI</div>
+                      <p style={{ fontSize: '11px', color: '#666' }}>Google Pay, PhonePe, Paytm</p>
+                    </div>
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Unified_Payments_Interface_logo.svg/1200px-Unified_Payments_Interface_logo.svg.png" alt="UPI" style={{ height: '24px' }} />
                   </div>
                 </div>
 
