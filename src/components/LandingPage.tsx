@@ -10,10 +10,10 @@ import { Star, ShieldCheck, Truck, RefreshCw, ShoppingCart } from 'lucide-react'
 import { useEffect } from 'react';
 
 export const LandingPage: React.FC = () => {
-  const { addToCart, fetchCampaignSettings } = useStore();
+  const { addToCart, fetchData } = useStore();
 
   useEffect(() => {
-    fetchCampaignSettings();
+    fetchData();
   }, []);
 
   const handleAddToCart = () => {
