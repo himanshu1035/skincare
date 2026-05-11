@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useStore } from '../store/useStore';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Package, Truck, LogOut, User, Mail, Phone } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -60,11 +60,20 @@ export const AccountPage: React.FC = () => {
                     style={{ background: 'white', padding: '24px', borderRadius: '16px', boxShadow: 'var(--shadow-sm)' }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', borderBottom: '1px solid #eee', paddingBottom: '16px' }}>
-                      <div>
-                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>ORDER ID</div>
-                        <div style={{ fontWeight: 'bold' }}>#{order.id.slice(0, 8).toUpperCase()}</div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                        <div>
+                          <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>Order ID: #{order.id.slice(0, 8).toUpperCase()}</div>
+                          <div style={{ fontSize: '18px', fontWeight: 'bold' }}>{currency}{order.totalAmount.toFixed(2)}</div>
+                        </div>
+                        <Link 
+                          to={`/track?id=${order.id}`} 
+                          className="btn-primary" 
+                          style={{ padding: '8px 20px', fontSize: '12px', borderRadius: '8px', textDecoration: 'none' }}
+                        >
+                          TRACK ORDER
+                        </Link>
                       </div>
-                      <div style={{ textAlign: 'right' }}>
+                      <div style={{ textAlign: 'right', display: 'none' }}>
                         <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>STATUS</div>
                         <div style={{ 
                           fontWeight: 'bold', 

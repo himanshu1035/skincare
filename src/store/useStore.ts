@@ -53,6 +53,16 @@ interface CampaignSettings {
   payDeliveryFirst: boolean;
 }
 
+interface Review {
+  id: string;
+  userId?: string;
+  userName: string;
+  rating: number;
+  comment: string;
+  isPublic: boolean;
+  createdAt: string;
+}
+
 interface State {
   cart: CartItem[];
   isBogoActive: boolean;
@@ -64,6 +74,7 @@ interface State {
   isLoading: boolean;
   currentUser: User | null;
   settings: CampaignSettings;
+  reviews: Review[];
   
   // Actions
   fetchData: () => Promise<void>;
@@ -76,6 +87,12 @@ interface State {
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, delta: number) => void;
   clearCart: () => void;
+  
+  // Review Actions
+  fetchReviews: () => Promise<void>;
+  addReview: (review: Partial<Review>) => Promise<void>;
+  adminUpdateReview: (id: string, updates: Partial<Review>) => Promise<void>;
+  adminDeleteReview: (id: string) => Promise<void>;
   
   // Auth Actions
   login: (email: string, password: string) => Promise<boolean>;
@@ -119,6 +136,7 @@ export const useStore = create<State>((set, get) => ({
     deliveryCharge: 0,
     payDeliveryFirst: false
   },
+  reviews: [],
   
   fetchData: async () => {
     try {
@@ -159,8 +177,56 @@ export const useStore = create<State>((set, get) => ({
     }
   },
 
-  toggleCart: () => set((state) => ({ isCartOpen: !state.isCartOpen })),
+  fetchReviews: async () => {
+    const user = get().currentUser;
+    let query = supabase.from('skin_reviews').select('*');
+    
+    const { data } = await query.order('skin_created_at', { ascending: false });
+    
+    const allReviews = (data || []).map(r => ({
+      id: r.skin_id,
+      userId: r.skin_user_id,
+      userName: r.skin_user_name,
+      rating: r.skin_rating,
+      comment: r.skin_comment,
+      isPublic: r.skin_is_public,
+      createdAt: r.skin_created_at
+    }));
+
+    // Filter: Public reviews OR user's own reviews
+    const filtered = allReviews.filter(r => r.isPublic || (user && r.userId === user.id));
+    set({ reviews: filtered });
+  },
+
+  addReview: async (review) => {
+    const user = get().currentUser;
+    await supabase.from('skin_reviews').insert({
+      skin_user_id: user?.id || null,
+      skin_user_name: review.userName,
+      skin_rating: review.rating,
+      skin_comment: review.comment,
+      skin_is_public: !user // Admin-created (no user) are public by default
+    });
+    get().fetchReviews();
+  },
+
+  adminUpdateReview: async (id, updates) => {
+    await supabase.from('skin_reviews').update({
+      skin_user_name: updates.userName,
+      skin_rating: updates.rating,
+      skin_comment: updates.comment,
+      skin_is_public: updates.isPublic
+    }).eq('skin_id', id);
+    get().fetchReviews();
+  },
+
+  adminDeleteReview: async (id) => {
+    await supabase.from('skin_reviews').delete().eq('skin_id', id);
+    get().fetchReviews();
+  },
   
+  toggleCart: () => set((state) => ({ isCartOpen: !state.isCartOpen })),
+
   setBogoActive: async (active) => {
     await supabase.from('skin_campaign_settings').upsert({ skin_id: 'bogo_campaign', skin_is_active: active });
     set({ isBogoActive: active });
