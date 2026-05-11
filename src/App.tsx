@@ -10,10 +10,20 @@ import { AccountPage } from './components/AccountPage';
 import { OrderSuccessPage } from './components/OrderSuccessPage';
 import { UPIPaymentPage } from './components/UPIPaymentPage';
 import { PolicyPage } from './components/PolicyPage';
+import { useLocation } from 'react-router-dom';
+
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+};
 
 const App: React.FC = () => {
   return (
     <Router>
+      <ScrollToTop />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
-import { QrCode, Copy, CheckCircle2, Loader2, Info, ArrowLeft, Smartphone } from 'lucide-react';
+import { Copy, CheckCircle2, Loader2, Info, ArrowLeft, Smartphone } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const UPIPaymentPage: React.FC = () => {
@@ -43,9 +43,24 @@ export const UPIPaymentPage: React.FC = () => {
   }, [showSuccessModal, orderId]);
 
   const upiApps = [
-    { name: 'GPay', icon: 'https://cdn.iconscout.com/icon/free/png-256/free-google-pay-2038779-1721670.png', color: '#4285F4' },
-    { name: 'PhonePe', icon: 'https://download.logo.wine/logo/PhonePe/PhonePe-Logo.wine.png', color: '#5f259f' },
-    { name: 'Paytm', icon: 'https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/paytm-icon.png', color: '#00BAF2' }
+    { 
+      name: 'GPay', 
+      icon: 'https://cdn.iconscout.com/icon/free/png-256/free-google-pay-2038779-1721670.png', 
+      color: '#4285F4',
+      scheme: `googlepay://pay?pa=${settings.upiId}&pn=${encodedName}&am=${totalAmount.toFixed(2)}&cu=INR&tr=${orderId}`
+    },
+    { 
+      name: 'PhonePe', 
+      icon: 'https://download.logo.wine/logo/PhonePe/PhonePe-Logo.wine.png', 
+      color: '#5f259f',
+      scheme: `phonepe://pay?pa=${settings.upiId}&pn=${encodedName}&am=${totalAmount.toFixed(2)}&cu=INR&tr=${orderId}`
+    },
+    { 
+      name: 'Paytm', 
+      icon: 'https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/paytm-icon.png', 
+      color: '#00BAF2',
+      scheme: `paytmmp://pay?pa=${settings.upiId}&pn=${encodedName}&am=${totalAmount.toFixed(2)}&cu=INR&tr=${orderId}`
+    }
   ];
 
   const handleCopy = () => {
@@ -95,7 +110,7 @@ export const UPIPaymentPage: React.FC = () => {
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '24px' }}>
             <div style={{ width: '40px', height: '40px', background: 'black', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
-              <QrCode size={20} />
+              <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/Unified_Payments_Interface_logo.svg" alt="UPI" style={{ width: '24px', filter: 'brightness(0) invert(1)' }} />
             </div>
             <h1 style={{ fontSize: '24px', fontWeight: '800' }}>{isDeliveryOnly ? 'Pay Delivery Fee' : 'UPI Payment'}</h1>
           </div>
@@ -112,17 +127,24 @@ export const UPIPaymentPage: React.FC = () => {
               {upiApps.map(app => (
                 <button 
                   key={app.name}
-                  onClick={handleOpenApp}
+                  onClick={() => {
+                    // Try app specific scheme, fallback to generic upi:// after a short delay
+                    window.location.href = app.scheme;
+                    setTimeout(() => {
+                      window.location.href = upiUri;
+                    }, 1000);
+                  }}
                   style={{ 
                     display: 'flex', 
                     flexDirection: 'column', 
                     alignItems: 'center', 
                     gap: '8px', 
-                    padding: '12px', 
                     background: 'white', 
                     border: '1px solid #eee', 
+                    padding: '12px', 
                     borderRadius: '16px',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    flex: 1
                   }}
                 >
                   <img src={app.icon} alt={app.name} style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
