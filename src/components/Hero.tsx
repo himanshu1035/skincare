@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ShoppingCart, Star, CheckCircle2, TrendingUp, Loader2, Sparkles } from 'lucide-react';
+import { ShoppingCart, Star, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 export const Hero: React.FC = () => {
@@ -69,10 +69,6 @@ export const Hero: React.FC = () => {
             style={{ width: '100%', borderRadius: '24px', boxShadow: '0 20px 40px rgba(0,0,0,0.1)', objectFit: 'cover' }} 
           />
           
-          <div style={{ position: 'absolute', bottom: '20px', right: '20px', background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(10px)', padding: '12px 20px', borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '0 10px 20px rgba(0,0,0,0.05)' }}>
-            <TrendingUp size={18} color="var(--success-green)" />
-            <span style={{ fontSize: '13px', fontWeight: '700' }}>Viral on TikTok</span>
-          </div>
         </motion.div>
 
         {/* Right/Order 1 on Mobile: Content */}

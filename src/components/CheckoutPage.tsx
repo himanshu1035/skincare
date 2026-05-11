@@ -19,7 +19,7 @@ export const CheckoutPage: React.FC = () => {
   const [address, setAddress] = useState('');
   const [landmark, setLandmark] = useState('');
   const [city, setCity] = useState('');
-  const [state, setState] = useState('Punjab');
+  const [state, setState] = useState('');
   const [zip, setZip] = useState('');
   const [mobile, setMobile] = useState('');
   const [password, setPassword] = useState('');
@@ -33,7 +33,7 @@ export const CheckoutPage: React.FC = () => {
       setAddress(currentUser.address || '');
       setLandmark(currentUser.landmark || '');
       setCity(currentUser.city || '');
-      setState(currentUser.state || 'Punjab');
+      setState(currentUser.state || '');
       setZip(currentUser.zip || '');
       setMobile(currentUser.mobile || '');
     }
@@ -153,6 +153,7 @@ export const CheckoutPage: React.FC = () => {
                   <input type="text" placeholder="City" value={city} onChange={(e) => setCity(e.target.value)} className="input-field" />
                   <div style={{ position: 'relative' }}>
                     <select className="input-field" style={{ appearance: 'none' }} value={state} onChange={(e) => setState(e.target.value)}>
+                      <option value="" disabled>Select State</option>
                       {STATES.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                     <ChevronDown size={16} style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#999' }} />

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 
 interface CartItem {
@@ -130,7 +131,9 @@ const DEFAULT_PRODUCT: Product = {
   stockCount: 42
 };
 
-export const useStore = create<State>((set, get) => ({
+export const useStore = create<State>()(
+  persist(
+    (set, get) => ({
   cart: [],
   isBogoActive: true,
   isCartOpen: false,
@@ -475,4 +478,13 @@ export const useStore = create<State>((set, get) => ({
       skin_last_name: updates.lastName
     }).eq('skin_id', userId);
   }
-}));
+    }),
+    {
+      name: 'cosrx-storage',
+      partialize: (state: State) => ({ 
+        currentUser: state.currentUser, 
+        cart: state.cart 
+      }),
+    }
+  )
+);

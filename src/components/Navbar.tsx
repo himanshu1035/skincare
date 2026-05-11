@@ -37,6 +37,7 @@ export const Navbar: React.FC = () => {
           
           <div className="nav-links">
             <Link to="/" className="nav-link">SHOP</Link>
+            <Link to="/" className="nav-link">DASHBOARD</Link>
             <Link to="/track" className="nav-link" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Truck size={18} color="var(--accent-gold)" /> TRACK ORDER
             </Link>
@@ -93,7 +94,7 @@ export const Navbar: React.FC = () => {
               style={{ position: 'fixed', top: '80px', left: 0, width: '80%', maxWidth: '300px', height: 'calc(100vh - 80px)', background: 'white', zIndex: 999, padding: '40px 24px', display: 'flex', flexDirection: 'column', gap: '32px' }}
             >
               <Link to="/" onClick={toggleMenu} style={{ fontSize: '18px', fontWeight: '700', color: 'black', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                SHOP ALL PRODUCTS
+                GO TO DASHBOARD
               </Link>
               <Link to="/track" onClick={toggleMenu} style={{ fontSize: '18px', fontWeight: '700', color: 'black', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <Truck size={20} color="var(--accent-gold)" /> TRACK YOUR ORDER
