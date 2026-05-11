@@ -11,17 +11,30 @@ interface CartItem {
   isFree?: boolean;
 }
 
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  originalPrice: number;
+  image: string;
+  stockCount: number;
+}
+
 interface State {
   cart: CartItem[];
   isBogoActive: boolean;
   isCartOpen: boolean;
   offerExpiresAt: number;
   stockLeft: number;
+  currency: string;
+  product: Product | null;
   
   // Actions
-  fetchCampaignSettings: () => Promise<void>;
+  fetchData: () => Promise<void>;
   toggleCart: () => void;
   setBogoActive: (active: boolean) => Promise<void>;
+  updateCurrency: (currency: string) => Promise<void>;
+  updateProduct: (updates: Partial<Product>) => Promise<void>;
   addToCart: (product: Omit<CartItem, 'quantity' | 'isFree'>) => void;
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, delta: number) => void;
@@ -35,23 +48,48 @@ export const useStore = create<State>((set, get) => ({
   isCartOpen: false,
   offerExpiresAt: Date.now() + 1000 * 60 * 60 * 2,
   stockLeft: 42,
+  currency: '$',
+  product: null,
   
-  fetchCampaignSettings: async () => {
+  fetchData: async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch Settings
+      const { data: settings } = await supabase
         .from('skin_campaign_settings')
         .select('*')
         .eq('skin_id', 'bogo_campaign')
         .single();
       
-      if (data && !error) {
+      // Fetch Product
+      const { data: products } = await supabase
+        .from('skin_products')
+        .select('*')
+        .limit(1)
+        .single();
+
+      if (settings) {
         set({ 
-          isBogoActive: data.skin_is_active,
-          offerExpiresAt: data.skin_expires_at ? new Date(data.skin_expires_at).getTime() : get().offerExpiresAt
+          isBogoActive: settings.skin_is_active,
+          currency: settings.skin_currency,
+          offerExpiresAt: settings.skin_expires_at ? new Date(settings.skin_expires_at).getTime() : get().offerExpiresAt
+        });
+      }
+
+      if (products) {
+        set({
+          product: {
+            id: products.skin_id,
+            name: products.skin_name,
+            price: Number(products.skin_price),
+            originalPrice: Number(products.skin_original_price),
+            image: products.skin_image_url,
+            stockCount: products.skin_stock_count
+          },
+          stockLeft: products.skin_stock_count
         });
       }
     } catch (err) {
-      console.error('Error fetching campaign settings:', err);
+      console.error('Error fetching data:', err);
     }
   },
 
@@ -69,6 +107,44 @@ export const useStore = create<State>((set, get) => ({
       }
     } catch (err) {
       console.error('Error updating BOGO status:', err);
+    }
+  },
+
+  updateCurrency: async (currency) => {
+    try {
+      const { error } = await supabase
+        .from('skin_campaign_settings')
+        .update({ skin_currency: currency, skin_updated_at: new Date().toISOString() })
+        .eq('skin_id', 'bogo_campaign');
+      
+      if (!error) {
+        set({ currency });
+      }
+    } catch (err) {
+      console.error('Error updating currency:', err);
+    }
+  },
+
+  updateProduct: async (updates) => {
+    const product = get().product;
+    if (!product) return;
+
+    try {
+      const { error } = await supabase
+        .from('skin_products')
+        .update({
+          skin_name: updates.name ?? product.name,
+          skin_price: updates.price ?? product.price,
+          skin_original_price: updates.originalPrice ?? product.originalPrice,
+          skin_stock_count: updates.stockCount ?? product.stockCount
+        })
+        .eq('skin_id', product.id);
+      
+      if (!error) {
+        set({ product: { ...product, ...updates } });
+      }
+    } catch (err) {
+      console.error('Error updating product:', err);
     }
   },
   

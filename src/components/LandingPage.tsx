@@ -4,7 +4,6 @@ import { Hero } from './Hero';
 import { ProductSection } from './ProductSection';
 import { CartDrawer } from './CartDrawer';
 import { MarketingPopups } from './MarketingPopups';
-import { AdminPanel } from './AdminPanel';
 import { useStore } from '../store/useStore';
 import { Star, ShieldCheck, Truck, RefreshCw, ShoppingCart } from 'lucide-react';
 
@@ -126,7 +125,6 @@ export const LandingPage: React.FC = () => {
 
       <CartDrawer />
       <MarketingPopups />
-      <AdminPanel />
     </div>
   );
 };

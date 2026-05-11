@@ -5,7 +5,7 @@ import { useStore } from '../store/useStore';
 import { Link } from 'react-router-dom';
 
 export const CartDrawer: React.FC = () => {
-  const { cart, isCartOpen, toggleCart, updateQuantity, removeFromCart } = useStore();
+  const { cart, isCartOpen, toggleCart, updateQuantity, removeFromCart, currency } = useStore();
 
   const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   const originalTotal = cart.reduce((acc, item) => acc + (item.originalPrice * item.quantity), 0);
@@ -44,7 +44,7 @@ export const CartDrawer: React.FC = () => {
             {/* Savings Highlight */}
             {totalSavings > 0 && (
               <div style={{ background: 'var(--success-green)', color: 'white', padding: '12px', textAlign: 'center', fontSize: '14px', fontWeight: 'bold' }}>
-                🎉 YOU UNLOCKED A FREE PRODUCT! SAVED ${totalSavings.toFixed(2)}
+                🎉 YOU UNLOCKED A FREE PRODUCT! SAVED {currency}{totalSavings.toFixed(2)}
               </div>
             )}
 
@@ -67,10 +67,10 @@ export const CartDrawer: React.FC = () => {
                         
                         {item.isFree ? (
                           <div style={{ color: 'var(--success-green)', fontWeight: 'bold', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            FREE <span style={{ textDecoration: 'line-through', color: '#ccc', fontWeight: 'normal', fontSize: '12px' }}>$25.00</span>
+                            FREE <span style={{ textDecoration: 'line-through', color: '#ccc', fontWeight: 'normal', fontSize: '12px' }}>{currency}25.00</span>
                           </div>
                         ) : (
-                          <div style={{ fontWeight: 'bold' }}>${item.price.toFixed(2)}</div>
+                          <div style={{ fontWeight: 'bold' }}>{currency}{item.price.toFixed(2)}</div>
                         )}
 
                         {!item.isFree && (
@@ -100,11 +100,11 @@ export const CartDrawer: React.FC = () => {
             <div style={{ padding: '24px', borderTop: '1px solid #eee', background: 'var(--secondary-ivory)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: 'var(--text-muted)' }}>
                 <span>Subtotal</span>
-                <span>${subtotal.toFixed(2)}</span>
+                <span>{currency}{subtotal.toFixed(2)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', fontSize: '20px', fontWeight: 'bold' }}>
                 <span>Total</span>
-                <span>${subtotal.toFixed(2)}</span>
+                <span>{currency}{subtotal.toFixed(2)}</span>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

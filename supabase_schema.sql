@@ -14,6 +14,7 @@ CREATE TABLE skin_campaign_settings (
   skin_id TEXT PRIMARY KEY, -- Use 'bogo_campaign' as id
   skin_is_active BOOLEAN DEFAULT TRUE,
   skin_expires_at TIMESTAMPTZ,
+  skin_currency TEXT DEFAULT '$',
   skin_updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
