@@ -6,6 +6,7 @@ import { TrackOrderPage } from './components/TrackOrderPage';
 import { AdminPage } from './components/AdminPage';
 import { AuthPage } from './components/AuthPage';
 import { AccountPage } from './components/AccountPage';
+import { OrdersPage } from './components/OrdersPage';
 
 import { OrderSuccessPage } from './components/OrderSuccessPage';
 import { UPIPaymentPage } from './components/UPIPaymentPage';
@@ -32,6 +33,7 @@ const App: React.FC = () => {
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/login" element={<AuthPage />} />
         <Route path="/account" element={<AccountPage />} />
+        <Route path="/orders" element={<OrdersPage />} />
         <Route path="/order-success" element={<OrderSuccessPage />} />
         <Route path="/privacy-policy" element={<PolicyPage title="Privacy Policy" type="privacy" />} />
         <Route path="/shipping-policy" element={<PolicyPage title="Shipping Policy" type="shipping" />} />

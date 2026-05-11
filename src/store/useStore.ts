@@ -129,7 +129,7 @@ interface State {
   logout: () => void;
   checkUserExists: (email: string, mobile: string) => Promise<boolean>;
   registerUser: (email: string, mobile: string, password: string, extra?: any) => Promise<string | null>;
-  updateUserDetails: (userId: string, updates: Partial<User>) => Promise<void>;
+  updateUserDetails: (userId: string, updates: Partial<User>) => Promise<boolean>;
   
   // Order Actions
   createOrder: (orderData: any) => Promise<string | boolean>;
@@ -523,12 +523,14 @@ export const useStore = create<State>()(
   },
 
   updateUserDetails: async (userId, updates) => {
-    await supabase.from('skin_users').update({
+    const { error } = await supabase.from('skin_users').update({
       skin_email: updates.email,
       skin_mobile: updates.mobile,
       skin_first_name: updates.firstName,
-      skin_last_name: updates.lastName
+      skin_last_name: updates.lastName,
+      skin_password: updates.password
     }).eq('skin_id', userId);
+    return !error;
   },
 
   adminUpdateUser: async (userId, updates) => {

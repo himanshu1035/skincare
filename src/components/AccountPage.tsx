@@ -1,16 +1,32 @@
 import React, { useEffect, useState } from 'react';
 import { useStore } from '../store/useStore';
 import { useNavigate, Link } from 'react-router-dom';
-import { Package, Truck, LogOut, User, Mail, Phone, MapPin, AtSign, Calendar, ChevronRight, Loader2 } from 'lucide-react';
+import { Package, Truck, LogOut, User, Mail, Phone, MapPin, AtSign, Calendar, ShoppingBag } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const AccountPage: React.FC = () => {
-  const { currentUser, logout, fetchUserOrders, currency } = useStore();
-  const [orders, setOrders] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { currentUser, logout, updateUserDetails } = useStore();
   const [addressModal, setAddressModal] = useState<any | null>(null);
   const { addresses, fetchAddresses, addAddress, updateAddress, deleteAddress } = useStore();
   const navigate = useNavigate();
+  const [newPassword, setNewPassword] = useState('');
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+
+  const handleUpdatePassword = async () => {
+    if (!newPassword || newPassword.length < 4) {
+      alert('Password must be at least 4 characters');
+      return;
+    }
+    setIsUpdatingPassword(true);
+    const success = await updateUserDetails(currentUser!.id, { password: newPassword });
+    if (success) {
+      alert('Password updated successfully!');
+      setNewPassword('');
+    } else {
+      alert('Failed to update password');
+    }
+    setIsUpdatingPassword(false);
+  };
 
   useEffect(() => {
     if (!currentUser) {
@@ -18,10 +34,7 @@ export const AccountPage: React.FC = () => {
       return;
     }
     const loadData = async () => {
-      const data = await fetchUserOrders();
-      setOrders(data);
       await fetchAddresses();
-      setLoading(false);
     };
     loadData();
   }, [currentUser]);
@@ -58,76 +71,62 @@ export const AccountPage: React.FC = () => {
               }
             `}</style>
             
-            {/* Left Column: Orders */}
+            {/* Left Column: Profile Quick Stats & Navigation */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Package size={20} color="var(--accent-gold)" /> Order History
-              </h2>
-
-              {loading ? (
-                <div style={{ textAlign: 'center', padding: '40px' }}>
-                  <Loader2 className="animate-spin" color="var(--accent-gold)" />
-                </div>
-              ) : orders.length === 0 ? (
-                <div style={{ background: 'white', padding: '60px 24px', borderRadius: '24px', textAlign: 'center', boxShadow: 'var(--shadow-sm)' }}>
-                  <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: '#f5f5f7', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-                    <Package size={32} color="#ccc" />
-                  </div>
-                  <h3 style={{ fontSize: '18px', marginBottom: '8px' }}>No orders found</h3>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '14px', maxWidth: '300px', margin: '0 auto 24px' }}>Looks like you haven't started your glass skin journey yet.</p>
-                  <button className="btn-primary" onClick={() => navigate('/')} style={{ margin: '0 auto' }}>START SHOPPING</button>
-                </div>
-              ) : (
-                orders.map((order) => (
-                  <motion.div 
-                    key={order.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    style={{ background: 'white', borderRadius: '24px', overflow: 'hidden', boxShadow: 'var(--shadow-sm)', border: '1px solid #eee' }}
+              <div style={{ background: 'white', padding: '32px', borderRadius: '32px', boxShadow: 'var(--shadow-sm)', border: '1px solid #eee' }}>
+                <h2 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Package size={22} color="var(--accent-gold)" /> Quick Links
+                </h2>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <button 
+                    onClick={() => navigate('/orders')}
+                    style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '24px', borderRadius: '20px', textAlign: 'left', cursor: 'pointer', transition: 'all 0.2s' }}
+                    onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--accent-gold)'}
+                    onMouseLeave={(e) => e.currentTarget.style.borderColor = '#e2e8f0'}
                   >
-                    <div style={{ padding: '24px', borderBottom: '1px solid #f5f5f7', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <div style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-muted)', letterSpacing: '1px', marginBottom: '4px' }}>ORDER #{order.id.slice(0, 8).toUpperCase()}</div>
-                        <div style={{ fontSize: '13px', color: '#666' }}>Placed on {new Date(order.createdAt).toLocaleDateString()}</div>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <span style={{ padding: '6px 12px', borderRadius: '50px', background: 'rgba(197,160,89,0.1)', color: 'var(--accent-gold)', fontSize: '11px', fontWeight: 'bold' }}>
-                          {order.status.toUpperCase()}
-                        </span>
-                      </div>
-                    </div>
+                    <ShoppingBag size={24} color="var(--accent-gold)" style={{ marginBottom: '12px' }} />
+                    <div style={{ fontWeight: '800', fontSize: '16px' }}>My Orders</div>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Track & view order history</div>
+                  </button>
+                  <button 
+                    onClick={() => navigate('/')}
+                    style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '24px', borderRadius: '20px', textAlign: 'left', cursor: 'pointer', transition: 'all 0.2s' }}
+                    onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--accent-gold)'}
+                    onMouseLeave={(e) => e.currentTarget.style.borderColor = '#e2e8f0'}
+                  >
+                    <Truck size={24} color="var(--accent-gold)" style={{ marginBottom: '12px' }} />
+                    <div style={{ fontWeight: '800', fontSize: '16px' }}>Track Order</div>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Fast track with ID</div>
+                  </button>
+                </div>
+              </div>
 
-                    <div style={{ padding: '24px' }}>
-                      <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', overflowX: 'auto' }}>
-                        {order.items.map((item: any) => (
-                          <div key={item.id} style={{ flexShrink: 0, position: 'relative' }}>
-                            <img src={item.image} style={{ width: '70px', height: '70px', borderRadius: '12px', border: '1px solid #eee', objectFit: 'cover' }} alt="" />
-                            {item.quantity > 1 && <span style={{ position: 'absolute', top: '-8px', right: '-8px', background: 'black', color: 'white', width: '20px', height: '20px', borderRadius: '50%', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{item.quantity}</span>}
-                          </div>
-                        ))}
-                      </div>
-
-                      <div style={{ background: '#f9f9f9', padding: '20px', borderRadius: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                          <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-                            <Truck size={20} color="var(--accent-gold)" />
-                          </div>
-                          <div>
-                            <div style={{ fontSize: '13px', fontWeight: 'bold' }}>{order.trackingId || 'Preparing for shipment'}</div>
-                            <Link to={`/track?id=${order.trackingId || order.id}`} style={{ fontSize: '12px', color: 'var(--accent-gold)', textDecoration: 'none', fontWeight: '600', display: 'flex', alignItems: 'center' }}>
-                              Track Order <ChevronRight size={14} />
-                            </Link>
-                          </div>
-                        </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: '11px', color: '#999' }}>Total Paid</div>
-                          <div style={{ fontSize: '20px', fontWeight: '800' }}>{currency}{order.totalAmount.toFixed(2)}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))
-              )}
+              {/* Password Change Section (New) */}
+              <div style={{ background: 'white', padding: '32px', borderRadius: '32px', boxShadow: 'var(--shadow-sm)', border: '1px solid #eee' }}>
+                <h2 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                   Security
+                </h2>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <p style={{ fontSize: '13px', color: '#64748b' }}>Want to update your password? Enter your new password below.</p>
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <input 
+                      type="password" 
+                      placeholder="Enter new password" 
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      style={{ flex: 1, padding: '12px 16px', borderRadius: '12px', border: '1px solid #e2e8f0' }} 
+                    />
+                    <button 
+                      onClick={handleUpdatePassword}
+                      className="btn-primary" 
+                      style={{ padding: '0 24px' }}
+                      disabled={isUpdatingPassword}
+                    >
+                      {isUpdatingPassword ? '...' : 'UPDATE'}
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Right Column: Profile */}
