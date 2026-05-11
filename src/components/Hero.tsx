@@ -4,7 +4,7 @@ import { ShoppingCart, Star, CheckCircle2, TrendingUp, Loader2 } from 'lucide-re
 import { useStore } from '../store/useStore';
 
 export const Hero: React.FC = () => {
-  const { addToCart, stockLeft, currency, product, isBogoActive, isLoading } = useStore();
+  const { addToCart, stockLeft, currency, product, isBogoActive, isLoading, settings } = useStore();
 
   // If we are loading and have NO product yet, show spinner
   if (isLoading && !product) {
@@ -85,9 +85,18 @@ export const Hero: React.FC = () => {
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
               <div style={{ display: 'flex' }}>
-                {[1,2,3,4,5].map(i => <Star key={i} size={16} fill="var(--accent-gold)" color="var(--accent-gold)" />)}
+                {[1,2,3,4,5].map(i => (
+                  <Star 
+                    key={i} 
+                    size={16} 
+                    fill={i <= Math.round(Number(settings.displayRating || 4.9)) ? "var(--accent-gold)" : "none"} 
+                    color="var(--accent-gold)" 
+                  />
+                ))}
               </div>
-              <span style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: '500' }}>4.9/5 (12.4k Reviews)</span>
+              <span style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: '500' }}>
+                {settings.displayRating || '4.9'}/5 ({settings.displayReviewCount || '12.4k'} Reviews)
+              </span>
             </div>
 
             <h1 className="hero-title" style={{ fontSize: '48px', lineHeight: '1.1', marginBottom: '20px' }}>

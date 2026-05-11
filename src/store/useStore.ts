@@ -24,6 +24,13 @@ interface User {
   id: string;
   email: string;
   mobile: string;
+  firstName?: string;
+  lastName?: string;
+  address?: string;
+  landmark?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
 }
 
 interface Order {
@@ -297,7 +304,18 @@ export const useStore = create<State>((set, get) => ({
   login: async (email, password) => {
     const { data } = await supabase.from('skin_users').select('*').eq('skin_email', email).eq('skin_password', password).maybeSingle();
     if (data) {
-      set({ currentUser: { id: data.skin_id, email: data.skin_email, mobile: data.skin_mobile } });
+      set({ currentUser: { 
+        id: data.skin_id, 
+        email: data.skin_email, 
+        mobile: data.skin_mobile,
+        firstName: data.skin_first_name,
+        lastName: data.skin_last_name,
+        address: data.skin_address,
+        landmark: data.skin_landmark,
+        city: data.skin_city,
+        state: data.skin_state,
+        zip: data.skin_zip
+      } });
       return true;
     }
     return false;
@@ -350,6 +368,26 @@ export const useStore = create<State>((set, get) => ({
       skin_user_id: orderData.userId || store.currentUser?.id || null,
       skin_tracking_id: randomTrackingId
     });
+
+    // Save/Update address to user profile if logged in
+    if (!error && (orderData.userId || store.currentUser?.id)) {
+      const uid = orderData.userId || store.currentUser?.id;
+      await supabase.from('skin_users').update({
+        skin_first_name: orderData.firstName,
+        skin_last_name: orderData.lastName,
+        skin_address: orderData.address,
+        skin_landmark: orderData.landmark,
+        skin_city: orderData.city,
+        skin_state: orderData.state,
+        skin_zip: orderData.zip
+      }).eq('skin_id', uid);
+      
+      // Update local state too
+      if (store.currentUser && store.currentUser.id === uid) {
+        set({ currentUser: { ...store.currentUser, ...orderData } });
+      }
+    }
+
     if (!error) { store.clearCart(); return true; }
     return false;
   },
@@ -403,7 +441,13 @@ export const useStore = create<State>((set, get) => ({
 
   fetchAllUsers: async () => {
     const { data } = await supabase.from('skin_users').select('*').order('skin_created_at', { ascending: false });
-    return (data || []).map(u => ({ id: u.skin_id, email: u.skin_email, mobile: u.skin_mobile }));
+    return (data || []).map(u => ({ 
+      id: u.skin_id, 
+      email: u.skin_email, 
+      mobile: u.skin_mobile,
+      firstName: u.skin_first_name,
+      lastName: u.skin_last_name
+    }));
   },
 
   updateOrderStatus: async (orderId, status, trackingId) => {
@@ -413,7 +457,9 @@ export const useStore = create<State>((set, get) => ({
   updateUserDetails: async (userId, updates) => {
     await supabase.from('skin_users').update({
       skin_email: updates.email,
-      skin_mobile: updates.mobile
+      skin_mobile: updates.mobile,
+      skin_first_name: updates.firstName,
+      skin_last_name: updates.lastName
     }).eq('skin_id', userId);
   }
 }));

@@ -1,15 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '../store/useStore';
-import { BarChart3, ToggleLeft, ToggleRight, LogOut, Package, Settings, RefreshCw, Users, ShoppingCart, Edit2, Check, X, CreditCard, Truck, DollarSign, MapPin, Phone, Mail, Star, Trash2, Plus } from 'lucide-react';
-
-const CURRENCIES = [
-  { label: 'US Dollar ($)', value: '$' },
-  { label: 'Euro (€)', value: '€' },
-  { label: 'Indian Rupee (₹)', value: '₹' },
-  { label: 'British Pound (£)', value: '£' },
-  { label: 'UAE Dirham (AED)', value: 'AED ' },
-  { label: 'Australian Dollar (A$)', value: 'A$' }
-];
+import { ToggleLeft, ToggleRight, LogOut, Package, Settings, Users, ShoppingCart, Edit2, Check, X, CreditCard, Truck, DollarSign, MapPin, Phone, Mail, Star, Trash2, Plus, User as UserIcon } from 'lucide-react';
 
 const ORDER_STATUSES = [
   "Processing",
@@ -23,7 +14,7 @@ const ORDER_STATUSES = [
 
 export const AdminPage: React.FC = () => {
   const { 
-    isBogoActive, setBogoActive, currency, updateCurrency, 
+    isBogoActive, setBogoActive, currency, 
     product, updateProduct, fetchData, 
     fetchAllOrders, fetchAllUsers, updateOrderStatus, updateUserDetails,
     settings, updateSettings,
@@ -33,14 +24,7 @@ export const AdminPage: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [tab, setTab] = useState<'settings' | 'orders' | 'users' | 'payment' | 'reviews'>('settings');
-
-  // Local Form States
-  const [price, setPrice] = useState(0);
-  const [origPrice, setOrigPrice] = useState(0);
-  const [codCharge, setCodCharge] = useState(0);
-  const [prepayDiscount, setPrepayDiscount] = useState(0);
-  const [deliveryCharge, setDeliveryCharge] = useState(0);
+  const [tab, setTab] = useState<'payment' | 'orders' | 'users' | 'reviews'>('payment');
 
   // Review Create State
   const [newReview, setNewReview] = useState({ userName: '', rating: 5, comment: '' });
@@ -49,8 +33,7 @@ export const AdminPage: React.FC = () => {
   const [editingOrder, setEditingOrder] = useState<string | null>(null);
   const [editOrderData, setEditOrderData] = useState<any>(null);
   const [editingUser, setEditingUser] = useState<string | null>(null);
-  const [editEmail, setEditEmail] = useState('');
-  const [editMobile, setEditMobile] = useState('');
+  const [editUserData, setEditUserData] = useState<any>(null);
   const [editingReview, setEditingReview] = useState<string | null>(null);
   const [editReviewData, setEditReviewData] = useState<any>(null);
 
@@ -58,8 +41,6 @@ export const AdminPage: React.FC = () => {
   const [orders, setOrders] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   
-  const hasLoadedInitially = useRef(false);
-
   useEffect(() => {
     const init = async () => {
       await fetchData();
@@ -70,61 +51,44 @@ export const AdminPage: React.FC = () => {
     init();
   }, [tab]);
 
-  useEffect(() => {
-    if ((product || settings) && !hasLoadedInitially.current) {
-      if (product) {
-        setPrice(product.price);
-        setOrigPrice(product.originalPrice);
-      }
-      if (settings) {
-        setCodCharge(settings.codCharge);
-        setPrepayDiscount(settings.prepayDiscount);
-        setDeliveryCharge(settings.deliveryCharge);
-      }
-      hasLoadedInitially.current = true;
-    }
-  }, [product, settings]);
-
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (username === 'admin' && password === 'admin') setIsAuthenticated(true);
     else alert('Invalid credentials');
   };
 
-  const handleSaveProduct = async () => {
-    const success = await updateProduct({ price, originalPrice: origPrice });
-    if (success) alert('Product updated successfully!');
+  const saveTimeoutRef = useRef<any>(null);
+
+  // Auto-save logic with Debounce
+  const autoSaveProduct = (updates: any) => {
+    // Update local store immediately for UI responsiveness
+    const state = useStore.getState();
+    useStore.setState({ product: state.product ? { ...state.product, ...updates } : null });
+    
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(() => {
+      updateProduct(updates);
+    }, 1000);
   };
 
-  const handleSaveSettings = async (updates: any) => {
-    const success = await updateSettings(updates);
-    if (success) alert('Settings saved successfully!');
+  const autoSaveSettings = (updates: any) => {
+    // Update local store immediately
+    const state = useStore.getState();
+    useStore.setState({ settings: { ...state.settings, ...updates } });
+
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(() => {
+      updateSettings(updates);
+    }, 1000);
+  };
+  const autoSaveUser = async (id: string, updates: any) => {
+    await updateUserDetails(id, updates);
+    setUsers(await fetchAllUsers());
   };
 
   const handleCreateReview = async () => {
     await addReview(newReview);
-    alert('Review created successfully!');
     setNewReview({ userName: '', rating: 5, comment: '' });
-  };
-
-  const handleUpdateReview = async () => {
-    await adminUpdateReview(editReviewData.id, editReviewData);
-    alert('Review updated!');
-    setEditingReview(null);
-  };
-
-  const handleUpdateOrder = async () => {
-    await updateOrderStatus(editOrderData.id, editOrderData.status, editOrderData.trackingId);
-    alert('Order updated!');
-    setEditingOrder(null);
-    setOrders(await fetchAllOrders());
-  };
-
-  const handleUpdateUser = async (id: string) => {
-    await updateUserDetails(id, { email: editEmail, mobile: editMobile });
-    alert('User details updated!');
-    setEditingUser(null);
-    setUsers(await fetchAllUsers());
   };
 
   if (!isAuthenticated) {
@@ -150,11 +114,8 @@ export const AdminPage: React.FC = () => {
           <Settings size={28} /> SKIN ADMIN
         </div>
         
-        <button onClick={() => setTab('settings')} style={{ background: tab === 'settings' ? 'rgba(255,255,255,0.1)' : 'none', color: 'white', padding: '16px', borderRadius: '12px', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <BarChart3 size={20} /> Store Settings
-        </button>
         <button onClick={() => setTab('payment')} style={{ background: tab === 'payment' ? 'rgba(255,255,255,0.1)' : 'none', color: 'white', padding: '16px', borderRadius: '12px', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <CreditCard size={20} /> Payment & Delivery
+          <CreditCard size={20} /> Payment & Pricing
         </button>
         <button onClick={() => setTab('orders')} style={{ background: tab === 'orders' ? 'rgba(255,255,255,0.1)' : 'none', color: 'white', padding: '16px', borderRadius: '12px', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '12px' }}>
           <ShoppingCart size={20} /> Manage Orders
@@ -174,132 +135,126 @@ export const AdminPage: React.FC = () => {
       </aside>
 
       <main style={{ flex: 1, padding: '40px', overflowY: 'auto' }}>
-        {tab === 'settings' && (
-          <div style={{ maxWidth: '900px' }}>
-            <h1 style={{ fontSize: '32px', marginBottom: '32px' }}>Store Settings</h1>
+        {tab === 'payment' && product && (
+          <div style={{ maxWidth: '1000px' }}>
+            <h1 style={{ fontSize: '32px', marginBottom: '32px' }}>Payment & Pricing Overhaul</h1>
+            
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+              {/* Product Pricing */}
               <div style={{ background: 'white', padding: '32px', borderRadius: '20px', boxShadow: 'var(--shadow-sm)' }}>
-                <h3 style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}><Package color="var(--accent-gold)" /> Product Control</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <label style={{ fontSize: '14px' }}>Sale Price ({currency})</label>
-                  <input type="number" value={price} onChange={(e) => setPrice(Number(e.target.value))} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
-                  <label style={{ fontSize: '14px' }}>Original Price ({currency})</label>
-                  <input type="number" value={origPrice} onChange={(e) => setOrigPrice(Number(e.target.value))} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
-                  <button onClick={handleSaveProduct} className="btn-primary" style={{ justifyContent: 'center' }}>SAVE CHANGES</button>
-                </div>
-              </div>
-
-              <div style={{ background: 'white', padding: '32px', borderRadius: '20px', boxShadow: 'var(--shadow-sm)' }}>
-                <h3 style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}><RefreshCw color="var(--accent-gold)" /> Campaign & Currency</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <h3 style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}><Package color="var(--accent-gold)" /> <DollarSign color="var(--accent-gold)" size={20} /> Product Prices</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#999' }}>Offer Price ({currency})</label>
+                    <input type="number" value={product.price} onChange={(e) => autoSaveProduct({ price: Number(e.target.value) })} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#999' }}>Actual Price ({currency})</label>
+                    <input type="number" value={product.originalPrice} onChange={(e) => autoSaveProduct({ originalPrice: Number(e.target.value) })} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
+                  </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: '#f9f9f9', borderRadius: '12px' }}>
-                    <span>BOGO Campaign</span>
+                    <span>BOGO Campaign Active</span>
                     <button onClick={() => setBogoActive(!isBogoActive)} style={{ background: 'none', color: isBogoActive ? 'var(--success-green)' : '#ccc' }}>
                       {isBogoActive ? <ToggleRight size={40} /> : <ToggleLeft size={40} />}
                     </button>
                   </div>
-                  <label style={{ fontSize: '14px' }}>Store Currency</label>
-                  <select value={currency} onChange={(e) => updateCurrency(e.target.value)} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #eee' }}>
-                    {CURRENCIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-                  </select>
                 </div>
               </div>
-            </div>
-          </div>
-        )}
 
-        {tab === 'payment' && (
-          <div style={{ maxWidth: '900px' }}>
-            <h1 style={{ fontSize: '32px', marginBottom: '32px' }}>Payment & Delivery</h1>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+              {/* Delivery & Discounts */}
               <div style={{ background: 'white', padding: '32px', borderRadius: '20px', boxShadow: 'var(--shadow-sm)' }}>
-                <h3 style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}><Truck color="var(--accent-gold)" /> Delivery Settings</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <label style={{ fontSize: '14px' }}>Standard Delivery Charge ({currency})</label>
-                  <input type="number" value={deliveryCharge} onChange={(e) => setDeliveryCharge(Number(e.target.value))} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
-                  
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: '#f9f9f9', borderRadius: '12px', marginTop: '10px' }}>
-                    <div>
-                      <div style={{ fontWeight: 'bold', fontSize: '14px' }}>Pay Delivery First?</div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Customer pays delivery charge before COD</div>
-                    </div>
-                    <button onClick={() => updateSettings({ payDeliveryFirst: !settings.payDeliveryFirst })} style={{ background: 'none', color: settings.payDeliveryFirst ? 'var(--success-green)' : '#ccc' }}>
-                      {settings.payDeliveryFirst ? <ToggleRight size={40} /> : <ToggleLeft size={40} />}
-                    </button>
+                <h3 style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}><Truck color="var(--accent-gold)" /> Delivery & Online Rules</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#999' }}>Standard Delivery Charge ({currency})</label>
+                    <input type="number" value={settings.deliveryCharge} onChange={(e) => autoSaveSettings({ deliveryCharge: Number(e.target.value) })} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
                   </div>
-                  <button onClick={() => handleSaveSettings({ deliveryCharge })} className="btn-primary" style={{ justifyContent: 'center' }}>SAVE DELIVERY</button>
-                </div>
-              </div>
-
-              <div style={{ background: 'white', padding: '32px', borderRadius: '20px', boxShadow: 'var(--shadow-sm)' }}>
-                <h3 style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}><DollarSign color="var(--accent-gold)" /> Payment Rules</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <label style={{ fontSize: '14px' }}>COD Extra Charge ({currency})</label>
-                  <input type="number" value={codCharge} onChange={(e) => setCodCharge(Number(e.target.value))} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
-                  
-                  <label style={{ fontSize: '14px' }}>Prepayment Discount ({currency})</label>
-                  <input type="number" value={prepayDiscount} onChange={(e) => setPrepayDiscount(Number(e.target.value))} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
-                  
-                  <button onClick={() => handleSaveSettings({ codCharge, prepayDiscount })} className="btn-primary" style={{ justifyContent: 'center', marginTop: '10px' }}>SAVE RULES</button>
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#999' }}>COD Extra Charge ({currency})</label>
+                    <input type="number" value={settings.codCharge} onChange={(e) => autoSaveSettings({ codCharge: Number(e.target.value) })} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#999' }}>Online Payment Discount ({currency})</label>
+                    <input type="number" value={settings.prepayDiscount} onChange={(e) => autoSaveSettings({ prepayDiscount: Number(e.target.value) })} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
+                  </div>
                 </div>
               </div>
             </div>
+            <div style={{ marginTop: '24px', textAlign: 'center', color: 'var(--success-green)', fontSize: '12px' }}>✓ All changes are auto-saved in real-time.</div>
           </div>
         )}
 
-        {tab === 'orders' && (
-          <div>
-            <h1 style={{ fontSize: '32px', marginBottom: '32px' }}>Manage Orders</h1>
+        {tab === 'reviews' && (
+          <div style={{ maxWidth: '1000px' }}>
+            <h1 style={{ fontSize: '32px', marginBottom: '32px' }}>Manage Reviews</h1>
+            
+            {/* Review Stats Manipulation */}
+            <div style={{ background: 'white', padding: '32px', borderRadius: '20px', boxShadow: 'var(--shadow-sm)', marginBottom: '32px' }}>
+              <h3 style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}><Settings color="var(--accent-gold)" /> Global Social Proof Manipulation</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                <div>
+                  <label style={{ fontSize: '12px', color: '#999' }}>Manual Review Count (e.g. 15,000+)</label>
+                  <input type="text" value={settings.displayReviewCount} onChange={(e) => autoSaveSettings({ displayReviewCount: e.target.value })} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', color: '#999' }}>Manual Average Rating (e.g. 4.9)</label>
+                  <input type="text" value={settings.displayRating} onChange={(e) => autoSaveSettings({ displayRating: e.target.value })} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
+                </div>
+              </div>
+            </div>
+
+            {/* Create Review */}
+            <div style={{ background: 'white', padding: '32px', borderRadius: '20px', boxShadow: 'var(--shadow-sm)', marginBottom: '32px' }}>
+              <h3 style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}><Plus color="var(--accent-gold)" /> Add New Custom Review</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px 2fr auto', gap: '16px', alignItems: 'end' }}>
+                <input type="text" placeholder="Name" value={newReview.userName} onChange={(e) => setNewReview({ ...newReview, userName: e.target.value })} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
+                <select value={newReview.rating} onChange={(e) => setNewReview({ ...newReview, rating: Number(e.target.value) })} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #eee' }}>
+                  {[5,4,3,2,1].map(n => <option key={n} value={n}>{n} Stars</option>)}
+                </select>
+                <input type="text" placeholder="Comment" value={newReview.comment} onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
+                <button onClick={handleCreateReview} className="btn-primary" style={{ padding: '12px 24px' }}>ADD</button>
+              </div>
+            </div>
+
+            {/* Review List */}
             <div style={{ background: 'white', borderRadius: '20px', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                 <thead style={{ background: '#f9f9f9' }}>
                   <tr>
-                    <th style={{ padding: '20px' }}>Order Info</th>
-                    <th style={{ padding: '20px' }}>Shipping Details</th>
-                    <th style={{ padding: '20px' }}>Payment</th>
-                    <th style={{ padding: '20px' }}>Status & Tracking</th>
+                    <th style={{ padding: '20px' }}>User</th>
+                    <th style={{ padding: '20px' }}>Rating</th>
+                    <th style={{ padding: '20px' }}>Comment</th>
                     <th style={{ padding: '20px' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {orders.map(order => (
-                    <tr key={order.id} style={{ borderTop: '1px solid #eee' }}>
+                  {reviews.map(review => (
+                    <tr key={review.id} style={{ borderTop: '1px solid #eee' }}>
                       <td style={{ padding: '20px' }}>
-                        <div style={{ fontWeight: 'bold' }}>#{order.id.slice(0, 8).toUpperCase()}</div>
-                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{new Date(order.createdAt).toLocaleDateString()}</div>
+                        {editingReview === review.id ? (
+                          <input type="text" value={editReviewData.userName} onChange={(e) => setEditReviewData({ ...editReviewData, userName: e.target.value })} style={{ padding: '8px', borderRadius: '8px', border: '1px solid #eee' }} />
+                        ) : review.userName}
                       </td>
                       <td style={{ padding: '20px' }}>
-                        <div style={{ fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}><Users size={14} /> {order.firstName} {order.lastName}</div>
-                        <div style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px' }}><Phone size={14} /> {order.customerMobile}</div>
-                        <div style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px' }}><MapPin size={14} /> {order.city}, {order.state}</div>
+                        {editingReview === review.id ? (
+                          <select value={editReviewData.rating} onChange={(e) => setEditReviewData({ ...editReviewData, rating: Number(e.target.value) })} style={{ padding: '8px', borderRadius: '8px', border: '1px solid #eee' }}>
+                            {[1,2,3,4,5].map(n => <option key={n} value={n}>{n}</option>)}
+                          </select>
+                        ) : review.rating}
                       </td>
                       <td style={{ padding: '20px' }}>
-                        <div style={{ fontWeight: 'bold' }}>{currency}{order.totalAmount.toFixed(2)}</div>
-                        <span style={{ fontSize: '11px', fontWeight: 'bold', color: order.paymentMethod === 'Prepaid' ? 'var(--success-green)' : 'var(--accent-gold)' }}>{order.paymentMethod}</span>
+                        {editingReview === review.id ? (
+                          <input type="text" value={editReviewData.comment} onChange={(e) => setEditReviewData({ ...editReviewData, comment: e.target.value })} style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #eee' }} />
+                        ) : review.comment}
                       </td>
                       <td style={{ padding: '20px' }}>
-                        {editingOrder === order.id ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <select value={editOrderData.status} onChange={(e) => setEditOrderData({ ...editOrderData, status: e.target.value })} style={{ padding: '8px', borderRadius: '8px', border: '1px solid #eee' }}>
-                              {ORDER_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                            </select>
-                            <input type="text" value={editOrderData.trackingId} onChange={(e) => setEditOrderData({ ...editOrderData, trackingId: e.target.value })} placeholder="Tracking ID" style={{ padding: '8px', borderRadius: '8px', border: '1px solid #eee' }} />
-                          </div>
+                        {editingReview === review.id ? (
+                          <button onClick={() => { adminUpdateReview(review.id, editReviewData); setEditingReview(null); }} style={{ background: 'var(--success-green)', color: 'white', padding: '8px', borderRadius: '8px' }}><Check size={16} /></button>
                         ) : (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <span style={{ padding: '4px 10px', borderRadius: '50px', background: 'rgba(197,160,89,0.1)', color: 'var(--accent-gold)', fontSize: '11px', fontWeight: 'bold', width: 'fit-content' }}>{order.status}</span>
-                            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{order.trackingId || 'No tracking ID'}</div>
+                          <div style={{ display: 'flex', gap: '12px' }}>
+                            <button onClick={() => { setEditingReview(review.id); setEditReviewData(review); }} style={{ color: 'var(--accent-gold)' }}><Edit2 size={18} /></button>
+                            <button onClick={() => adminDeleteReview(review.id)} style={{ color: '#ff4d4d' }}><Trash2 size={18} /></button>
                           </div>
-                        )}
-                      </td>
-                      <td style={{ padding: '20px' }}>
-                        {editingOrder === order.id ? (
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            <button onClick={handleUpdateOrder} style={{ background: 'var(--success-green)', color: 'white', padding: '8px', borderRadius: '8px' }}><Check size={16} /></button>
-                            <button onClick={() => setEditingOrder(null)} style={{ background: '#eee', padding: '8px', borderRadius: '8px' }}><X size={16} /></button>
-                          </div>
-                        ) : (
-                          <button onClick={() => { setEditingOrder(order.id); setEditOrderData(order); }} style={{ background: 'none', color: 'var(--accent-gold)' }}><Edit2 size={18} /></button>
                         )}
                       </td>
                     </tr>
@@ -326,18 +281,15 @@ export const AdminPage: React.FC = () => {
                     <tr key={user.id} style={{ borderTop: '1px solid #eee' }}>
                       <td style={{ padding: '20px' }}>
                         {editingUser === user.id ? (
-                          <div style={{ display: 'flex', gap: '16px' }}>
-                            <div style={{ flex: 1 }}>
-                              <label style={{ fontSize: '11px', color: '#999' }}>Email</label>
-                              <input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
-                            </div>
-                            <div style={{ flex: 1 }}>
-                              <label style={{ fontSize: '11px', color: '#999' }}>Mobile</label>
-                              <input type="tel" value={editMobile} onChange={(e) => setEditMobile(e.target.value)} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
-                            </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                            <div><label style={{fontSize: '11px'}}>First Name</label><input type="text" value={editUserData.firstName} onChange={(e) => setEditUserData({ ...editUserData, firstName: e.target.value })} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} /></div>
+                            <div><label style={{fontSize: '11px'}}>Last Name</label><input type="text" value={editUserData.lastName} onChange={(e) => setEditUserData({ ...editUserData, lastName: e.target.value })} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} /></div>
+                            <div><label style={{fontSize: '11px'}}>Email</label><input type="email" value={editUserData.email} onChange={(e) => setEditUserData({ ...editUserData, email: e.target.value })} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} /></div>
+                            <div><label style={{fontSize: '11px'}}>Mobile</label><input type="tel" value={editUserData.mobile} onChange={(e) => setEditUserData({ ...editUserData, mobile: e.target.value })} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} /></div>
                           </div>
                         ) : (
-                          <div style={{ display: 'flex', gap: '32px' }}>
+                          <div style={{ display: 'flex', gap: '40px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: '200px' }}><UserIcon size={16} color="#999" /> <b>{user.firstName} {user.lastName}</b></div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}><Mail size={16} color="#999" /> {user.email}</div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}><Phone size={16} color="#999" /> {user.mobile}</div>
                           </div>
@@ -346,11 +298,11 @@ export const AdminPage: React.FC = () => {
                       <td style={{ padding: '20px' }}>
                         {editingUser === user.id ? (
                           <div style={{ display: 'flex', gap: '8px' }}>
-                            <button onClick={() => handleUpdateUser(user.id)} style={{ background: 'var(--success-green)', color: 'white', padding: '8px', borderRadius: '8px' }}><Check size={16} /></button>
+                            <button onClick={() => { autoSaveUser(user.id, editUserData); setEditingUser(null); }} style={{ background: 'var(--success-green)', color: 'white', padding: '8px', borderRadius: '8px' }}><Check size={16} /></button>
                             <button onClick={() => setEditingUser(null)} style={{ background: '#eee', padding: '8px', borderRadius: '8px' }}><X size={16} /></button>
                           </div>
                         ) : (
-                          <button onClick={() => { setEditingUser(user.id); setEditEmail(user.email); setEditMobile(user.mobile); }} style={{ background: 'none', color: 'var(--accent-gold)' }}><Edit2 size={18} /></button>
+                          <button onClick={() => { setEditingUser(user.id); setEditUserData(user); }} style={{ color: 'var(--accent-gold)' }}><Edit2 size={18} /></button>
                         )}
                       </td>
                     </tr>
@@ -361,115 +313,62 @@ export const AdminPage: React.FC = () => {
           </div>
         )}
 
-        {tab === 'reviews' && (
-          <div style={{ maxWidth: '1000px' }}>
-            <h1 style={{ fontSize: '32px', marginBottom: '32px' }}>Manage Reviews</h1>
-            
-            {/* Review Stats Manipulation */}
-            <div style={{ background: 'white', padding: '32px', borderRadius: '20px', boxShadow: 'var(--shadow-sm)', marginBottom: '32px' }}>
-              <h3 style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}><Settings color="var(--accent-gold)" /> Manipulation: Review Stats</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '24px', alignItems: 'end' }}>
-                <div>
-                  <label style={{ fontSize: '12px', color: '#999' }}>Display Review Count (e.g. 10,000+)</label>
-                  <input type="text" value={settings.displayReviewCount} onChange={(e) => updateSettings({ displayReviewCount: e.target.value })} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
-                </div>
-                <div>
-                  <label style={{ fontSize: '12px', color: '#999' }}>Display Average Rating (e.g. 4.9)</label>
-                  <input type="text" value={settings.displayRating} onChange={(e) => updateSettings({ displayRating: e.target.value })} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
-                </div>
-                <button onClick={() => alert('Stats updated globally!')} className="btn-primary" style={{ padding: '12px 24px' }}>UPDATE GLOBAL STATS</button>
-              </div>
-            </div>
-
-            {/* Create Review */}
-            <div style={{ background: 'white', padding: '32px', borderRadius: '20px', boxShadow: 'var(--shadow-sm)', marginBottom: '32px' }}>
-              <h3 style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}><Plus color="var(--accent-gold)" /> Create New Public Review</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px 2fr auto', gap: '16px', alignItems: 'end' }}>
-                <div>
-                  <label style={{ fontSize: '12px', color: '#999' }}>User Name</label>
-                  <input type="text" value={newReview.userName} onChange={(e) => setNewReview({ ...newReview, userName: e.target.value })} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
-                </div>
-                <div>
-                  <label style={{ fontSize: '12px', color: '#999' }}>Rating</label>
-                  <select value={newReview.rating} onChange={(e) => setNewReview({ ...newReview, rating: Number(e.target.value) })} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #eee' }}>
-                    <option value="5">5 Stars</option>
-                    <option value="4">4 Stars</option>
-                    <option value="3">3 Stars</option>
-                    <option value="2">2 Stars</option>
-                    <option value="1">1 Star</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={{ fontSize: '12px', color: '#999' }}>Comment</label>
-                  <input type="text" value={newReview.comment} onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #eee' }} />
-                </div>
-                <button onClick={handleCreateReview} className="btn-primary" style={{ padding: '12px 24px' }}>CREATE</button>
-              </div>
-            </div>
-
-            {/* List Reviews */}
+        {tab === 'orders' && (
+          <div>
+            <h1 style={{ fontSize: '32px', marginBottom: '32px' }}>Manage Orders</h1>
             <div style={{ background: 'white', borderRadius: '20px', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                 <thead style={{ background: '#f9f9f9' }}>
                   <tr>
-                    <th style={{ padding: '20px' }}>User</th>
-                    <th style={{ padding: '20px' }}>Rating</th>
-                    <th style={{ padding: '20px' }}>Comment</th>
-                    <th style={{ padding: '20px' }}>Visibility</th>
+                    <th style={{ padding: '20px' }}>Order Info</th>
+                    <th style={{ padding: '20px' }}>Shipping Details</th>
+                    <th style={{ padding: '20px' }}>Payment</th>
+                    <th style={{ padding: '20px' }}>Status & Tracking</th>
                     <th style={{ padding: '20px' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {reviews.map(review => (
-                    <tr key={review.id} style={{ borderTop: '1px solid #eee' }}>
+                  {orders.map(order => (
+                    <tr key={order.id} style={{ borderTop: '1px solid #eee' }}>
                       <td style={{ padding: '20px' }}>
-                        {editingReview === review.id ? (
-                          <input type="text" value={editReviewData.userName} onChange={(e) => setEditReviewData({ ...editReviewData, userName: e.target.value })} style={{ padding: '8px', borderRadius: '8px', border: '1px solid #eee' }} />
+                        <div style={{ fontWeight: 'bold' }}>#{order.id.slice(0, 8).toUpperCase()}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{new Date(order.createdAt).toLocaleDateString()}</div>
+                      </td>
+                      <td style={{ padding: '20px' }}>
+                        <div style={{ fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}><UserIcon size={14} /> {order.firstName} {order.lastName}</div>
+                        <div style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px' }}><Phone size={14} /> {order.customerMobile}</div>
+                        <div style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px' }}><MapPin size={14} /> {order.city}, {order.state}</div>
+                      </td>
+                      <td style={{ padding: '20px' }}>
+                        <div style={{ fontWeight: 'bold' }}>{currency}{order.totalAmount.toFixed(2)}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <CreditCard size={12} color="#666" />
+                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: order.paymentMethod === 'Prepaid' ? 'var(--success-green)' : 'var(--accent-gold)' }}>{order.paymentMethod}</span>
+                        </div>
+                      </td>
+                      <td style={{ padding: '20px' }}>
+                        {editingOrder === order.id ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <select value={editOrderData.status} onChange={(e) => setEditOrderData({ ...editOrderData, status: e.target.value })} style={{ padding: '8px', borderRadius: '8px', border: '1px solid #eee' }}>
+                              {ORDER_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                            <input type="text" value={editOrderData.trackingId} onChange={(e) => setEditOrderData({ ...editOrderData, trackingId: e.target.value })} placeholder="Tracking ID" style={{ padding: '8px', borderRadius: '8px', border: '1px solid #eee' }} />
+                          </div>
                         ) : (
-                          <div>
-                            <div style={{ fontWeight: 'bold' }}>{review.userName}</div>
-                            <div style={{ fontSize: '11px', color: '#999' }}>{review.userId ? 'Real Customer' : 'Admin Created'}</div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <span style={{ padding: '4px 10px', borderRadius: '50px', background: 'rgba(197,160,89,0.1)', color: 'var(--accent-gold)', fontSize: '11px', fontWeight: 'bold', width: 'fit-content' }}>{order.status}</span>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{order.trackingId || 'No tracking ID'}</div>
                           </div>
                         )}
                       </td>
                       <td style={{ padding: '20px' }}>
-                        {editingReview === review.id ? (
-                          <select value={editReviewData.rating} onChange={(e) => setEditReviewData({ ...editReviewData, rating: Number(e.target.value) })} style={{ padding: '8px', borderRadius: '8px', border: '1px solid #eee' }}>
-                            {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n} Stars</option>)}
-                          </select>
-                        ) : (
-                          <div style={{ display: 'flex', color: 'var(--accent-gold)' }}>
-                            {Array.from({ length: 5 }).map((_, i) => <Star key={i} size={14} fill={i < review.rating ? "currentColor" : "none"} />)}
-                          </div>
-                        )}
-                      </td>
-                      <td style={{ padding: '20px' }}>
-                        {editingReview === review.id ? (
-                          <input type="text" value={editReviewData.comment} onChange={(e) => setEditReviewData({ ...editReviewData, comment: e.target.value })} style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #eee' }} />
-                        ) : review.comment}
-                      </td>
-                      <td style={{ padding: '20px' }}>
-                        {editingReview === review.id ? (
-                          <button onClick={() => setEditReviewData({ ...editReviewData, isPublic: !editReviewData.isPublic })} style={{ background: 'none', color: editReviewData.isPublic ? 'var(--success-green)' : '#ccc' }}>
-                            {editReviewData.isPublic ? <ToggleRight size={32} /> : <ToggleLeft size={32} />}
-                          </button>
-                        ) : (
-                          <span style={{ padding: '4px 10px', borderRadius: '50px', background: review.isPublic ? 'rgba(76,175,80,0.1)' : 'rgba(153,153,153,0.1)', color: review.isPublic ? 'var(--success-green)' : '#999', fontSize: '11px', fontWeight: 'bold' }}>
-                            {review.isPublic ? 'Public' : 'Private (User Only)'}
-                          </span>
-                        )}
-                      </td>
-                      <td style={{ padding: '20px' }}>
-                        {editingReview === review.id ? (
+                        {editingOrder === order.id ? (
                           <div style={{ display: 'flex', gap: '8px' }}>
-                            <button onClick={handleUpdateReview} style={{ background: 'var(--success-green)', color: 'white', padding: '8px', borderRadius: '8px' }}><Check size={16} /></button>
-                            <button onClick={() => setEditingReview(null)} style={{ background: '#eee', padding: '8px', borderRadius: '8px' }}><X size={16} /></button>
+                            <button onClick={() => { updateOrderStatus(order.id, editOrderData.status, editOrderData.trackingId); setEditingOrder(null); fetchAllOrders().then(setOrders); }} style={{ background: 'var(--success-green)', color: 'white', padding: '8px', borderRadius: '8px' }}><Check size={16} /></button>
+                            <button onClick={() => setEditingOrder(null)} style={{ background: '#eee', padding: '8px', borderRadius: '8px' }}><X size={16} /></button>
                           </div>
                         ) : (
-                          <div style={{ display: 'flex', gap: '12px' }}>
-                            <button onClick={() => { setEditingReview(review.id); setEditReviewData(review); }} style={{ background: 'none', color: 'var(--accent-gold)' }}><Edit2 size={18} /></button>
-                            <button onClick={() => adminDeleteReview(review.id)} style={{ background: 'none', color: '#ff4d4d' }}><Trash2 size={18} /></button>
-                          </div>
+                          <button onClick={() => { setEditingOrder(order.id); setEditOrderData(order); }} style={{ color: 'var(--accent-gold)' }}><Edit2 size={18} /></button>
                         )}
                       </td>
                     </tr>

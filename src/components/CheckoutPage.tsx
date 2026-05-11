@@ -9,7 +9,7 @@ const STATES = [
 ];
 
 export const CheckoutPage: React.FC = () => {
-  const { cart, createOrder, currency, checkUserExists, registerUser, settings } = useStore();
+  const { cart, createOrder, currency, checkUserExists, registerUser, settings, currentUser } = useStore();
   const navigate = useNavigate();
   
   // Form States
@@ -23,6 +23,21 @@ export const CheckoutPage: React.FC = () => {
   const [zip, setZip] = useState('');
   const [mobile, setMobile] = useState('');
   const [password, setPassword] = useState('');
+
+  // Pre-fill if logged in
+  useEffect(() => {
+    if (currentUser) {
+      setEmail(currentUser.email || '');
+      setFirstName(currentUser.firstName || '');
+      setLastName(currentUser.lastName || '');
+      setAddress(currentUser.address || '');
+      setLandmark(currentUser.landmark || '');
+      setCity(currentUser.city || '');
+      setState(currentUser.state || 'Punjab');
+      setZip(currentUser.zip || '');
+      setMobile(currentUser.mobile || '');
+    }
+  }, [currentUser]);
   
   const [userExists, setUserExists] = useState<boolean | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'Prepaid' | 'COD'>('Prepaid');
@@ -94,13 +109,20 @@ export const CheckoutPage: React.FC = () => {
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
               <div style={{ fontSize: '28px', fontWeight: 'bold' }}>COSRX<span style={{ color: 'var(--accent-gold)' }}>.</span></div>
-              {!userExists && <button onClick={() => navigate('/login')} style={{ background: 'none', color: 'var(--accent-gold)', fontWeight: '600', textDecoration: 'underline' }}>Sign in</button>}
+              {currentUser ? (
+                <div style={{ fontSize: '13px', color: '#666' }}>
+                  Welcome back, <b>{currentUser.firstName}</b> 
+                  <span style={{ marginLeft: '10px', background: '#f0f0f0', padding: '4px 8px', borderRadius: '4px', fontSize: '11px' }}>Logged in</span>
+                </div>
+              ) : (
+                !userExists && <button onClick={() => navigate('/login')} style={{ background: 'none', color: 'var(--accent-gold)', fontWeight: '600', textDecoration: 'underline' }}>Sign in</button>
+              )}
             </div>
 
             {/* Contact Section */}
             <div style={{ marginBottom: '40px' }}>
               <h2 className="section-title">Contact</h2>
-              <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="input-field" />
+              <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="input-field" disabled={!!currentUser} />
             </div>
 
             {/* Delivery Section */}
