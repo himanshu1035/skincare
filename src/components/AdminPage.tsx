@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
 import { BarChart3, ToggleLeft, ToggleRight, LogOut, Package, Settings, RefreshCw, Users, ShoppingCart, Edit2, Check, X, CreditCard, Truck, DollarSign } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+
 
 const CURRENCIES = [
   { label: 'US Dollar ($)', value: '$' },

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
-import { ArrowLeft, Lock, CreditCard, UserPlus, CheckCircle2, Truck, MapPin, DollarSign, Percent } from 'lucide-react';
+import { ArrowLeft, Lock, CreditCard, CheckCircle2, Truck, MapPin, Percent } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
