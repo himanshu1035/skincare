@@ -1,24 +1,19 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ShoppingCart, Star, CheckCircle2, TrendingUp, Loader2 } from 'lucide-react';
+import { ShoppingCart, Star, CheckCircle2, TrendingUp, Loader2, Sparkles } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 export const Hero: React.FC = () => {
   const { addToCart, stockLeft, currency, product, isBogoActive, isLoading, settings } = useStore();
 
-  // If we are loading and have NO product yet, show spinner
   if (isLoading && !product) {
     return (
-      <section style={{ padding: '100px 0', textAlign: 'center', background: 'var(--secondary-ivory)' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
-          <Loader2 className="animate-spin" size={48} color="var(--accent-gold)" />
-          <p style={{ color: 'var(--text-muted)' }}>Loading Premium Skincare...</p>
-        </div>
+      <section style={{ padding: '100px 0', textAlign: 'center', background: 'white' }}>
+        <Loader2 className="animate-spin" size={48} color="var(--accent-gold)" />
       </section>
     );
   }
 
-  // If still no product after loading finishes, we'll use the one from the store (which now has a fallback)
   if (!product) return null;
 
   const handleAddToCart = () => {
@@ -32,119 +27,118 @@ export const Hero: React.FC = () => {
   };
 
   return (
-    <section style={{ padding: '60px 0', background: 'linear-gradient(180deg, var(--secondary-ivory) 0%, var(--primary-cream) 100%)' }}>
+    <section style={{ background: 'white', overflow: 'hidden' }}>
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .animate-spin { animation: spin 2s linear infinite; }
-        @media (max-width: 768px) {
-          .hero-grid { grid-template-columns: 1fr !important; gap: 40px !important; }
-          .hero-title { font-size: 36px !important; }
-          .hero-image-container { order: -1; }
-          .hide-mobile { display: none !important; }
+        .hero-container { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 60px; align-items: center; padding: 60px 20px; }
+        .mobile-rating { display: none; }
+        
+        @media (max-width: 992px) {
+          .hero-container { grid-template-columns: 1fr !important; padding: 20px 16px 40px !important; gap: 32px !important; }
+          .hero-image-container { margin: 0 -16px; border-radius: 0 !important; }
+          .hero-image-container img { border-radius: 0 !important; }
+          .hero-title { font-size: 32px !important; text-align: center; }
+          .hero-desc { text-align: center; font-size: 16px !important; }
+          .price-card { padding: 24px 16px !important; }
+          .mobile-rating { display: flex !important; justify-content: center; margin-bottom: 12px; }
+          .desktop-rating { display: none !important; }
+          .hero-content { order: 2; }
+          .hero-image-container { order: 1; }
         }
       `}</style>
-      <div className="container">
-        <div className="hero-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '60px', alignItems: 'center' }}>
-          
-          <motion.div 
-            className="hero-image-container"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8 }}
-            style={{ position: 'relative' }}
-          >
-            {isBogoActive && (
-              <div className="bogo-badge-animate" style={{ position: 'absolute', top: '20px', right: '20px', background: 'var(--bogo-badge)', color: 'white', padding: '12px 24px', borderRadius: '50px', fontWeight: 'bold', zIndex: 10, boxShadow: 'var(--shadow-lg)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <span style={{ fontSize: '12px' }}>BUY 1 GET 1</span>
-                <span style={{ fontSize: '20px' }}>FREE</span>
-              </div>
-            )}
-            
-            <img 
-              src={product.image} 
-              alt={product.name} 
-              style={{ width: '100%', borderRadius: '12px', boxShadow: 'var(--shadow-lg)' }} 
-            />
-            
-            <div style={{ marginTop: '24px', display: 'flex', gap: '12px' }}>
-              <div style={{ background: 'white', padding: '12px', borderRadius: '8px', flex: 1, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <TrendingUp size={20} color="var(--success-green)" />
-                <span style={{ fontSize: '13px', fontWeight: '500' }}>1.2k sold today</span>
-              </div>
-              <div className="hide-mobile" style={{ background: 'white', padding: '12px', borderRadius: '8px', flex: 1, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <CheckCircle2 size={20} color="var(--success-green)" />
-                <span style={{ fontSize: '13px', fontWeight: '500' }}>In stock & Ready to ship</span>
-              </div>
-            </div>
-          </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-              <div style={{ display: 'flex' }}>
-                {[1,2,3,4,5].map(i => (
-                  <Star 
-                    key={i} 
-                    size={16} 
-                    fill={i <= Math.round(Number(settings.displayRating || 4.9)) ? "var(--accent-gold)" : "none"} 
-                    color="var(--accent-gold)" 
-                  />
-                ))}
-              </div>
-              <span style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: '500' }}>
-                {settings.displayRating || '4.9'}/5 ({settings.displayReviewCount || '12.4k'} Reviews)
+      <div className="container hero-container">
+        {/* Left/Order 2 on Mobile: Image */}
+        <motion.div 
+          className="hero-image-container"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6 }}
+          style={{ position: 'relative' }}
+        >
+          {isBogoActive && (
+            <div style={{ position: 'absolute', top: '16px', left: '16px', background: 'black', color: 'white', padding: '10px 20px', borderRadius: '50px', fontWeight: '900', zIndex: 10, fontSize: '14px', boxShadow: '0 10px 20px rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Sparkles size={16} color="var(--accent-gold)" /> BUY 1 GET 1 FREE
+            </div>
+          )}
+          
+          <img 
+            src={product.image} 
+            alt={product.name} 
+            style={{ width: '100%', borderRadius: '24px', boxShadow: '0 20px 40px rgba(0,0,0,0.1)', objectFit: 'cover' }} 
+          />
+          
+          <div style={{ position: 'absolute', bottom: '20px', right: '20px', background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(10px)', padding: '12px 20px', borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '0 10px 20px rgba(0,0,0,0.05)' }}>
+            <TrendingUp size={18} color="var(--success-green)" />
+            <span style={{ fontSize: '13px', fontWeight: '700' }}>Viral on TikTok</span>
+          </div>
+        </motion.div>
+
+        {/* Right/Order 1 on Mobile: Content */}
+        <div className="hero-content">
+          <div className="mobile-rating">
+            <div style={{ display: 'flex', gap: '2px' }}>
+              {[1,2,3,4,5].map(i => <Star key={i} size={14} fill="var(--accent-gold)" color="var(--accent-gold)" />)}
+            </div>
+            <span style={{ fontSize: '12px', marginLeft: '8px', fontWeight: '600', color: '#666' }}>
+              {settings.displayRating || '4.9'}/5 ({settings.displayReviewCount || '12.4k'} Reviews)
+            </span>
+          </div>
+
+          <div className="desktop-rating" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', gap: '2px' }}>
+              {[1,2,3,4,5].map(i => <Star key={i} size={16} fill="var(--accent-gold)" color="var(--accent-gold)" />)}
+            </div>
+            <span style={{ fontSize: '14px', fontWeight: '600', color: '#666' }}>
+              {settings.displayRating || '4.9'}/5 ({settings.displayReviewCount || '12.4k'} Reviews)
+            </span>
+          </div>
+
+          <h1 className="hero-title" style={{ fontSize: '56px', fontWeight: '900', lineHeight: '1', marginBottom: '20px', letterSpacing: '-1px' }}>
+            Experience the <br /> 
+            <span style={{ color: 'var(--accent-gold)' }}>Glass Skin</span> Power.
+          </h1>
+          
+          <p className="hero-desc" style={{ fontSize: '18px', color: '#666', marginBottom: '32px', lineHeight: '1.6' }}>
+            Transform your routine with the <b>{product.name}</b>. The holy grail of hydration for a luminous, dewy finish.
+          </p>
+
+          <div className="price-card" style={{ background: '#fcfcfc', border: '1px solid #eee', padding: '32px', borderRadius: '24px', marginBottom: '32px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
+              <span style={{ fontSize: '40px', fontWeight: '900' }}>{currency}{product.price.toFixed(2)}</span>
+              <span style={{ fontSize: '24px', textDecoration: 'line-through', color: '#ccc' }}>{currency}{product.originalPrice.toFixed(2)}</span>
+              <span style={{ background: 'var(--success-green)', color: 'white', padding: '6px 12px', borderRadius: '50px', fontSize: '12px', fontWeight: '900' }}>
+                SAVE {Math.round((1 - product.price / product.originalPrice) * 100)}%
               </span>
             </div>
-
-            <h1 className="hero-title" style={{ fontSize: '48px', lineHeight: '1.1', marginBottom: '20px' }}>
-              Unlock the Viral <br /> 
-              <span style={{ color: 'var(--accent-gold)' }}>Glass Skin Glow</span>
-            </h1>
-            
-            <p style={{ fontSize: '18px', color: 'var(--text-muted)', marginBottom: '32px' }}>
-              {product.name}. The #1 Korean skincare secret for hydration and that legendary "slugging" glow. 
+            <p style={{ fontSize: '13px', color: '#999', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <CheckCircle2 size={14} color="var(--success-green)" /> Free Shipping & 30-Day Returns included.
             </p>
+          </div>
 
-            <div style={{ background: 'rgba(197, 160, 89, 0.1)', borderLeft: '4px solid var(--accent-gold)', padding: '20px', marginBottom: '32px' }}>
-              <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--accent-gold)', marginBottom: '4px' }}>LIMITED TIME OFFER</div>
-              <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '8px' }}>
-                {isBogoActive ? 'BUY 1 GET 1 FREE' : 'SPECIAL DISCOUNT'}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <span style={{ fontSize: '32px', fontWeight: 'bold' }}>{currency}{product.price.toFixed(2)}</span>
-                <span style={{ fontSize: '20px', textDecoration: 'line-through', color: 'var(--text-muted)' }}>{currency}{product.originalPrice.toFixed(2)}</span>
-                <span style={{ background: 'var(--bogo-badge)', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold' }}>
-                  SAVE {Math.round((1 - product.price / product.originalPrice) * 100)}%
-                </span>
-              </div>
+          <button 
+            className="btn-primary" 
+            onClick={handleAddToCart}
+            style={{ width: '100%', justifyContent: 'center', height: '72px', fontSize: '18px', fontWeight: '900', borderRadius: '16px', background: 'black', color: 'white' }}
+          >
+            <ShoppingCart size={22} style={{ marginRight: '12px' }} />
+            {isBogoActive ? 'ADD TO CART - GET 1 FREE' : 'ADD TO CART NOW'}
+          </button>
+
+          <div style={{ marginTop: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '8px', fontWeight: '700' }}>
+              <span>LIMITED STOCK REMAINING</span>
+              <span style={{ color: stockLeft < 20 ? 'var(--error-red)' : 'var(--success-green)' }}>{stockLeft} UNITS LEFT</span>
             </div>
-
-            <button 
-              className="btn-primary" 
-              onClick={handleAddToCart}
-              style={{ width: '100%', justifyContent: 'center', height: '64px', fontSize: '18px' }}
-            >
-              <ShoppingCart size={22} />
-              {isBogoActive ? 'ADD TO CART - GET 1 FREE' : 'ADD TO CART NOW'}
-            </button>
-
-            <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-                <span>Stock remaining:</span>
-                <span style={{ fontWeight: 'bold', color: stockLeft < 20 ? 'var(--error-red)' : 'var(--success-green)' }}>{stockLeft} units left</span>
-              </div>
-              <div style={{ height: '6px', background: '#eee', borderRadius: '3px', overflow: 'hidden' }}>
-                <motion.div 
-                  initial={{ width: '100%' }}
-                  animate={{ width: `${(stockLeft / 100) * 100}%` }}
-                  style={{ height: '100%', background: 'var(--accent-gold)' }}
-                />
-              </div>
+            <div style={{ height: '8px', background: '#f0f0f0', borderRadius: '10px', overflow: 'hidden' }}>
+              <motion.div 
+                initial={{ width: '100%' }}
+                animate={{ width: `${(stockLeft / 100) * 100}%` }}
+                style={{ height: '100%', background: stockLeft < 20 ? 'var(--error-red)' : 'var(--accent-gold)' }}
+              />
             </div>
-          </motion.div>
+          </div>
         </div>
       </div>
     </section>

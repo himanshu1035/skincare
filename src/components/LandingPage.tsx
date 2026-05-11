@@ -1,14 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Navbar } from './Navbar';
 import { Hero } from './Hero';
 import { ProductSection } from './ProductSection';
 import { CartDrawer } from './CartDrawer';
 import { useStore } from '../store/useStore';
-import { Star, ShieldCheck, Truck, RefreshCw, ShoppingCart } from 'lucide-react';
+import { Star, ShieldCheck, Truck, RefreshCw, ShoppingCart, Award } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-
-import { useEffect } from 'react';
 
 export const LandingPage: React.FC = () => {
   const { addToCart, fetchData, product, reviews, settings } = useStore();
@@ -30,122 +28,137 @@ export const LandingPage: React.FC = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: 'white' }}>
       <Navbar />
       
-      <main style={{ flex: 1 }}>
+      <main>
         <Hero />
         
-        {/* Trust Badges Strip */}
-        <div style={{ background: 'white', padding: '30px 0', borderTop: '1px solid #eee', borderBottom: '1px solid #eee' }}>
-          <div className="container" style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', fontWeight: '600' }}>
-              <Truck size={20} color="var(--accent-gold)" /> FREE GLOBAL SHIPPING
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', fontWeight: '600' }}>
-              <ShieldCheck size={20} color="var(--accent-gold)" /> SECURE PAYMENTS
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', fontWeight: '600' }}>
-              <RefreshCw size={20} color="var(--accent-gold)" /> 30-DAY MONEY BACK
+        {/* Mobile-First Trust Badges */}
+        <section style={{ borderTop: '1px solid #f5f5f7', borderBottom: '1px solid #f5f5f7', background: '#fafafa', padding: '24px 0' }}>
+          <div className="container">
+            <div className="trust-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+              <style>{`
+                .trust-item { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+                .trust-icon { width: 44px; height: 44px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+                .trust-text { font-size: 10px; font-weight: 800; color: #333; letter-spacing: 0.5px; }
+                
+                @media (max-width: 768px) {
+                  .trust-grid { gap: 8px !important; }
+                  .trust-text { font-size: 8px !important; }
+                  .trust-icon { width: 36px !important; height: 36px !important; }
+                }
+              `}</style>
+              <div className="trust-item">
+                <div className="trust-icon"><Truck size={18} color="var(--accent-gold)" /></div>
+                <span className="trust-text">FREE SHIPPING</span>
+              </div>
+              <div className="trust-item">
+                <div className="trust-icon"><ShieldCheck size={18} color="var(--accent-gold)" /></div>
+                <span className="trust-text">SECURE PAY</span>
+              </div>
+              <div className="trust-item">
+                <div className="trust-icon"><RefreshCw size={18} color="var(--accent-gold)" /></div>
+                <span className="trust-text">30D REFUND</span>
+              </div>
+              <div className="trust-item">
+                <div className="trust-icon"><Award size={18} color="var(--accent-gold)" /></div>
+                <span className="trust-text">100% GENUINE</span>
+              </div>
             </div>
           </div>
-        </div>
+        </section>
 
         <ProductSection />
 
-        {/* Customer Reviews Section */}
-        <section id="reviews" style={{ padding: '80px 0', background: 'var(--secondary-ivory)' }}>
+        {/* Community Reviews */}
+        <section id="reviews" style={{ padding: '80px 0', background: '#f5f5f7' }}>
           <div className="container">
-            <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-              <h2 style={{ fontSize: '32px', marginBottom: '12px' }}>What Our Community Says</h2>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', fontSize: '18px', fontWeight: 'bold', color: 'var(--accent-gold)' }}>
-                <div style={{ display: 'flex' }}>
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={20} fill={i < Math.round(Number(settings.displayRating || 4.9)) ? "currentColor" : "none"} />
-                  ))}
+            <div style={{ textAlign: 'center', marginBottom: '60px' }}>
+              <h2 style={{ fontSize: '32px', fontWeight: '800', marginBottom: '16px' }}>The COSRX Community</h2>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+                <div style={{ display: 'flex', gap: '2px' }}>
+                  {[...Array(5)].map((_, i) => <Star key={i} size={18} fill="var(--accent-gold)" color="var(--accent-gold)" />)}
                 </div>
-                <span>{settings.displayRating || '4.9'}/5</span>
-                <span style={{ color: 'var(--text-muted)', fontWeight: 'normal', fontSize: '14px' }}>Based on {settings.displayReviewCount || '1,240+'} reviews</span>
+                <span style={{ fontSize: '20px', fontWeight: '900' }}>{settings.displayRating || '4.9'}</span>
+                <span style={{ color: '#999', fontSize: '14px' }}>({settings.displayReviewCount || '12.4k'} total reviews)</span>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
-              {reviews.length > 0 ? reviews.map((review, i) => (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
+              {reviews.map((review, i) => (
                 <motion.div 
                   key={review.id} 
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.1 }}
-                  style={{ background: 'white', padding: '30px', borderRadius: '12px', boxShadow: 'var(--shadow-sm)' }}
+                  style={{ background: 'white', padding: '32px', borderRadius: '24px', boxShadow: '0 10px 30px rgba(0,0,0,0.03)', border: '1px solid #f0f0f0' }}
                 >
-                  <div style={{ display: 'flex', marginBottom: '16px' }}>
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} size={16} fill={i < review.rating ? "var(--accent-gold)" : "none"} color="var(--accent-gold)" />
-                    ))}
+                  <div style={{ display: 'flex', gap: '4px', marginBottom: '20px' }}>
+                    {[...Array(5)].map((_, i) => <Star key={i} size={14} fill={i < review.rating ? "var(--accent-gold)" : "none"} color="var(--accent-gold)" />)}
                   </div>
-                  <p style={{ fontStyle: 'italic', marginBottom: '20px', color: 'var(--text-dark)' }}>"{review.comment}"</p>
-                  <div style={{ fontWeight: 'bold', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--accent-gold)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>{review.userName[0]}</div>
-                    {review.userName} <span style={{ color: 'var(--success-green)', fontSize: '12px', fontWeight: 'normal' }}>• Verified Buyer</span>
+                  <p style={{ fontSize: '16px', lineHeight: '1.6', color: '#333', marginBottom: '24px', fontWeight: '500' }}>"{review.comment}"</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'black', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '14px' }}>{review.userName[0]}</div>
+                    <div>
+                      <div style={{ fontWeight: '800', fontSize: '14px' }}>{review.userName}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--success-green)', fontWeight: '700' }}>VERIFIED GLOW-GETTER</div>
+                    </div>
                   </div>
                 </motion.div>
-              )) : (
-                <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: '#999' }}>
-                  Loading reviews...
-                </div>
-              )}
+              ))}
             </div>
           </div>
         </section>
       </main>
 
-      <footer style={{ background: 'var(--text-dark)', color: 'white', padding: '60px 0' }}>
+      <footer style={{ background: 'black', color: 'white', padding: '80px 0 40px' }}>
         <div className="container">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '40px', marginBottom: '40px' }}>
-            <div>
-              <div style={{ fontSize: '24px', fontWeight: 'bold', letterSpacing: '2px', marginBottom: '20px' }}>COSRX<span style={{ color: 'var(--accent-gold)' }}>.</span></div>
-              <p style={{ color: '#999', fontSize: '14px' }}>Premium Korean Skincare for every skin type. Built for the glow-getters.</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '60px', marginBottom: '60px' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '28px', fontWeight: '900', letterSpacing: '4px', marginBottom: '24px' }}>COSRX<span style={{ color: 'var(--accent-gold)' }}>.</span></div>
+              <p style={{ color: '#666', fontSize: '14px', lineHeight: '1.6' }}>The global leader in minimalist, high-performance skincare. Direct from the source.</p>
             </div>
-            <div>
-              <h4 style={{ marginBottom: '20px' }}>Shop</h4>
-              <ul style={{ listStyle: 'none', color: '#999', fontSize: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <li>Best Sellers</li>
-                <li>New Arrivals</li>
-                <li>BOGO Offers</li>
-                <li style={{ opacity: 0.1 }}><Link to="/admin" style={{ color: 'inherit', textDecoration: 'none' }}>Admin</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 style={{ marginBottom: '20px' }}>Support</h4>
-              <ul style={{ listStyle: 'none', color: '#999', fontSize: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ textAlign: 'center' }}>
+              <h4 style={{ fontSize: '14px', fontWeight: '900', letterSpacing: '2px', marginBottom: '32px' }}>CUSTOMER CARE</h4>
+              <ul style={{ listStyle: 'none', color: '#666', fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <li>Shipping Policy</li>
                 <li>Refund Policy</li>
-                <li>Track Order</li>
-                <li>Contact Us</li>
+                <li>Terms of Service</li>
+                <li style={{ opacity: 0.1 }}><Link to="/admin" style={{ color: 'inherit' }}>Admin</Link></li>
               </ul>
             </div>
-            <div>
-              <h4 style={{ marginBottom: '20px' }}>Stay Connected</h4>
-              <p style={{ color: '#999', fontSize: '14px', marginBottom: '16px' }}>Subscribe to get exclusive early access to flash sales.</p>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <input type="text" placeholder="Email" style={{ background: '#333', border: 'none', padding: '10px', borderRadius: '4px', color: 'white', flex: 1 }} />
-                <button style={{ background: 'var(--accent-gold)', padding: '10px 20px', borderRadius: '4px', fontWeight: 'bold' }}>JOIN</button>
+            <div style={{ textAlign: 'center' }}>
+              <h4 style={{ fontSize: '14px', fontWeight: '900', letterSpacing: '2px', marginBottom: '32px' }}>JOIN THE CLUB</h4>
+              <p style={{ color: '#666', fontSize: '13px', marginBottom: '24px' }}>Sign up for exclusive BOGO deals and first access to new drops.</p>
+              <div style={{ display: 'flex', gap: '8px', maxWidth: '300px', margin: '0 auto' }}>
+                <input type="email" placeholder="Email" style={{ background: '#1a1a1a', border: '1px solid #333', padding: '12px 16px', borderRadius: '8px', color: 'white', flex: 1, fontSize: '14px' }} />
+                <button style={{ background: 'white', color: 'black', padding: '12px 24px', borderRadius: '8px', fontWeight: '900', fontSize: '13px' }}>JOIN</button>
               </div>
             </div>
           </div>
-          <div style={{ borderTop: '1px solid #333', paddingTop: '20px', textAlign: 'center', fontSize: '12px', color: '#666' }}>
-            © 2026 COSRX GLOBAL. All Rights Reserved.
+          <div style={{ borderTop: '1px solid #222', paddingTop: '40px', textAlign: 'center', fontSize: '11px', color: '#444', letterSpacing: '1px' }}>
+            © 2026 COSRX GLOBAL PARTNERS. ALL RIGHTS RESERVED.
           </div>
         </div>
       </footer>
 
-      {/* Floating Mobile CTA */}
-      <div className="mobile-sticky-cta glass">
-        <button className="btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={handleAddToCart} disabled={!product}>
-          <ShoppingCart size={20} /> {product ? 'ADD TO CART - BUY 1 GET 1 FREE' : 'LOADING...'}
+      {/* Floating Mobile CTA - App-like Feel */}
+      <motion.div 
+        initial={{ y: 100 }}
+        animate={{ y: 0 }}
+        style={{ position: 'fixed', bottom: '24px', left: '16px', right: '16px', zIndex: 900 }}
+      >
+        <button 
+          onClick={handleAddToCart}
+          disabled={!product}
+          style={{ width: '100%', height: '64px', background: 'black', color: 'white', border: 'none', borderRadius: '16px', fontWeight: '900', fontSize: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', boxShadow: '0 20px 40px rgba(0,0,0,0.3)', cursor: 'pointer' }}
+        >
+          <ShoppingCart size={20} />
+          {product ? (settings.codCharge === 0 ? 'ORDER NOW - CASH ON DELIVERY' : 'ADD TO CART - BOGO FREE') : 'LOADING...'}
         </button>
-      </div>
+      </motion.div>
 
       <CartDrawer />
     </div>
