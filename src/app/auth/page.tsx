@@ -133,7 +133,7 @@ export default function AuthPage() {
                 {isLogin ? 'Welcome Back' : 'Join COSRX'}
               </h1>
               <p className="text-text-muted text-sm font-medium">
-                Instant access to your skincare journey. No email confirmation required.
+                Experience the viral skincare miracle today.
               </p>
             </div>
 

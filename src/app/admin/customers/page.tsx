@@ -16,9 +16,9 @@ import { Button } from '@/components/ui/Button';
 export default async function AdminCustomersPage() {
   const supabase = createClient();
   
-  // Fetch from the correct table 'skin_users'
+  // Fetch from the correct consolidated table 'skin_user_profiles'
   const { data: customers } = await supabase
-    .from('skin_users')
+    .from('skin_user_profiles')
     .select(`
       *,
       skin_orders (count)
@@ -30,7 +30,7 @@ export default async function AdminCustomersPage() {
       <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div>
           <h1 className="text-4xl font-black tracking-tighter text-text-dark">Customers</h1>
-          <p className="text-text-muted mt-2 font-medium">Manage user accounts and view purchase history from the skin_users table.</p>
+          <p className="text-text-muted mt-2 font-medium">Manage user accounts and view purchase history from the skin_user_profiles table.</p>
         </div>
         <Button className="h-14 px-10 rounded-full font-black tracking-widest bg-text-dark hover:bg-accent-gold transition-all duration-300">
           EXPORT CUSTOMER DATA
@@ -83,7 +83,7 @@ export default async function AdminCustomersPage() {
                         <Mail size={12} className="text-text-muted" /> {customer.skin_email}
                       </p>
                       <p className="flex items-center gap-2 text-[10px] font-bold text-text-muted">
-                        <Phone size={12} className="text-text-muted" /> {customer.skin_mobile || 'No Mobile'}
+                        <Phone size={12} className="text-text-muted" /> {customer.skin_phone || 'No Mobile'}
                       </p>
                     </div>
                   </td>

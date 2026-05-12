@@ -24,7 +24,7 @@ export default async function AdminDashboard() {
     { data: collections }
   ] = await Promise.all([
     supabase.from('skin_products').select('*', { count: 'exact', head: true }),
-    supabase.from('skin_users').select('*', { count: 'exact', head: true }),
+    supabase.from('skin_user_profiles').select('*', { count: 'exact', head: true }),
     supabase.from('skin_orders').select('skin_total').eq('skin_payment_status', 'verified'),
     supabase.from('skin_variants').select('*', { count: 'exact', head: true }).lt('skin_stock_count', 10),
     supabase.from('skin_orders')
