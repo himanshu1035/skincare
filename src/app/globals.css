@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+/* Tailwind CSS v4 Theme Configuration */
+@theme {
+  --color-primary-cream: #FDFBF7;
+  --color-secondary-ivory: #F8F5F0;
+  --color-accent-gold: #C5A059;
+  --color-text-dark: #1A1A1A;
+  --color-text-muted: #666666;
+  --color-success-green: #4A6741;
+  --color-error-red: #D9534F;
+  --color-bogo-badge: #FF4D4D;
+
+  --font-heading: "Outfit", "Inter", sans-serif;
+  --font-body: "Inter", sans-serif;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@layer base {
+  :root {
+    --background: #FDFBF7;
+    --foreground: #1A1A1A;
+  }
+
+  * {
+    border-color: var(--color-secondary-ivory);
+  }
+  
+  body {
+    background-color: var(--color-primary-cream);
+    color: var(--color-text-dark);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+  }
+}
+
+.glass {
+  background-color: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.container {
+  width: 100%;
+  margin-right: auto;
+  margin-left: auto;
+  padding-right: 1.5rem;
+  padding-left: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding-right: 3rem;
+    padding-left: 3rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .container {
+    max-width: 80rem;
+  }
+}
