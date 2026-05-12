@@ -20,7 +20,9 @@ import {
 } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
 
-export default function PaymentPage() {
+import { Suspense } from 'react';
+
+function PaymentPageContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get('orderId');
   const router = useRouter();
@@ -300,5 +302,13 @@ export default function PaymentPage() {
       </div>
       <Footer />
     </main>
+  );
+}
+
+export default function PaymentPage() {
+  return (
+    <Suspense fallback={<div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-accent-gold" size={40} /></div>}>
+      <PaymentPageContent />
+    </Suspense>
   );
 }
