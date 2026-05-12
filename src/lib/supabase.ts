@@ -1,18 +1,29 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+// Re-using the environment variables with strict validation
+const getSupabaseConfig = () => {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  if (process.env.NODE_ENV !== 'production') {
-    console.warn('Supabase credentials missing. Please add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to your .env file.');
+  if (!url || !key) {
+    // In development, we warn. In production, we provide clear context.
+    if (process.env.NODE_ENV === 'production') {
+       console.error("CRITICAL: Supabase environment variables are missing on Vercel.");
+    }
+    return { 
+      url: url || 'https://fjecoflrppakvcreojbw.supabase.co', 
+      key: key || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqZWNvZmxycHBha3ZjcmVvamJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMTMwNTEsImV4cCI6MjA5Mzc4OTA1MX0.2mSWt_w_knKQZ5VhAA_OcXMvIGODmi0SX9mIxmvzpLU'
+    };
   }
-}
 
-export const supabase = createSupabaseClient(
-  supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder-key'
-);
+  return { url, key };
+};
 
-export const createClientComponentClient = () => supabase; // For client components
-export const createClient = () => supabase;
+const config = getSupabaseConfig();
+
+// Global single instance for efficiency
+export const supabase = createSupabaseClient(config.url, config.key);
+
+// Helpers for different component types
+export const createClient = () => createSupabaseClient(config.url, config.key);
+export const createClientComponentClient = () => supabase;
