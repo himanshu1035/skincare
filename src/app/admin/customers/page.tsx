@@ -11,13 +11,32 @@ export default async function AdminCustomersPage() {
     .from('skin_user_profiles')
     .select(`
       *,
-      skin_orders (count)
+      skin_orders (*)
     `)
     .order('skin_created_at', { ascending: false });
 
   if (error) {
     console.error("Supabase Fetch Error:", error);
   }
+
+  // Calculate stats for each customer
+  const customersWithStats = customers?.map(customer => {
+    const orders = customer.skin_orders || [];
+    const totalSpent = orders
+      .filter((o: any) => o.skin_payment_status === 'verified' || o.skin_status === 'delivered')
+      .reduce((acc: number, o: any) => acc + (Number(o.skin_total_amount) || Number(o.skin_total) || 0), 0);
+    
+    const lastOrder = orders.length > 0 
+      ? new Date(Math.max(...orders.map((o: any) => new Date(o.skin_created_at).getTime())))
+      : null;
+
+    return {
+      ...customer,
+      totalSpent,
+      lastOrderDate: lastOrder,
+      orderCount: orders.length
+    };
+  });
 
   return (
     <div className="space-y-12">
@@ -43,7 +62,7 @@ export default async function AdminCustomersPage() {
         </div>
       </div>
 
-      <CustomerTable customers={customers || []} />
+      <CustomerTable customers={customersWithStats || []} />
     </div>
   );
 }

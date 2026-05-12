@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS skin_orders (
   skin_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   skin_user_id UUID REFERENCES skin_user_profiles(skin_id) ON DELETE SET NULL,
   skin_total DECIMAL(10,2) NOT NULL,
-  skin_status TEXT DEFAULT 'pending', -- 'pending', 'processing', 'shipped', 'delivered', 'cancelled'
+  skin_status TEXT DEFAULT 'under_review', -- 'under_review', 'pending', 'processing', 'shipped', 'delivered', 'cancelled'
   skin_payment_status TEXT DEFAULT 'unpaid', -- 'unpaid', 'paid', 'verified', 'failed'
   skin_payment_method TEXT, -- 'cod', 'card', 'upi'
   skin_utr TEXT UNIQUE, -- Unique Transaction Reference for verification

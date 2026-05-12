@@ -81,7 +81,7 @@ function PaymentPageContent() {
     
     // Update status to 'under_review' for UPI so it shows as pending in admin
     // For COD with upfront payment, it also goes under review for the handling charge
-    const newStatus = (amountToPayNow > 0) ? 'under_review' : 'processing';
+    const newStatus = 'under_review';
 
     const { error } = await supabase
       .from('skin_orders')
@@ -320,13 +320,19 @@ function PaymentPageContent() {
                   <ShieldCheck size={40} className="opacity-20" />
                 </div>
 
-                <button 
-                  onClick={handleCompleteOrder}
-                  disabled={isSubmitting}
-                  className={`w-full py-6 rounded-2xl font-black text-xs tracking-widest uppercase transition-all shadow-xl flex items-center justify-center gap-3 ${isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-white text-text-dark hover:bg-accent-gold hover:text-white'}`}
-                >
-                  {isSubmitting ? 'VERIFYING...' : 'CONFIRM ORDER'} <ChevronRight size={18} />
-                </button>
+                {(!(amountToPayNow > 0 && (!utr || utr.trim().length < 6))) ? (
+                  <button 
+                    onClick={handleCompleteOrder}
+                    disabled={isSubmitting}
+                    className={`w-full py-6 rounded-2xl font-black text-xs tracking-widest uppercase transition-all shadow-xl flex items-center justify-center gap-3 ${isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-white text-text-dark hover:bg-accent-gold hover:text-white'}`}
+                  >
+                    {isSubmitting ? 'VERIFYING...' : 'CONFIRM ORDER'} <ChevronRight size={18} />
+                  </button>
+                ) : (
+                  <div className="w-full py-6 rounded-2xl bg-secondary-ivory border-2 border-dashed border-accent-gold/30 text-accent-gold text-[10px] font-black uppercase tracking-widest text-center animate-pulse">
+                    Please Enter UTR to Confirm
+                  </div>
+                )}
               </div>
 
               <div className="p-8 border border-gray-100 rounded-[2rem] bg-white/50 flex items-center gap-6">

@@ -5,7 +5,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { createClient } from '@/lib/supabase';
 import { useAuthStore } from '@/store/useAuthStore';
-import { Package, Truck, CheckCircle2, Clock, MapPin, IndianRupee, ArrowRight, Loader2, ChevronDown, ChevronUp, ShoppingBag, CreditCard, ShieldCheck } from 'lucide-react';
+import { Package, Truck, CheckCircle2, Clock, MapPin, IndianRupee, ArrowRight, Loader2, ChevronDown, ChevronUp, ShoppingBag, CreditCard, ShieldCheck, XCircle } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';

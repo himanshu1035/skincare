@@ -96,20 +96,28 @@ export default function CheckoutPage() {
           currentUserId = signupData.user?.id || null;
         }
 
-        if (currentUserId) {
-          await supabase.from('skin_user_profiles').upsert([{
-            skin_id: currentUserId,
-            skin_email: data.email,
-            skin_first_name: data.firstName,
-            skin_last_name: data.lastName,
-            skin_phone: data.primaryPhone,
-            skin_role: 'customer'
-          }]);
-        }
       } catch (err: any) {
         alert(err.message);
         setIsSubmitting(false);
         return;
+      }
+    }
+
+    // ALWAYS ensure profile exists in skin_user_profiles before order to prevent Foreign Key errors
+    if (currentUserId) {
+      const { error: profileSyncError } = await supabase.from('skin_user_profiles').upsert([{
+        skin_id: currentUserId,
+        skin_email: data.email,
+        skin_first_name: data.firstName,
+        skin_last_name: data.lastName,
+        skin_phone: data.primaryPhone,
+        skin_role: 'customer'
+      }]);
+      
+      if (profileSyncError) {
+        console.error("Profile Sync Error:", profileSyncError);
+        // We don't throw here to avoid blocking the order if it's a minor sync issue, 
+        // but the foreign key error usually happens if the record is missing.
       }
     }
 
@@ -131,7 +139,7 @@ export default function CheckoutPage() {
       skin_total_amount: grandTotal,
       skin_items: items,
       skin_user_id: currentUserId,
-      skin_status: 'pending',
+      skin_status: 'under_review',
       skin_shipping_charge: shipping,
       skin_cod_charge: codFee
     }).select().single();

@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { User, Mail, Phone, ShoppingBag, Truck, MapPin, LogOut, ChevronRight, Package, ShieldCheck } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import { Button } from './ui/Button';
+import { formatPrice } from '@/lib/utils';
 
 export const AccountPage = () => {
   const { user, logout } = useAuthStore();

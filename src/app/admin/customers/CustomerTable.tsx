@@ -14,6 +14,7 @@ import {
   Edit2
 } from 'lucide-react';
 import { CustomerEditModal } from './CustomerEditModal';
+import { formatPrice } from '@/lib/utils';
 
 interface CustomerTableProps {
   customers: any[];
@@ -30,9 +31,9 @@ export const CustomerTable = ({ customers }: CustomerTableProps) => {
             <thead className="bg-secondary-ivory/30 border-b border-secondary-ivory">
               <tr>
                 <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-text-muted">Account</th>
-                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-text-muted">Contact Info</th>
+                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-text-muted">Orders & Spent</th>
+                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-text-muted">Latest Activity</th>
                 <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-text-muted">Role</th>
-                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-text-muted">Orders</th>
                 <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-text-muted">Joined</th>
                 <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-text-muted text-right">Actions</th>
               </tr>
@@ -49,19 +50,31 @@ export const CustomerTable = ({ customers }: CustomerTableProps) => {
                         <p className="font-black text-text-dark text-sm truncate max-w-[200px]">
                             {customer.skin_first_name} {customer.skin_last_name}
                         </p>
-                        <p className="text-[10px] text-text-muted font-bold uppercase tracking-widest">{customer.skin_email}</p>
+                        <div className="flex flex-col gap-0.5 mt-1">
+                          <p className="text-[9px] text-text-muted font-bold uppercase tracking-widest">{customer.skin_email}</p>
+                          {customer.skin_phone && <p className="text-[9px] text-accent-gold font-black uppercase tracking-widest">{customer.skin_phone}</p>}
+                        </div>
                       </div>
                     </div>
                   </td>
                   <td className="px-8 py-6">
                     <div className="space-y-1">
-                      <p className="flex items-center gap-2 text-xs font-bold text-text-dark">
-                        <Mail size={12} className="text-text-muted" /> {customer.skin_email}
+                      <p className="flex items-center gap-2 text-xs font-black text-text-dark">
+                        <ShoppingBag size={12} className="text-text-muted" /> {customer.orderCount || 0} Orders
                       </p>
-                      <p className="flex items-center gap-2 text-[10px] font-bold text-text-muted">
-                        <Phone size={12} className="text-text-muted" /> {customer.skin_phone || 'No Mobile'}
+                      <p className="flex items-center gap-2 text-[10px] font-black text-accent-gold uppercase tracking-widest">
+                         Spent: {formatPrice(customer.totalSpent || 0)}
                       </p>
                     </div>
+                  </td>
+                  <td className="px-8 py-6">
+                    {customer.lastOrderDate ? (
+                       <p className="flex items-center gap-2 text-[10px] font-black text-text-dark uppercase tracking-widest">
+                         <Calendar size={12} className="text-text-muted" /> {new Date(customer.lastOrderDate).toLocaleDateString()}
+                       </p>
+                    ) : (
+                       <p className="text-[10px] text-text-muted font-bold uppercase italic">No Orders Yet</p>
+                    )}
                   </td>
                   <td className="px-8 py-6">
                     <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border flex items-center gap-1.5 w-fit ${
@@ -69,11 +82,6 @@ export const CustomerTable = ({ customers }: CustomerTableProps) => {
                     }`}>
                       <Shield size={10} /> {customer.skin_role || 'Customer'}
                     </span>
-                  </td>
-                  <td className="px-8 py-6">
-                    <div className="flex items-center gap-2 font-black text-sm text-text-dark">
-                      <ShoppingBag size={14} className="text-text-muted" /> {customer.skin_orders?.[0]?.count || 0}
-                    </div>
                   </td>
                   <td className="px-8 py-6">
                     <p className="flex items-center gap-2 text-[10px] font-black text-text-muted uppercase tracking-widest">
