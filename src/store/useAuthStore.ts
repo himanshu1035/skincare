@@ -18,7 +18,7 @@ interface AuthStore {
 export const useAuthStore = create<AuthStore>()(
   persist(
     (set) => ({
-      user: null, // Removed dummy ID
+      user: null, 
       setUser: (user) => set({ user }),
       logout: () => {
         set({ user: null });

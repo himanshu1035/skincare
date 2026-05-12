@@ -9,21 +9,24 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { Button } from '@/components/ui/Button';
 import { Footer } from '@/components/Footer';
 import { createClient } from '@/lib/supabase';
-import { ChevronLeft, Lock, Info, Phone, IndianRupee, ShieldCheck, User, Key, CheckCircle2, Loader2, Mail, Send, AlertCircle, Clock } from 'lucide-react';
+import { Lock, Phone, ShieldCheck, Mail, IndianRupee, AlertCircle, Loader2 } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 export default function CheckoutPage() {
   const { items, getTotal } = useCartStore();
-  const { user } = useAuthStore();
+  const { user, setUser } = useAuthStore();
   const [paymentMethod, setPaymentMethod] = useState<'CARD' | 'COD' | 'UPI'>('UPI');
   const [settings, setSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  
+  // Auth during checkout states
   const [email, setEmail] = useState(user?.email || '');
-  const [emailStatus, setEmailStatus] = useState<'idle' | 'checking' | 'verified' | 'new' | 'verification_sent'>('idle');
   const [password, setPassword] = useState('');
+  const [isExistingUser, setIsExistingUser] = useState(false);
+
   const router = useRouter();
   const supabase = createClient();
 
@@ -44,67 +47,10 @@ export default function CheckoutPage() {
     setLoading(false);
   };
 
-  const checkEmailVerification = async (val: string) => {
-    if (!val || !val.includes('@') || user) {
-       if (user) setEmailStatus('verified');
-       return;
-    }
-    
-    setEmailStatus('checking');
-    const { data } = await supabase
-      .from('skin_user_profiles')
-      .select('skin_email')
-      .eq('skin_email', val.toLowerCase())
-      .maybeSingle();
-
-    if (data) {
-      setEmailStatus('verified');
-    } else {
-      setEmailStatus('new');
-    }
-  };
-
-  const handleSendVerification = async () => {
-    if (!password || password.length < 8) {
-      alert('Please enter a password (min 8 characters) to create your account.');
-      return;
-    }
-    
-    setIsSubmitting(true);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          first_name: 'Guest', // Will be updated during order creation
-        }
-      }
-    });
-
-    if (error) {
-      alert('Verification Error: ' + error.message);
-    } else {
-      setEmailStatus('verification_sent');
-    }
-    setIsSubmitting(false);
-  };
-
-  const checkVerificationStatus = async () => {
-    setIsSubmitting(true);
-    // Try to sign in or check profiles again
-    const { data } = await supabase
-      .from('skin_user_profiles')
-      .select('skin_email')
-      .eq('skin_email', email.toLowerCase())
-      .maybeSingle();
-
-    if (data) {
-      setEmailStatus('verified');
-      alert('Email Verified! You can now proceed to payment.');
-    } else {
-      alert('Verification not detected yet. Please check your email and click the verification link.');
-    }
-    setIsSubmitting(false);
+  const checkUserExists = async (emailVal: string) => {
+    if (!emailVal || user) return;
+    const { data } = await supabase.from('skin_user_profiles').select('skin_id').eq('skin_email', emailVal).maybeSingle();
+    setIsExistingUser(!!data);
   };
 
   if (!isMounted || loading) return <div className="h-screen flex items-center justify-center bg-white"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent-gold"></div></div>;
@@ -118,15 +64,52 @@ export default function CheckoutPage() {
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (emailStatus !== 'verified') {
-      alert('Please verify your email before proceeding to payment.');
-      return;
-    }
-    
     setIsSubmitting(true);
+    
     const formData = new FormData(e.target as HTMLFormElement);
     const data = Object.fromEntries(formData.entries());
 
+    let currentUserId = user?.id || null;
+
+    // 1. Instant Auth if not logged in
+    if (!user) {
+      try {
+        if (isExistingUser) {
+          // Attempt Login
+          const { data: loginData, error: loginErr } = await supabase.auth.signInWithPassword({
+            email: data.email as string,
+            password: password
+          });
+          if (loginErr) throw new Error('Incorrect password for this account.');
+          currentUserId = loginData.user.id;
+        } else {
+          // Instant Signup
+          const { data: signupData, error: signupErr } = await supabase.auth.signUp({
+            email: data.email as string,
+            password: password,
+          });
+          if (signupErr) throw signupErr;
+          currentUserId = signupData.user?.id || null;
+
+          if (currentUserId) {
+            await supabase.from('skin_user_profiles').upsert([{
+              skin_id: currentUserId,
+              skin_email: data.email,
+              skin_first_name: data.firstName,
+              skin_last_name: data.lastName,
+              skin_phone: data.primaryPhone,
+              skin_role: 'customer'
+            }]);
+          }
+        }
+      } catch (err: any) {
+        alert(err.message);
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
+    // 2. Create Order
     const { data: order, error: orderError } = await supabase.from('skin_orders').insert({
       skin_id: crypto.randomUUID(),
       skin_customer_email: data.email,
@@ -143,7 +126,7 @@ export default function CheckoutPage() {
       skin_payment_method: paymentMethod,
       skin_total_amount: grandTotal,
       skin_items: items,
-      skin_user_id: user?.id || null,
+      skin_user_id: currentUserId,
       skin_status: 'pending'
     }).select().single();
 
@@ -161,9 +144,9 @@ export default function CheckoutPage() {
     <main className="min-h-screen bg-white">
       <div className="border-b border-secondary-ivory py-6">
         <div className="container flex items-center justify-between">
-          <Link href="/" className="text-2xl font-bold tracking-tighter">COSRX</Link>
+          <Link href="/" className="text-2xl font-bold tracking-tighter text-text-dark">COSRX</Link>
           <div className="flex items-center gap-2 text-text-muted text-xs font-bold uppercase tracking-widest">
-            <Lock size={14} /> Secure Checkout
+            <Lock size={14} /> Secure Purchase
           </div>
         </div>
       </div>
@@ -173,48 +156,46 @@ export default function CheckoutPage() {
           
           <div className="lg:col-span-7 space-y-12">
             <section>
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold">Contact Information</h2>
-                {!user && <p className="text-sm">Already have an account? <Link href="/auth" className="text-accent-gold underline">Log in</Link></p>}
-              </div>
+              <h2 className="text-xl font-bold mb-6">Contact Information</h2>
               <div className="space-y-4">
                 <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
                   <input 
                     name="email" 
                     type="email" 
                     placeholder="Email address" 
-                    value={email}
-                    onChange={(e) => { setEmail(e.target.value); setEmailStatus('idle'); }}
-                    onBlur={(e) => checkEmailVerification(e.target.value)}
                     required 
-                    readOnly={emailStatus === 'verification_sent'}
-                    className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onBlur={(e) => checkUserExists(e.target.value)}
+                    className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl pl-12 pr-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" 
                   />
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                    {emailStatus === 'checking' && <Loader2 className="animate-spin text-accent-gold" size={16} />}
-                    {emailStatus === 'verified' && <div className="flex items-center gap-1.5 text-green-600 bg-green-50 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest"><CheckCircle2 size={12} /> Verified</div>}
-                    {emailStatus === 'verification_sent' && <div className="flex items-center gap-1.5 text-blue-600 bg-blue-50 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest"><Clock size={12} /> Awaiting Verification</div>}
-                  </div>
                 </div>
 
-                {emailStatus === 'verification_sent' && (
-                  <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-blue-50 border border-blue-100 p-4 rounded-xl flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Mail className="text-blue-600" size={18} />
-                      <p className="text-[11px] font-bold text-blue-700">Check your inbox to verify email.</p>
-                    </div>
-                    <button type="button" onClick={checkVerificationStatus} className="text-[10px] font-black uppercase tracking-widest text-blue-800 hover:underline">I have verified</button>
-                  </motion.div>
+                {!user && (
+                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="space-y-4 bg-accent-gold/5 p-6 rounded-2xl border border-accent-gold/20">
+                      <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-accent-gold mb-2">
+                         <ShieldCheck size={14} /> {isExistingUser ? 'Welcome back! Enter password' : 'Create a secure password'}
+                      </div>
+                      <input 
+                        type="password" 
+                        placeholder="Password" 
+                        required 
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full bg-white border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" 
+                      />
+                   </motion.div>
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="relative">
                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
-                    <input name="primaryPhone" type="tel" placeholder="Mobile Number" defaultValue={user?.phone} required className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl pl-12 pr-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all" />
+                    <input name="primaryPhone" type="tel" placeholder="Mobile Number" required defaultValue={user?.phone} className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl pl-12 pr-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
                   </div>
                   <div className="relative">
                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
-                    <input name="alternatePhone" type="tel" placeholder="Alternate Mobile (Optional)" className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl pl-12 pr-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all" />
+                    <input name="alternatePhone" type="tel" placeholder="Alternate Mobile (Optional)" className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl pl-12 pr-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
                   </div>
                 </div>
               </div>
@@ -224,63 +205,18 @@ export default function CheckoutPage() {
               <h2 className="text-xl font-bold mb-6">Shipping Address</h2>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <input name="firstName" type="text" placeholder="First Name" defaultValue={user?.firstName} required className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all" />
-                  <input name="lastName" type="text" placeholder="Last Name" defaultValue={user?.lastName} required className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all" />
+                  <input name="firstName" type="text" placeholder="First Name" required defaultValue={user?.firstName} className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
+                  <input name="lastName" type="text" placeholder="Last Name" required defaultValue={user?.lastName} className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
                 </div>
-                <input name="street" type="text" placeholder="Street Address" required className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all" />
-                <input name="line2" type="text" placeholder="Apartment, suite, etc. (optional)" className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all" />
+                <input name="street" type="text" placeholder="Street Address" required className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
+                <input name="line2" type="text" placeholder="Apartment, suite, etc. (optional)" className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
                 <div className="grid grid-cols-3 gap-4">
-                  <input name="city" type="text" placeholder="City" required className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all" />
-                  <input name="state" type="text" placeholder="State" required className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all" />
-                  <input name="zip" type="text" placeholder="ZIP Code" required className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all" />
+                  <input name="city" type="text" placeholder="City" required className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
+                  <input name="state" type="text" placeholder="State" required className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
+                  <input name="zip" type="text" placeholder="ZIP Code" required className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
                 </div>
               </div>
             </section>
-
-            <AnimatePresence>
-              {(emailStatus === 'new' || emailStatus === 'verification_sent') && (
-                <motion.section 
-                  initial={{ opacity: 0, height: 0, y: -20 }}
-                  animate={{ opacity: 1, height: 'auto', y: 0 }}
-                  exit={{ opacity: 0, height: 0, y: -20 }}
-                  className="p-8 rounded-[2rem] border-2 border-dashed border-accent-gold bg-accent-gold/5 space-y-6 overflow-hidden"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-accent-gold shadow-sm">
-                      <ShieldCheck size={24} />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-black tracking-tight">Security Verification</h3>
-                      <p className="text-xs text-text-muted font-medium">Verify your email to create a secure COSRX account and proceed.</p>
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-text-muted px-1">Choose Password</label>
-                    <input 
-                      name="password" 
-                      type="password" 
-                      placeholder="Min. 8 characters" 
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required={emailStatus === 'new'}
-                      readOnly={emailStatus === 'verification_sent'}
-                      className="w-full bg-white border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all" 
-                    />
-                  </div>
-                  
-                  {emailStatus === 'new' && (
-                    <Button 
-                      type="button" 
-                      onClick={handleSendVerification}
-                      className="w-full h-14 text-[11px] font-black tracking-[0.2em] bg-accent-gold text-white"
-                      disabled={isSubmitting || !password}
-                    >
-                      {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <><Send size={16} className="mr-2" /> SEND VERIFICATION EMAIL</>}
-                    </Button>
-                  )}
-                </motion.section>
-              )}
-            </AnimatePresence>
 
             <section>
               <h2 className="text-xl font-bold mb-6">Payment Method</h2>
@@ -303,18 +239,9 @@ export default function CheckoutPage() {
             </section>
 
             <div className="pt-8">
-              {emailStatus === 'verified' ? (
-                <Button type="submit" size="lg" className="w-full h-16 text-sm font-bold tracking-widest shadow-xl" disabled={isSubmitting || items.length === 0}>
-                  {isSubmitting ? 'PROCESSING...' : `PROCEED TO PAYMENT • ${formatPrice(grandTotal)}`}
-                </Button>
-              ) : (
-                <div className="p-6 bg-red-50 rounded-2xl border border-red-100 flex items-center gap-4">
-                  <AlertCircle className="text-red-600 shrink-0" size={24} />
-                  <p className="text-xs font-bold text-red-700 leading-relaxed">
-                    Email verification is required for new customers. Please send and verify your email above to enable the payment button.
-                  </p>
-                </div>
-              )}
+              <Button type="submit" size="lg" className="w-full h-16 text-sm font-bold tracking-widest shadow-xl" disabled={isSubmitting || items.length === 0}>
+                {isSubmitting ? 'SECURELY PROCESSING...' : `PLACE ORDER • ${formatPrice(grandTotal)}`}
+              </Button>
             </div>
           </div>
 

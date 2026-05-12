@@ -12,7 +12,6 @@ import { createClient } from '@/lib/supabase';
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
-  const [authMethod, setAuthMethod] = useState<'password' | 'magic'>('password');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,84 +21,7 @@ export default function AuthPage() {
   const setUser = useAuthStore((state) => state.setUser);
   const supabase = createClient();
 
-  // Automatic Login after Email Verification Redirect
-  useEffect(() => {
-    const handleAuthStateChange = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user) {
-        // Fetch full profile to sync with store
-        const { data: profile } = await supabase
-          .from('skin_user_profiles')
-          .select('*')
-          .eq('skin_id', session.user.id)
-          .single();
-
-        setUser({
-          id: session.user.id,
-          email: session.user.email!,
-          firstName: profile?.skin_first_name,
-          lastName: profile?.skin_last_name,
-          phone: profile?.skin_phone,
-        });
-
-        router.push('/account');
-      }
-    };
-
-    handleAuthStateChange();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        const { data: profile } = await supabase
-          .from('skin_user_profiles')
-          .select('*')
-          .eq('skin_id', session.user.id)
-          .single();
-
-        setUser({
-          id: session.user.id,
-          email: session.user.email!,
-          firstName: profile?.skin_first_name,
-          lastName: profile?.skin_last_name,
-          phone: profile?.skin_phone,
-        });
-        router.push('/account');
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [supabase, setUser, router]);
-
-  const handleMagicLink = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-    setSuccess(null);
-
-    const formData = new FormData(e.target as HTMLFormElement);
-    const email = formData.get('email') as string;
-
-    const { error: otpError } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth`,
-      },
-    });
-
-    if (otpError) {
-      setError(otpError.message);
-    } else {
-      setSuccess('Check your email! We sent you a secure sign-in link.');
-    }
-    setIsLoading(false);
-  };
-
   const handleAuth = async (e: React.FormEvent) => {
-    if (authMethod === 'magic' && isLogin) {
-      return handleMagicLink(e);
-    }
-
     e.preventDefault();
     setIsLoading(true);
     setError(null);
@@ -137,11 +59,11 @@ export default function AuthPage() {
 
         router.push('/account');
       } else {
+        // Signup without requiring email confirmation (Requires Supabase dashboard setting disabled)
         const { data, error: signupError } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/auth`,
             data: {
               first_name: firstName,
               last_name: lastName,
@@ -164,8 +86,17 @@ export default function AuthPage() {
               skin_role: 'customer'
             }]);
 
-          setSuccess('Account created! Please check your email and click the verification link to activate your account.');
-          setIsLogin(true);
+          // Auto-login after signup
+          setUser({
+            id: data.user.id,
+            email: data.user.email!,
+            firstName,
+            lastName,
+            phone,
+          });
+
+          setSuccess('Account created successfully! Welcome to COSRX.');
+          setTimeout(() => router.push('/account'), 1500);
         }
       }
     } catch (err: any) {
@@ -186,7 +117,6 @@ export default function AuthPage() {
             animate={{ opacity: 1, y: 0 }}
             className="bg-white rounded-[3rem] p-10 md:p-14 shadow-2xl border border-secondary-ivory relative overflow-hidden"
           >
-            {/* Status Messages */}
             {error && (
               <div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600 text-sm font-bold animate-in fade-in slide-in-from-top-2">
                 <AlertCircle size={18} /> {error}
@@ -202,32 +132,8 @@ export default function AuthPage() {
               <h1 className="text-4xl font-black text-text-dark mb-4 tracking-tighter">
                 {isLogin ? 'Welcome Back' : 'Join COSRX'}
               </h1>
-              
-              {isLogin && (
-                <div className="flex bg-secondary-ivory/50 p-1 rounded-2xl mb-6">
-                  <button 
-                    type="button"
-                    onClick={() => setAuthMethod('password')}
-                    className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${authMethod === 'password' ? 'bg-white shadow-sm text-text-dark' : 'text-text-muted'}`}
-                  >
-                    Password
-                  </button>
-                  <button 
-                    type="button"
-                    onClick={() => setAuthMethod('magic')}
-                    className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${authMethod === 'magic' ? 'bg-white shadow-sm text-text-dark' : 'text-text-muted'}`}
-                  >
-                    Magic Link
-                  </button>
-                </div>
-              )}
-
               <p className="text-text-muted text-sm font-medium">
-                {authMethod === 'magic' && isLogin 
-                  ? 'We will email you a secure link to sign in instantly.' 
-                  : isLogin 
-                    ? 'Access your orders and personalized skincare.' 
-                    : 'Experience the viral skincare miracle today.'}
+                Instant access to your skincare journey. No email confirmation required.
               </p>
             </div>
 
@@ -256,41 +162,37 @@ export default function AuthPage() {
                 </div>
               </div>
 
-              {(authMethod === 'password' || !isLogin) && (
-                <>
-                  {!isLogin && (
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-text-muted px-1">Phone Number</label>
-                      <div className="relative">
-                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
-                        <input name="phone" type="tel" className="w-full bg-secondary-ivory/50 border-none rounded-xl pl-12 pr-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none font-medium" placeholder="+91" required />
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-text-muted px-1">Password</label>
-                    <div className="relative">
-                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
-                      <input 
-                        name="password"
-                        type={showPassword ? 'text' : 'password'} 
-                        className="w-full bg-secondary-ivory/50 border-none rounded-xl pl-12 pr-12 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none font-medium" 
-                        placeholder="••••••••" 
-                        required 
-                        minLength={6}
-                      />
-                      <button 
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-dark"
-                      >
-                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                      </button>
-                    </div>
+              {!isLogin && (
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-text-muted px-1">Phone Number</label>
+                  <div className="relative">
+                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
+                    <input name="phone" type="tel" className="w-full bg-secondary-ivory/50 border-none rounded-xl pl-12 pr-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none font-medium" placeholder="+91" required />
                   </div>
-                </>
+                </div>
               )}
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest text-text-muted px-1">Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
+                  <input 
+                    name="password"
+                    type={showPassword ? 'text' : 'password'} 
+                    className="w-full bg-secondary-ivory/50 border-none rounded-xl pl-12 pr-12 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none font-medium" 
+                    placeholder="••••••••" 
+                    required 
+                    minLength={6}
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-dark"
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
 
               {isLogin && (
                 <div className="text-right">
