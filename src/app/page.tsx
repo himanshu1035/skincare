@@ -56,18 +56,16 @@ export default async function Home() {
     
     const name = col.skin_name.toLowerCase();
     
-    // Level 1: Verified COSRX Shopify CDN URLs
-    if (name.includes('snail')) return 'https://cdn.shopify.com/s/files/1/0550/9303/5183/products/Advanced-Snail-96-Mucin-Power-Essence-100ml-1_1024x1024.jpg';
-    if (name.includes('sun')) return 'https://cdn.shopify.com/s/files/1/0550/9303/5183/products/Aloe-Soothing-Sun-Cream-SPF50-PA---50ml-1_1024x1024.jpg';
-    if (name.includes('vitamin c') || name.includes('glow')) return 'https://cdn.shopify.com/s/files/1/0550/9303/5183/products/The-Vitamin-C-23-Serum-20g-1_1024x1024.jpg';
-    if (name.includes('toner') || name.includes('propolis')) return 'https://cdn.shopify.com/s/files/1/0550/9303/5183/products/Full-Fit-Propolis-Synergy-Toner-280ml-1_1024x1024.jpg';
+    // Level 1: Premium Local Generated Assets (Verified High-Res)
+    if (name.includes('snail')) return '/snail.png';
+    if (name.includes('sun')) return '/sun.png';
+    if (name.includes('vitamin c') || name.includes('glow')) return '/vitc.png';
+    if (name.includes('propolis') || name.includes('toner')) return '/propolis.png';
     
-    // Level 2: High-Quality Unsplash Fallbacks (Reliable Internet Images)
+    // Level 2: Fallback to reliable external sources
     if (name.includes('cleanser')) return 'https://images.unsplash.com/photo-1556228720-195a672e8a03?q=80&w=800&auto=format&fit=crop';
-    if (name.includes('moisturizer') || name.includes('cream')) return 'https://images.unsplash.com/photo-1612817288484-6f916006741a?q=80&w=800&auto=format&fit=crop';
     
-    // Level 3: Final Default
-    return 'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?q=80&w=800&auto=format&fit=crop';
+    return '/snail.png'; // Global default to ensure no empty boxes
   };
 
   return (
