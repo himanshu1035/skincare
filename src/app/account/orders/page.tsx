@@ -47,8 +47,10 @@ export default function UserOrdersPage() {
       
       setIsCheckingAuth(false);
       
-      if (session?.user?.id || user?.id) {
-         fetchUserOrders(session?.user?.id || user?.id);
+      const userId = session?.user?.id || user?.id;
+      
+      if (userId) {
+        fetchUserOrders(userId);
       }
     };
     
