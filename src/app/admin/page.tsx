@@ -40,10 +40,10 @@ export default async function AdminDashboard() {
   const totalRevenue = orderData?.reduce((acc, order) => acc + (order.skin_total || 0), 0) || 0;
 
   const stats = [
-    { name: 'Total Products', value: productCount || 0, icon: <ShoppingBag />, color: 'bg-blue-600' },
-    { name: 'Total Customers', value: customerCount || 0, icon: <Users />, color: 'bg-purple-600' },
-    { name: 'Total Revenue', value: formatPrice(totalRevenue), icon: <TrendingUp />, color: 'bg-green-600' },
-    { name: 'Low Stock Items', value: lowStockCount || 0, icon: <AlertCircle />, color: 'bg-red-600' },
+    { name: 'Total Products', value: productCount || 0, icon: <ShoppingBag size={20} />, color: 'bg-blue-600' },
+    { name: 'Total Customers', value: customerCount || 0, icon: <Users size={20} />, color: 'bg-purple-600' },
+    { name: 'Total Revenue', value: formatPrice(totalRevenue), icon: <TrendingUp size={20} />, color: 'bg-green-600' },
+    { name: 'Low Stock Items', value: lowStockCount || 0, icon: <AlertCircle size={20} />, color: 'bg-red-600' },
   ];
 
   return (
@@ -64,7 +64,7 @@ export default async function AdminDashboard() {
           <div key={stat.name} className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <div className={`w-10 h-10 rounded-lg ${stat.color} text-white flex items-center justify-center`}>
-                {React.cloneElement(stat.icon as React.ReactElement, { size: 20 })}
+                {stat.icon}
               </div>
               <span className="text-[8px] font-black uppercase tracking-widest text-gray-400 border border-gray-100 px-1.5 py-0.5 rounded">Live</span>
             </div>
