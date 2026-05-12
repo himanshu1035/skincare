@@ -68,10 +68,11 @@ function PaymentPageContent() {
   };
 
   const handleCompleteOrder = async () => {
-    // MANDATORY UTR CHECK - FORCED
-    if (paymentMethod === 'upi' && amountToPayNow > 0) {
+    // MANDATORY UTR CHECK - FORCED whenever there is an upfront payment
+    if (amountToPayNow > 0) {
       if (!utr || utr.trim().length < 6) {
-        alert('REQUIRED: Please enter your Transaction ID (UTR) from your payment app. We cannot verify your payment without it.');
+        alert('REQUIRED: Please enter your 12-digit Transaction ID (UTR) from your payment app. We cannot verify your payment without it.');
+        setIsSubmitting(false);
         return;
       }
     }
@@ -79,7 +80,8 @@ function PaymentPageContent() {
     setIsSubmitting(true);
     
     // Update status to 'under_review' for UPI so it shows as pending in admin
-    const newStatus = paymentMethod === 'upi' ? 'under_review' : 'processing';
+    // For COD with upfront payment, it also goes under review for the handling charge
+    const newStatus = (amountToPayNow > 0) ? 'under_review' : 'processing';
 
     const { error } = await supabase
       .from('skin_orders')
@@ -87,7 +89,7 @@ function PaymentPageContent() {
         skin_status: newStatus,
         skin_payment_method: paymentMethod.toUpperCase(),
         skin_utr: utr || null,
-        skin_payment_status: paymentMethod === 'cod' ? 'unpaid' : 'verified'
+        skin_payment_status: (amountToPayNow > 0) ? 'verified' : 'unpaid'
       })
       .eq('skin_id', orderId);
 

@@ -52,8 +52,8 @@ function StatusContent() {
             <h1 className="text-3xl font-black tracking-tighter text-text-dark mb-4">Order Received!</h1>
             <p className="text-[10px] font-black text-text-muted uppercase tracking-widest mb-2">Order ID: <span className="text-text-dark">#{orderId || '12345'}</span></p>
             <p className="text-sm text-text-muted mb-10 leading-relaxed font-medium">
-              Thank you for your order! Your payment is currently <span className="font-bold text-text-dark underline decoration-accent-gold">Under Review</span>. 
-              Once our team verifies your transaction, your order will be officially confirmed and processed for shipping.
+              Thank you for your order! Your payment is currently <span className="font-bold text-text-dark underline decoration-accent-gold">Pending Manual Verification</span>. 
+              Our team will verify your transaction shortly, after which your order will be officially accepted and prepared for shipping.
             </p>
             <div className="space-y-4">
               <Button size="lg" className="w-full" onClick={() => router.push('/account/orders')}>

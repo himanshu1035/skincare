@@ -26,7 +26,7 @@ export const AccountPage = () => {
   const fetchProfile = async () => {
     const { data } = await supabase
       .from('skin_user_profiles')
-      .select('*')
+      .select('*, skin_orders(*)')
       .eq('skin_id', user?.id)
       .single();
     if (data) setProfile(data);
@@ -97,7 +97,21 @@ export const AccountPage = () => {
           </div>
           
           <div className="space-y-6">
-            <p className="text-sm text-text-muted font-medium italic">Track your premium COSRX shipments in real-time.</p>
+            {profile?.skin_orders?.length > 0 ? (
+              <div className="space-y-4 mb-8">
+                {profile.skin_orders.slice(0, 2).map((order: any) => (
+                  <div key={order.skin_id} className="flex items-center justify-between p-4 bg-secondary-ivory/30 rounded-2xl border border-secondary-ivory">
+                    <div>
+                      <p className="text-[9px] font-black text-text-muted uppercase tracking-widest">Order #{order.skin_id.slice(0,8)}</p>
+                      <p className="text-xs font-bold text-text-dark uppercase">{order.skin_status.replace(/_/g, ' ')}</p>
+                    </div>
+                    <span className="text-sm font-black text-text-dark">{formatPrice(order.skin_total_amount)}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-text-muted font-medium italic mb-8">Track your premium COSRX shipments in real-time.</p>
+            )}
             <Button 
               onClick={() => router.push('/account/orders')}
               variant="secondary"
