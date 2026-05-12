@@ -32,7 +32,7 @@ export default function AdminSettingsPage() {
         acc[item.skin_key] = item.skin_value;
         return acc;
       }, {});
-      setSettings(prev => ({ ...prev, ...settingsObj }));
+      setSettings((prev: any) => ({ ...prev, ...settingsObj }));
     }
     setLoading(false);
   };
