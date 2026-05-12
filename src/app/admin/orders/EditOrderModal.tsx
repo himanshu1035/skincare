@@ -23,7 +23,8 @@ export const EditOrderModal = ({ order, onClose, onUpdate }: EditOrderModalProps
     skin_customer_address: order.skin_customer_address || '',
     skin_billing_address: order.skin_billing_address || '',
     skin_utr: order.skin_utr || '',
-    skin_payment_status: order.skin_payment_status || 'unpaid'
+    skin_payment_status: order.skin_payment_status || 'unpaid',
+    skin_estimated_delivery: order.skin_estimated_delivery || ''
   });
 
   const handleSave = async (e: React.FormEvent) => {
@@ -105,6 +106,19 @@ export const EditOrderModal = ({ order, onClose, onUpdate }: EditOrderModalProps
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black uppercase tracking-widest text-text-muted px-1">UTR Number</label>
                 <input value={formData.skin_utr} onChange={e => setFormData({...formData, skin_utr: e.target.value})} className="w-full h-14 bg-secondary-ivory/50 border-none rounded-2xl px-4 text-sm font-bold focus:ring-2 focus:ring-accent-gold outline-none" placeholder="12-digit UTR" />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase tracking-widest text-text-muted px-1">Estimated Delivery Date</label>
+              <div className="relative">
+                <Truck className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
+                <input 
+                  value={formData.skin_estimated_delivery} 
+                  onChange={e => setFormData({...formData, skin_estimated_delivery: e.target.value})} 
+                  className="w-full h-14 bg-secondary-ivory/50 border-none rounded-2xl pl-12 pr-4 text-sm font-bold focus:ring-2 focus:ring-accent-gold outline-none" 
+                  placeholder="e.g., Arriving by Oct 12" 
+                />
               </div>
             </div>
 

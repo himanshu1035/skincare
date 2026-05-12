@@ -36,8 +36,13 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     setIsMounted(true);
+    // Redirect if cart is empty
+    if (items.length === 0) {
+      router.push('/collections/all');
+      return;
+    }
     fetchSettings();
-  }, []);
+  }, [items, router]);
 
   const fetchSettings = async () => {
     const { data } = await supabase.from('skin_settings').select('*');

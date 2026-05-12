@@ -148,13 +148,13 @@ export const AccountPage = () => {
             transition={{ delay: 0.3 }}
             className="bg-accent-gold/10 rounded-[3rem] p-10 border border-accent-gold/20 shadow-sm"
           >
-            <h3 className="text-xl font-black uppercase tracking-widest mb-4 text-text-dark">Support</h3>
-            <p className="text-text-muted text-sm font-medium mb-8 leading-relaxed">Need help with your premium skincare routine?</p>
+            <h3 className="text-xl font-black uppercase tracking-widest mb-4 text-text-dark">Support Center</h3>
+            <p className="text-text-muted text-sm font-medium mb-8 leading-relaxed">Have questions about your order or products? Raise a ticket and track resolutions here.</p>
             <Button 
-              onClick={() => router.push('/contact-us')}
+              onClick={() => router.push('/account/support')}
               className="w-full h-12 rounded-2xl bg-white text-text-dark border-none shadow-sm font-black tracking-widest text-[10px]"
             >
-              CONTACT SUPPORT
+              MY TICKETS
             </Button>
           </motion.div>
         </div>

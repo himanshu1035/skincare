@@ -13,7 +13,8 @@ import {
   ChevronRight,
   Layers,
   ShieldCheck,
-  Compass
+  Compass,
+  MessageSquare
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion } from 'framer-motion';
@@ -27,6 +28,7 @@ export const AdminSidebar = React.memo(() => {
       title: "Store Overview",
       items: [
         { name: 'Dashboard', href: '/admin', icon: <LayoutDashboard size={16} /> },
+        { name: 'Support Center', href: '/admin/support', icon: <MessageSquare size={16} /> },
         { name: 'Payments Review', href: '/admin/payments', icon: <ShieldCheck size={16} /> },
       ]
     },

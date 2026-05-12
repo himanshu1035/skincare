@@ -39,17 +39,28 @@ function PaymentPageContent() {
 
   useEffect(() => {
     setIsMounted(true);
+    // Redirect if cart was already cleared (order completed)
+    if (items.length === 0) {
+      router.push('/collections/all');
+      return;
+    }
+
     if (orderId) {
       fetchData();
     } else {
       router.push('/checkout');
     }
-  }, [orderId]);
+  }, [orderId, items.length]);
 
   const fetchData = async () => {
     setLoading(true);
     const { data: orderData } = await supabase.from('skin_orders').select('*').eq('skin_id', orderId).single();
     if (orderData) {
+      // If UTR is already present, order is already "confirmed" or "completed"
+      if (orderData.skin_utr) {
+        router.push('/collections/all');
+        return;
+      }
       setOrder(orderData);
       setPaymentMethod(orderData.skin_payment_method?.toLowerCase() === 'cod' ? 'cod' : 'upi');
     } else {
@@ -137,20 +148,27 @@ function PaymentPageContent() {
   // Direct app handlers to avoid WhatsApp redirection and handle specific app logic
   const openPaymentApp = (app: string) => {
     let link = upiLink;
-    const isAndroid = /Android/i.test(navigator.userAgent);
+    const params = `pa=${upiId}&pn=${merchantName}&am=${amountToPayNow}&tr=${transactionId}&mc=5311&cu=INR`;
 
+    if (app === 'gpay') {
+      // tez:// is the specific scheme for Google Pay (GPay/Tez) in India
+      link = `tez://pay?${params}`;
+    } else if (app === 'phonepe') {
+      link = `phonepe://pay?${params}`;
+    } else if (app === 'paytm') {
+      link = `paytmmp://pay?${params}`;
+    }
+    
+    // For Android, try the more specific intent if the scheme fails
+    const isAndroid = /Android/i.test(navigator.userAgent);
     if (isAndroid) {
-      // Direct Intent URLs to bypass chooser and fix bank checks
       if (app === 'gpay') {
-        link = `intent://pay?pa=${upiId}&pn=${merchantName}&am=${amountToPayNow}&tr=${transactionId}&mc=5311&cu=INR#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end`;
+        link = `intent://pay?${params}#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end`;
       } else if (app === 'phonepe') {
-        link = `intent://pay?pa=${upiId}&pn=${merchantName}&am=${amountToPayNow}&tr=${transactionId}&mc=5311&cu=INR#Intent;scheme=upi;package=com.phonepe.app;end`;
+        link = `intent://pay?${params}#Intent;scheme=upi;package=com.phonepe.app;end`;
       } else if (app === 'paytm') {
-        link = `intent://pay?pa=${upiId}&pn=${merchantName}&am=${amountToPayNow}&tr=${transactionId}&mc=5311&cu=INR#Intent;scheme=upi;package=net.one97.paytm;end`;
+        link = `intent://pay?${params}#Intent;scheme=upi;package=net.one97.paytm;end`;
       }
-    } else {
-      // iOS / Other handles basic upi:// scheme
-      link = upiLink;
     }
     
     window.location.href = link;

@@ -14,6 +14,12 @@ function StatusContent() {
   const status = searchParams.get('status');
   const orderId = searchParams.get('orderId');
 
+  useEffect(() => {
+    if (!orderId && !status) {
+      router.push('/collections/all');
+    }
+  }, [orderId, status, router]);
+
   const isFailed = status === 'failed' || status === 'cancelled';
   const isSuccess = status === 'success';
 

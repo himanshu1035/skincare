@@ -69,6 +69,7 @@ CREATE TABLE IF NOT EXISTS skin_orders (
   skin_billing_address TEXT,
   skin_shipping_charge DECIMAL(10,2) DEFAULT 0,
   skin_cod_charge DECIMAL(10,2) DEFAULT 0,
+  skin_estimated_delivery TEXT, -- 'Arriving by Oct 12' or '3-5 business days'
   skin_created_at TIMESTAMPTZ DEFAULT NOW(),
   skin_updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -87,3 +88,16 @@ ALTER TABLE skin_products
 ADD CONSTRAINT fk_skin_product_category 
 FOREIGN KEY (skin_category_id) 
 REFERENCES skin_categories(skin_id);
+
+-- Support Tickets Table
+CREATE TABLE skin_support_tickets (
+  skin_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  skin_user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  skin_subject TEXT NOT NULL,
+  skin_message TEXT NOT NULL,
+  skin_status TEXT DEFAULT 'pending', -- pending, processing, approved, rejected, resolved
+  skin_priority TEXT DEFAULT 'normal', -- low, normal, high, urgent
+  skin_admin_reply TEXT,
+  skin_created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  skin_updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);

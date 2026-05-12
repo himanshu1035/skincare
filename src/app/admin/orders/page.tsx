@@ -22,6 +22,8 @@ export default function AdminOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [editingOrder, setEditingOrder] = useState<any>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const supabase = createClient();
 
   useEffect(() => {
@@ -54,6 +56,13 @@ export default function AdminOrdersPage() {
     setOrders(orders.map(o => o.skin_id === updatedOrder.skin_id ? updatedOrder : o));
   };
 
+  const filteredOrders = orders.filter(o => {
+    const fullName = `${o.skin_first_name || ''} ${o.skin_last_name || ''}`.toLowerCase();
+    const matchesSearch = fullName.includes(searchTerm.toLowerCase()) || o.skin_id.toLowerCase().includes(searchTerm.toLowerCase()) || (o.skin_utr && o.skin_utr.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesStatus = statusFilter === 'all' || o.skin_status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
   return (
     <div className="space-y-8 pb-20">
       <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
@@ -78,6 +87,33 @@ export default function AdminOrdersPage() {
         ))}
       </div>
 
+      {/* Filters Bar */}
+      <div className="flex flex-col md:flex-row gap-4 bg-white p-6 rounded-[2.5rem] border border-secondary-ivory shadow-sm">
+        <div className="relative flex-1">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
+          <input 
+            type="text" 
+            placeholder="Search by customer name, order ID, or UTR..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full h-12 bg-secondary-ivory/50 border-none rounded-xl pl-12 pr-4 text-xs font-bold focus:ring-2 focus:ring-accent-gold outline-none"
+          />
+        </div>
+        <div className="flex items-center gap-4">
+          <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">Filter:</span>
+          <select 
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="h-12 bg-secondary-ivory/50 border-none rounded-xl px-6 text-xs font-black uppercase tracking-widest focus:ring-2 focus:ring-accent-gold outline-none cursor-pointer"
+          >
+            <option value="all">ALL ORDERS</option>
+            {Object.keys(STATUS_CONFIG).map(s => (
+              <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       {/* Orders Table */}
       <div className="bg-white border border-secondary-ivory rounded-[3rem] shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
@@ -92,7 +128,7 @@ export default function AdminOrdersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-secondary-ivory">
-              {orders.map((order) => {
+              {filteredOrders.map((order) => {
                 const status = (STATUS_CONFIG as any)[order.skin_status] || STATUS_CONFIG.pending;
                 return (
                   <tr key={order.skin_id} className="hover:bg-secondary-ivory/10 transition-colors group text-sm">
@@ -110,9 +146,16 @@ export default function AdminOrdersPage() {
                     <td className="px-8 py-6">
                       <div className="flex flex-col gap-1">
                          <span className="text-[10px] font-black uppercase tracking-widest text-text-dark">{order.skin_payment_method || 'COD'}</span>
-                         <span className={`text-[9px] font-bold px-2 py-0.5 rounded w-fit uppercase ${order.skin_payment_status === 'verified' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'}`}>
-                           {order.skin_payment_status || 'UNPAID'}
-                         </span>
+                         <div className="flex items-center gap-2">
+                           <span className={`text-[9px] font-bold px-2 py-0.5 rounded w-fit uppercase ${order.skin_payment_status === 'verified' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'}`}>
+                             {order.skin_payment_status || 'UNPAID'}
+                           </span>
+                           {order.skin_utr && (
+                             <span className="text-[9px] font-black text-accent-gold border border-accent-gold/20 px-2 py-0.5 rounded uppercase">
+                               UTR: {order.skin_utr}
+                             </span>
+                           )}
+                         </div>
                       </div>
                     </td>
                     <td className="px-8 py-6">

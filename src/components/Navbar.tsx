@@ -10,7 +10,7 @@ import { CartDrawer } from './CartDrawer';
 import { SearchOverlay } from './SearchOverlay';
 import { createClient } from '@/lib/supabase';
 
-export const Navbar = () => {
+export const Navbar = React.memo(() => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -209,4 +209,4 @@ export const Navbar = () => {
       </nav>
     </>
   );
-};
+});

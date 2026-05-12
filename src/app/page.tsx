@@ -11,25 +11,16 @@ import { CollectionImage } from '@/components/CollectionImage';
 export default async function Home() {
   const supabase = createClient();
   
-  // 1. Fetch dynamic collections
-  const { data: collections } = await supabase
-    .from('skin_collections')
-    .select('*')
-    .neq('skin_slug', 'dermskincare-guide')
-    .limit(3);
+  // 1. Parallel data fetching for maximum performance
+  const [collectionsRes, bestSellerColRes, shippingSettingsRes] = await Promise.all([
+    supabase.from('skin_collections').select('*').neq('skin_slug', 'dermskincare-guide').limit(3),
+    supabase.from('skin_collections').select('skin_id').ilike('skin_name', '%best seller%').single(),
+    supabase.from('skin_settings').select('*').in('skin_key', ['free_shipping_threshold'])
+  ]);
 
-  // 2. Fetch Best Sellers
-  const { data: bestSellerCollection } = await supabase
-    .from('skin_collections')
-    .select('skin_id')
-    .ilike('skin_name', '%best seller%')
-    .single();
-
-  // 3. Fetch Shipping Settings
-  const { data: shippingSettings } = await supabase
-    .from('skin_settings')
-    .select('*')
-    .in('skin_key', ['free_shipping_threshold']);
+  const collections = collectionsRes.data;
+  const bestSellerCollection = bestSellerColRes.data;
+  const shippingSettings = shippingSettingsRes.data;
   
   const freeShippingThreshold = shippingSettings?.find(s => s.skin_key === 'free_shipping_threshold')?.skin_value || '1000';
 

@@ -25,6 +25,7 @@ const TRACKING_STEPS = [
   { id: 'pending', label: 'Ordered', step: 1 },
   { id: 'processing', label: 'Packed', step: 2 },
   { id: 'shipped', label: 'Shipped', step: 3 },
+  { id: 'out_for_delivery', label: 'Out for Delivery', step: 4 },
   { id: 'delivered', label: 'Delivered', step: 5 },
 ];
 
@@ -103,9 +104,18 @@ export default function UserOrdersPage() {
                           <div className={`w-14 h-14 rounded-2xl ${status.bg} ${status.color} flex items-center justify-center shadow-inner`}>
                             {status.icon}
                           </div>
-                          <div>
-                            <p className="text-[10px] font-black text-text-muted uppercase tracking-widest mb-1">Status</p>
-                            <h3 className={`text-xl font-black uppercase tracking-tight ${status.color}`}>{status.label}</h3>
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-2 mb-1">
+                               <p className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em]">Order Status</p>
+                               {order.skin_estimated_delivery && (
+                                 <span className="text-[8px] font-black bg-accent-gold/10 text-accent-gold px-2 py-0.5 rounded-full uppercase tracking-widest animate-pulse">
+                                   Est. Delivery: {order.skin_estimated_delivery}
+                                 </span>
+                               )}
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className="text-xl font-black text-text-dark uppercase tracking-tight">{status.label}</span>
+                            </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-8">

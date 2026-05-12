@@ -11,8 +11,10 @@ import {
   ShoppingBag,
   ExternalLink,
   Shield,
-  Edit2
+  Edit2,
+  MessageSquare
 } from 'lucide-react';
+import Link from 'next/link';
 import { CustomerEditModal } from './CustomerEditModal';
 import { formatPrice } from '@/lib/utils';
 
@@ -90,6 +92,12 @@ export const CustomerTable = ({ customers }: CustomerTableProps) => {
                   </td>
                   <td className="px-8 py-6 text-right">
                     <div className="flex items-center justify-end gap-2">
+                      <Link 
+                        href={`/admin/support?search=${customer.skin_email}`}
+                        className="p-2.5 bg-accent-gold/5 rounded-xl text-accent-gold hover:bg-accent-gold hover:text-white hover:shadow-md transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"
+                      >
+                        <MessageSquare size={16} /> Support
+                      </Link>
                       <button 
                         onClick={() => setSelectedCustomer(customer)}
                         className="p-2.5 bg-secondary-ivory/50 rounded-xl text-text-muted hover:text-accent-gold hover:bg-white hover:shadow-md transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"
