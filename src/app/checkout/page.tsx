@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useCheckoutStore } from '@/store/useCheckoutStore';
 import { Button } from '@/components/ui/Button';
 import { Footer } from '@/components/Footer';
 import { createClient } from '@/lib/supabase';
@@ -15,19 +16,19 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export default function CheckoutPage() {
   const { items, getTotal } = useCartStore();
-  const { user, setUser } = useAuthStore();
+  const { user } = useAuthStore();
+  const { data: savedData, setData: setSavedData } = useCheckoutStore();
+  
   const [paymentMethod, setPaymentMethod] = useState<'CARD' | 'COD' | 'UPI'>('UPI');
   const [settings, setSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   
-  // Auth during checkout states
-  const [email, setEmail] = useState(user?.email || '');
+  // Auth and Form states
+  const [email, setEmail] = useState(savedData.email || user?.email || '');
   const [password, setPassword] = useState('');
   const [isExistingUser, setIsExistingUser] = useState(false);
-
-  // Billing Address States
   const [isBillingSameAsShipping, setIsBillingSameAsShipping] = useState(true);
 
   const router = useRouter();
@@ -72,9 +73,11 @@ export default function CheckoutPage() {
     const formData = new FormData(e.target as HTMLFormElement);
     const data = Object.fromEntries(formData.entries());
 
+    // Save for persistence
+    setSavedData(data as any);
+
     let currentUserId = user?.id || null;
 
-    // 1. Instant Auth if not logged in
     if (!user) {
       try {
         if (isExistingUser) {
@@ -91,17 +94,17 @@ export default function CheckoutPage() {
           });
           if (signupErr) throw signupErr;
           currentUserId = signupData.user?.id || null;
+        }
 
-          if (currentUserId) {
-            await supabase.from('skin_user_profiles').upsert([{
-              skin_id: currentUserId,
-              skin_email: data.email,
-              skin_first_name: data.firstName,
-              skin_last_name: data.lastName,
-              skin_phone: data.primaryPhone,
-              skin_role: 'customer'
-            }]);
-          }
+        if (currentUserId) {
+          await supabase.from('skin_user_profiles').upsert([{
+            skin_id: currentUserId,
+            skin_email: data.email,
+            skin_first_name: data.firstName,
+            skin_last_name: data.lastName,
+            skin_phone: data.primaryPhone,
+            skin_role: 'customer'
+          }]);
         }
       } catch (err: any) {
         alert(err.message);
@@ -110,15 +113,13 @@ export default function CheckoutPage() {
       }
     }
 
-    // 2. Prepare Billing Data
     const shippingAddress = `${data.street}, ${data.line2 ? data.line2 + ', ' : ''}${data.city}, ${data.state} - ${data.zip}, ${data.country}`;
     const billingAddress = isBillingSameAsShipping 
       ? shippingAddress 
       : `${data.billingStreet}, ${data.billingLine2 ? data.billingLine2 + ', ' : ''}${data.billingCity}, ${data.billingState} - ${data.billingZip}, ${data.billingCountry}`;
 
-    // 3. Create Order
     const { data: order, error: orderError } = await supabase.from('skin_orders').insert({
-      skin_id: crypto.randomUUID(),
+      skin_id: crypto.randomUUID(), // Always new ID
       skin_customer_email: data.email,
       skin_customer_mobile: data.primaryPhone,
       skin_alternate_mobile: data.alternatePhone,
@@ -160,9 +161,8 @@ export default function CheckoutPage() {
         <form onSubmit={handleSubmitOrder} className="grid grid-cols-1 lg:grid-cols-12 gap-16">
           
           <div className="lg:col-span-7 space-y-12">
-            {/* Contact Information */}
             <section>
-              <h2 className="text-xl font-black mb-6 uppercase tracking-tight flex items-center gap-3">
+              <h2 className="text-xl font-black mb-6 uppercase tracking-tight flex items-center gap-3 text-text-dark">
                 <div className="w-8 h-8 bg-text-dark text-white rounded-full flex items-center justify-center text-xs">1</div>
                 Contact Information
               </h2>
@@ -172,7 +172,7 @@ export default function CheckoutPage() {
                   <input 
                     name="email" 
                     type="email" 
-                    placeholder="Email address for order updates" 
+                    placeholder="Email address" 
                     required 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -200,102 +200,67 @@ export default function CheckoutPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="relative group">
                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-accent-gold transition-colors" size={16} />
-                    <input name="primaryPhone" type="tel" placeholder="Mobile Number" required defaultValue={user?.phone} className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl pl-12 pr-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
+                    <input name="primaryPhone" type="tel" placeholder="Mobile Number" required defaultValue={savedData.primaryPhone || user?.phone} className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl pl-12 pr-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
                   </div>
                   <div className="relative group">
                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-accent-gold transition-colors" size={16} />
-                    <input name="alternatePhone" type="tel" placeholder="Alternate Mobile (Optional)" className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl pl-12 pr-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
+                    <input name="alternatePhone" type="tel" placeholder="Alternate Mobile" defaultValue={savedData.alternatePhone} className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl pl-12 pr-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
                   </div>
                 </div>
               </div>
             </section>
 
-            {/* Shipping Address */}
             <section>
-              <h2 className="text-xl font-black mb-6 uppercase tracking-tight flex items-center gap-3">
+              <h2 className="text-xl font-black mb-6 uppercase tracking-tight flex items-center gap-3 text-text-dark">
                 <div className="w-8 h-8 bg-text-dark text-white rounded-full flex items-center justify-center text-xs">2</div>
                 Shipping Address
               </h2>
-              <div className="space-y-4">
+              <div className="space-y-4 text-text-dark">
                 <div className="grid grid-cols-2 gap-4">
-                  <input name="firstName" type="text" placeholder="First Name" required defaultValue={user?.firstName} className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
-                  <input name="lastName" type="text" placeholder="Last Name" required defaultValue={user?.lastName} className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
+                  <input name="firstName" type="text" placeholder="First Name" required defaultValue={savedData.firstName || user?.firstName} className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
+                  <input name="lastName" type="text" placeholder="Last Name" required defaultValue={savedData.lastName || user?.lastName} className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
                 </div>
-                <input name="street" type="text" placeholder="House No, Building, Street" required className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
-                <input name="line2" type="text" placeholder="Apartment, suite, etc. (optional)" className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
+                <input name="street" type="text" placeholder="House No, Building, Street" required defaultValue={savedData.street} className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
+                <input name="line2" type="text" placeholder="Apartment, suite, etc. (optional)" defaultValue={savedData.line2} className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
                 <div className="grid grid-cols-3 gap-4">
-                  <input name="city" type="text" placeholder="City" required className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
-                  <input name="state" type="text" placeholder="State" required className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
-                  <input name="zip" type="text" placeholder="PIN Code" required className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
+                  <input name="city" type="text" placeholder="City" required defaultValue={savedData.city} className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
+                  <input name="state" type="text" placeholder="State" required defaultValue={savedData.state} className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
+                  <input name="zip" type="text" placeholder="PIN Code" required defaultValue={savedData.zip} className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
                 </div>
-                <input name="country" type="text" placeholder="Country" required defaultValue="India" className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
+                <input name="country" type="text" placeholder="Country" required defaultValue={savedData.country || "India"} className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
               </div>
             </section>
 
-            {/* Billing Address Toggle */}
             <section className="bg-secondary-ivory/10 p-6 rounded-[2rem] border border-secondary-ivory">
                <label className="flex items-center gap-4 cursor-pointer select-none">
                   <div className="relative">
-                    <input 
-                      type="checkbox" 
-                      checked={isBillingSameAsShipping} 
-                      onChange={(e) => setIsBillingSameAsShipping(e.target.checked)}
-                      className="peer sr-only"
-                    />
+                    <input type="checkbox" checked={isBillingSameAsShipping} onChange={(e) => setIsBillingSameAsShipping(e.target.checked)} className="peer sr-only" />
                     <div className="w-6 h-6 border-2 border-secondary-ivory rounded-lg bg-white peer-checked:bg-text-dark peer-checked:border-text-dark transition-all flex items-center justify-center">
                        {isBillingSameAsShipping && <CheckCircle2 size={14} className="text-white" />}
                     </div>
                   </div>
                   <span className="text-sm font-bold text-text-dark">Billing address same as shipping address</span>
                </label>
-
-               <AnimatePresence>
-                  {!isBillingSameAsShipping && (
-                    <motion.div 
-                      initial={{ opacity: 0, height: 0 }} 
-                      animate={{ opacity: 1, height: 'auto' }} 
-                      exit={{ opacity: 0, height: 0 }}
-                      className="mt-8 pt-8 border-t border-secondary-ivory space-y-4"
-                    >
-                      <h3 className="text-sm font-black uppercase tracking-widest text-text-muted mb-4">Billing Details</h3>
-                      <input name="billingStreet" type="text" placeholder="Billing House No, Street" className="w-full bg-white border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
-                      <div className="grid grid-cols-3 gap-4">
-                        <input name="billingCity" type="text" placeholder="City" className="w-full bg-white border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
-                        <input name="billingState" type="text" placeholder="State" className="w-full bg-white border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
-                        <input name="billingZip" type="text" placeholder="PIN" className="w-full bg-white border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
-                      </div>
-                      <input name="billingCountry" type="text" placeholder="Country" defaultValue="India" className="w-full bg-white border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" />
-                    </motion.div>
-                  )}
-               </AnimatePresence>
             </section>
 
-            {/* Payment Method */}
             <section>
-              <h2 className="text-xl font-black mb-6 uppercase tracking-tight flex items-center gap-3">
+              <h2 className="text-xl font-black mb-6 uppercase tracking-tight flex items-center gap-3 text-text-dark">
                 <div className="w-8 h-8 bg-text-dark text-white rounded-full flex items-center justify-center text-xs">3</div>
                 Payment Method
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div 
-                  onClick={() => setPaymentMethod('UPI')} 
-                  className={`p-6 rounded-[2rem] border-2 cursor-pointer transition-all flex items-center justify-between group ${paymentMethod === 'UPI' ? 'border-accent-gold bg-accent-gold/5 shadow-md' : 'border-secondary-ivory hover:border-text-muted'}`}
-                >
+                <div onClick={() => setPaymentMethod('UPI')} className={`p-6 rounded-[2rem] border-2 cursor-pointer transition-all flex items-center justify-between group ${paymentMethod === 'UPI' ? 'border-accent-gold bg-accent-gold/5 shadow-md' : 'border-secondary-ivory hover:border-text-muted'}`}>
                   <div className="flex items-center gap-4">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${paymentMethod === 'UPI' ? 'bg-accent-gold text-white' : 'bg-secondary-ivory text-text-muted group-hover:bg-text-dark group-hover:text-white'}`}>
                       <CreditCard size={20} />
                     </div>
-                    <span className="font-black text-xs uppercase tracking-widest">Instant UPI</span>
+                    <span className="font-black text-xs uppercase tracking-widest text-text-dark">Instant UPI</span>
                   </div>
                   {paymentMethod === 'UPI' && <CheckCircle2 className="text-accent-gold" size={20} />}
                 </div>
-
                 {settings?.cod_available === 'yes' && (
-                  <div 
-                    onClick={() => setPaymentMethod('COD')} 
-                    className={`p-6 rounded-[2rem] border-2 cursor-pointer transition-all flex items-center justify-between group ${paymentMethod === 'COD' ? 'border-accent-gold bg-accent-gold/5 shadow-md' : 'border-secondary-ivory hover:border-text-muted'}`}
-                  >
-                    <div className="flex items-center gap-4">
+                  <div onClick={() => setPaymentMethod('COD')} className={`p-6 rounded-[2rem] border-2 cursor-pointer transition-all flex items-center justify-between group ${paymentMethod === 'COD' ? 'border-accent-gold bg-accent-gold/5 shadow-md' : 'border-secondary-ivory hover:border-text-muted'}`}>
+                    <div className="flex items-center gap-4 text-text-dark">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${paymentMethod === 'COD' ? 'bg-accent-gold text-white' : 'bg-secondary-ivory text-text-muted group-hover:bg-text-dark group-hover:text-white'}`}>
                         <IndianRupee size={20} />
                       </div>
@@ -314,8 +279,7 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* Sidebar Order Summary */}
-          <div className="lg:col-span-5">
+          <div className="lg:col-span-5 text-text-dark">
             <div className="bg-secondary-ivory/20 rounded-[3rem] p-8 md:p-10 sticky top-32 border border-secondary-ivory shadow-sm">
               <h2 className="text-xl font-black mb-8 uppercase tracking-tight">Order Details</h2>
               <div className="space-y-6 mb-8 max-h-[35vh] overflow-y-auto pr-4 custom-scrollbar">
@@ -346,14 +310,12 @@ export default function CheckoutPage() {
                     <span className="text-accent-gold">{shipping === 0 ? 'COMPLIMENTARY' : formatPrice(shipping)}</span>
                   </div>
                 </div>
-                
                 {paymentMethod === 'COD' && (
                    <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex justify-between text-[11px] font-bold uppercase tracking-widest text-text-muted">
                       <span>COD Handling Fee</span>
                       <span className="text-text-dark">{formatPrice(codFee)}</span>
                    </motion.div>
                 )}
-
                 <div className="flex justify-between items-end pt-6 mt-4 border-t border-secondary-ivory">
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-[0.3em] text-text-muted mb-1">Grand Total</p>
@@ -364,21 +326,11 @@ export default function CheckoutPage() {
                   </div>
                 </div>
               </div>
-
-              <div className="mt-10 p-6 bg-white/50 rounded-2xl border border-secondary-ivory flex items-center gap-4">
-                 <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-600">
-                    <ShieldCheck size={20} />
-                 </div>
-                 <p className="text-[10px] font-bold text-text-muted leading-relaxed uppercase tracking-tight">
-                    Your transaction is encrypted and protected with industry-standard security.
-                 </p>
-              </div>
             </div>
           </div>
         </form>
       </div>
       <Footer />
-      
       <style jsx>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }

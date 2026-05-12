@@ -15,6 +15,10 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: "COSRX Official Store | Expecting Tomorrow",
   description: "Dermatologically tested skincare for all skin types. Shop the official COSRX store for Snail Mucin, Retinol, and more.",
+  icons: {
+    icon: '/icon.png',
+    apple: '/icon.png',
+  }
 };
 
 export default function RootLayout({

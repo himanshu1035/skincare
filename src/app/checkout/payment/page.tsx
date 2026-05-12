@@ -86,12 +86,13 @@ function PaymentPageContent() {
       .update({ 
         skin_status: newStatus,
         skin_payment_method: paymentMethod.toUpperCase(),
-        skin_utr: utr || null
+        skin_utr: utr || null,
+        skin_payment_status: paymentMethod === 'cod' ? 'unpaid' : 'verified'
       })
       .eq('skin_id', orderId);
 
     if (!error) {
-      clearCart();
+      clearCart(); // ONLY clear cart on success
       router.push(`/checkout/status?status=success&orderId=${orderId}`);
     } else {
       alert('Error: ' + error.message);
@@ -99,30 +100,55 @@ function PaymentPageContent() {
     setIsSubmitting(false);
   };
 
+  const handleBack = async () => {
+    // Mark current order as failed before going back
+    if (orderId) {
+      await supabase
+        .from('skin_orders')
+        .update({ skin_status: 'cancelled', skin_payment_status: 'failed' })
+        .eq('skin_id', orderId);
+    }
+    router.push('/checkout');
+  };
+
   if (!isMounted || loading) return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-accent-gold" size={40} /></div>;
 
   const finalTotal = Number(order.skin_total_amount);
-  const codFee = Number(settings?.cod_handling_price || 50);
   const upiId = settings?.upi_id || 'merchant@upi';
   const merchantName = encodeURIComponent(settings?.upi_name || 'COSRX STORE');
   
+  // New Logic: COD Upfront = Shipping + COD Fee (if admin enabled)
+  const shippingCharge = Number(order.skin_shipping_charge || 0);
+  const codCharge = Number(order.skin_cod_charge || 0);
+  const totalHandlingCharges = shippingCharge + codCharge;
+
   const amountToPayNow = paymentMethod === 'cod' 
-    ? (settings?.prepay_handling_for_cod === 'yes' ? codFee : 0)
+    ? (settings?.prepay_handling_for_cod === 'yes' ? totalHandlingCharges : 0)
     : finalTotal;
 
-  // Standard UPI deep link
-  const upiLink = `upi://pay?pa=${upiId}&pn=${merchantName}&am=${amountToPayNow}&cu=INR`;
+  // Standard UPI deep link with TR and MC to avoid "Amount > 2000" bank restrictions
+  // MC 5311 is for Departmental Stores (Generic Retail)
+  const transactionId = `TXN${orderId?.slice(0, 8)}${Date.now().toString().slice(-6)}`;
+  const upiLink = `upi://pay?pa=${upiId}&pn=${merchantName}&tr=${transactionId}&mc=5311&am=${amountToPayNow}&cu=INR`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiLink)}`;
 
-  // Direct app handlers to avoid WhatsApp redirection
+  // Direct app handlers to avoid WhatsApp redirection and handle specific app logic
   const openPaymentApp = (app: string) => {
     let link = upiLink;
     const isAndroid = /Android/i.test(navigator.userAgent);
 
     if (isAndroid) {
-      if (app === 'gpay') link = `intent://pay?pa=${upiId}&pn=${merchantName}&am=${amountToPayNow}&cu=INR#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end`;
-      if (app === 'phonepe') link = `intent://pay?pa=${upiId}&pn=${merchantName}&am=${amountToPayNow}&cu=INR#Intent;scheme=upi;package=com.phonepe.app;end`;
-      if (app === 'paytm') link = `intent://pay?pa=${upiId}&pn=${merchantName}&am=${amountToPayNow}&cu=INR#Intent;scheme=upi;package=net.one97.paytm;end`;
+      // Direct Intent URLs to bypass chooser and fix bank checks
+      if (app === 'gpay') {
+        link = `intent://pay?pa=${upiId}&pn=${merchantName}&am=${amountToPayNow}&tr=${transactionId}&mc=5311&cu=INR#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end`;
+      } else if (app === 'phonepe') {
+        link = `intent://pay?pa=${upiId}&pn=${merchantName}&am=${amountToPayNow}&tr=${transactionId}&mc=5311&cu=INR#Intent;scheme=upi;package=com.phonepe.app;end`;
+      } else if (app === 'paytm') {
+        link = `intent://pay?pa=${upiId}&pn=${merchantName}&am=${amountToPayNow}&tr=${transactionId}&mc=5311&cu=INR#Intent;scheme=upi;package=net.one97.paytm;end`;
+      }
+    } else {
+      // iOS / Other handles basic upi:// scheme
+      link = upiLink;
     }
     
     window.location.href = link;
@@ -139,7 +165,7 @@ function PaymentPageContent() {
       <Navbar />
       <div className="pt-40 pb-24">
         <div className="container max-w-6xl">
-          <button onClick={() => router.push('/checkout')} className="flex items-center gap-2 text-text-muted hover:text-text-dark font-black uppercase tracking-widest text-[10px] mb-8 transition-colors">
+          <button onClick={handleBack} className="flex items-center gap-2 text-text-muted hover:text-text-dark font-black uppercase tracking-widest text-[10px] mb-8 transition-colors">
             <ArrowLeft size={14} /> Back to Shipping Info
           </button>
 
@@ -193,8 +219,15 @@ function PaymentPageContent() {
                       <div className="inline-flex items-center gap-2 px-4 py-2 bg-accent-gold/10 text-accent-gold rounded-full text-[10px] font-black uppercase tracking-widest">
                         <Zap size={12} /> Secure UPI Payment
                       </div>
-                      <h3 className="text-2xl font-black tracking-tight">Scan this QR</h3>
-                      <p className="text-sm text-text-muted font-medium">Pay exactly <span className="font-black text-text-dark">{formatPrice(amountToPayNow)}</span></p>
+                      <h3 className="text-2xl font-black tracking-tight">
+                        {paymentMethod === 'cod' ? 'Confirm Delivery' : 'Scan this QR'}
+                      </h3>
+                      <p className="text-sm text-text-muted font-medium">
+                        {paymentMethod === 'cod' 
+                          ? `Pay ${formatPrice(amountToPayNow)} to confirm your COD order.` 
+                          : `Pay exactly ${formatPrice(amountToPayNow)} to secure your order.`
+                        }
+                      </p>
                     </div>
 
                     <div className="relative inline-block p-4 bg-white border-2 border-secondary-ivory rounded-[2.5rem] shadow-sm overflow-hidden group">
@@ -265,6 +298,12 @@ function PaymentPageContent() {
                     <span className="opacity-60 font-medium">Total Order Value</span>
                     <span className="font-bold">{formatPrice(finalTotal)}</span>
                   </div>
+                  {amountToPayNow > 0 && amountToPayNow < finalTotal && (
+                    <div className="flex justify-between text-sm text-accent-gold">
+                      <span className="font-medium">Balance Due at Doorstep</span>
+                      <span className="font-bold">{formatPrice(finalTotal - amountToPayNow)}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-between items-end mb-10">

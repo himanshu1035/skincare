@@ -66,6 +66,9 @@ CREATE TABLE IF NOT EXISTS skin_orders (
   skin_payment_method TEXT, -- 'cod', 'card', 'upi'
   skin_utr TEXT UNIQUE, -- Unique Transaction Reference for verification
   skin_shipping_address TEXT,
+  skin_billing_address TEXT,
+  skin_shipping_charge DECIMAL(10,2) DEFAULT 0,
+  skin_cod_charge DECIMAL(10,2) DEFAULT 0,
   skin_created_at TIMESTAMPTZ DEFAULT NOW(),
   skin_updated_at TIMESTAMPTZ DEFAULT NOW()
 );
