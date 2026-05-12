@@ -1,3 +1,5 @@
+"use client";
+
 import React from 'react';
 
 export default function GlobalLoading() {
@@ -5,7 +7,7 @@ export default function GlobalLoading() {
     <div className="fixed top-0 left-0 right-0 z-[9999] pointer-events-none">
       {/* Top Progress Bar */}
       <div className="h-[3px] w-full bg-secondary-ivory/30 overflow-hidden">
-        <div className="h-full bg-accent-gold w-1/3 animate-loading-bar shadow-[0_0_10px_rgba(212,175,55,0.5)]" />
+        <div className="h-full bg-accent-gold w-1/3 animate-[loading-bar_1.5s_infinite_ease-in-out] shadow-[0_0_10px_rgba(212,175,55,0.5)]" />
       </div>
 
       {/* Subtle Full Page Overlay for 'Shadow' effect */}
@@ -26,9 +28,6 @@ export default function GlobalLoading() {
           0% { transform: translateX(-100%); }
           50% { transform: translateX(0); }
           100% { transform: translateX(100%); }
-        }
-        .animate-loading-bar {
-          animation: loading-bar 1.5s infinite ease-in-out;
         }
       `}</style>
     </div>
