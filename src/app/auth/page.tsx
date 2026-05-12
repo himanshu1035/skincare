@@ -21,6 +21,17 @@ export default function AuthPage() {
   const setUser = useAuthStore((state) => state.setUser);
   const supabase = createClient();
 
+  // Redirect if already logged in
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session || useAuthStore.getState().user) {
+        router.replace('/account');
+      }
+    };
+    checkUser();
+  }, [router, supabase]);
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
