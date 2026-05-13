@@ -10,7 +10,8 @@ import {
   LogOut, 
   Loader2,
   User,
-  Shield
+  Shield,
+  ShoppingBag
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -72,9 +73,10 @@ export default function MarketerLayout({
   if (pathname === '/marketer/login') return <>{children}</>;
 
   const menuItems = [
-    { label: 'Dashboard', icon: <LayoutDashboard size={18} />, path: '/marketer/dashboard' },
-    { label: 'Coupons', icon: <Ticket size={18} />, path: '/marketer/dashboard' }, // Same for now
-    { label: 'Earnings', icon: <TrendingUp size={18} />, path: '/marketer/dashboard' }, // Same for now
+    { label: 'Overview', icon: <LayoutDashboard size={18} />, path: '/marketer/dashboard' },
+    { label: 'Campaigns', icon: <Ticket size={18} />, path: '/marketer/coupons' },
+    { label: 'Financials', icon: <TrendingUp size={18} />, path: '/marketer/earnings' },
+    { label: 'Sales Tracking', icon: <ShoppingBag size={18} />, path: '/marketer/orders' },
   ];
 
   return (
