@@ -185,12 +185,6 @@ function PaymentPageContent() {
     alert(`${label} copied to clipboard!`);
   };
 
-  const apps = [
-    { id: 'gpay', name: 'Google Pay', icon: 'https://cdn.iconscout.com/icon/free/png-256/google-pay-2038779-1721670.png' },
-    { id: 'phonepe', name: 'PhonePe', icon: 'https://cdn.iconscout.com/icon/free/png-256/phonepe-2038781-1721672.png' },
-    { id: 'paytm', name: 'Paytm', icon: 'https://cdn.iconscout.com/icon/free/png-256/paytm-226448.png' }
-  ];
-
   return (
     <main className="min-h-screen bg-secondary-ivory/20">
       <Navbar />
@@ -251,18 +245,15 @@ function PaymentPageContent() {
                         <Zap size={12} /> Secure UPI Payment
                       </div>
                       <h3 className="text-2xl font-black tracking-tight">
-                        {paymentMethod === 'cod' ? 'Confirm Delivery' : 'Scan this QR'}
+                        {paymentMethod === 'cod' ? 'Confirm Delivery' : 'Scan to Pay Now'}
                       </h3>
                       <p className="text-sm text-text-muted font-medium">
-                        {paymentMethod === 'cod' 
-                          ? `Pay ${formatPrice(amountToPayNow)} to confirm your COD order.` 
-                          : `Pay exactly ${formatPrice(amountToPayNow)} to secure your order.`
-                        }
+                        Use any UPI app to scan this QR and complete your payment.
                       </p>
                     </div>
 
-                    <div className="relative inline-block p-4 bg-white border-2 border-secondary-ivory rounded-[2.5rem] shadow-sm overflow-hidden group">
-                       <img src={qrUrl} alt="UPI Payment QR" className="w-60 h-60 object-contain relative z-10" />
+                    <div className="relative inline-block p-6 bg-white border-4 border-secondary-ivory rounded-[3rem] shadow-xl overflow-hidden group">
+                       <img src={qrUrl} alt="UPI Payment QR" className="w-64 h-64 object-contain relative z-10" />
                        <div className="absolute inset-0 bg-accent-gold/5 scale-0 group-hover:scale-150 transition-transform duration-700 rounded-full blur-3xl" />
                     </div>
 
@@ -307,20 +298,31 @@ function PaymentPageContent() {
                     )}
 
                     <div className="space-y-6">
-                      <p className="text-[10px] font-black text-text-muted uppercase tracking-[0.3em]">Or Click to Open App</p>
-                      <div className="flex justify-center gap-6">
-                        {apps.map((app) => (
-                          <button 
-                            key={app.id} 
-                            onClick={() => openPaymentApp(app.id)}
-                            className="flex flex-col items-center gap-3 group"
-                          >
-                            <div className="w-16 h-16 rounded-2xl bg-secondary-ivory p-3 group-hover:scale-110 transition-transform shadow-sm flex items-center justify-center">
-                              <img src={app.icon} alt={app.name} className="w-full h-full object-contain" />
-                            </div>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">{app.name}</span>
-                          </button>
-                        ))}
+                      <div className="p-4 bg-red-50 border-2 border-red-200 rounded-[2rem] flex items-start gap-4 text-left animate-pulse">
+                        <AlertCircle className="text-red-600 flex-shrink-0" size={24} />
+                        <div>
+                          <p className="text-[11px] font-black text-red-700 uppercase tracking-widest mb-1">STRICT CANCELLATION WARNING</p>
+                          <p className="text-[10px] font-bold text-red-600 uppercase leading-relaxed">
+                            PLEASE ENSURE THE <span className="text-red-800 underline">UPI ID</span> AND <span className="text-red-800 underline">AMOUNT</span> ARE 100% CORRECT. IF ANY DETAIL IS INCORRECT, YOUR ORDER WILL BE AUTOMATICALLY REJECTED & CANCELED.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <p className="text-[10px] font-black text-text-muted uppercase tracking-[0.3em]">Payment Instructions</p>
+                        <ol className="text-left space-y-3">
+                           {[
+                             'Copy the Merchant UPI ID and Total Amount shown above.',
+                             'Open any UPI app (GPay, PhonePe, Paytm, etc.).',
+                             'Pay the EXACT amount to the copied UPI ID.',
+                             'Enter the 12-digit UTR/Transaction ID below to confirm.'
+                           ].map((step, i) => (
+                             <li key={i} className="flex gap-3 text-[10px] font-bold text-text-dark uppercase tracking-tight">
+                               <span className="w-5 h-5 rounded-full bg-secondary-ivory flex items-center justify-center text-[8px] flex-shrink-0">{i + 1}</span>
+                               {step}
+                             </li>
+                           ))}
+                        </ol>
                       </div>
                     </div>
 
