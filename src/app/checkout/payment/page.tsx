@@ -72,10 +72,7 @@ function PaymentPageContent() {
     const { data: orderData } = await supabase.from('skin_orders').select('*').eq('skin_id', orderId).single();
     if (orderData) {
       // If order is already cancelled or paid, don't allow payment
-      if (orderData.skin_status === 'cancelled') {
-        router.push(`/checkout/status?status=cancelled&orderId=${orderId}`);
-        return;
-      }
+      // If order is already paid, don't allow double payment
       if (orderData.skin_utr) {
         router.push(`/checkout/status?status=success&orderId=${orderId}`);
         return;

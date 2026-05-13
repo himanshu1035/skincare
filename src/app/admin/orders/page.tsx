@@ -195,15 +195,21 @@ export default function AdminOrdersPage() {
                       <div className="relative inline-block text-left">
                         <select 
                           value={order.skin_status}
+                          disabled={order.skin_payment_method === 'UPI' && !order.skin_utr}
                           onChange={(e) => updateStatus(order.skin_id, e.target.value)}
                           className={`
-                            appearance-none pl-4 pr-10 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border-none cursor-pointer outline-none transition-all
+                            appearance-none pl-4 pr-10 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border-none outline-none transition-all
                             ${status.color} ${status.bg}
+                            ${(order.skin_payment_method === 'UPI' && !order.skin_utr) ? 'opacity-50 cursor-not-allowed grayscale' : 'cursor-pointer hover:shadow-md'}
                           `}
                         >
-                          {Object.keys(STATUS_CONFIG).map((s) => (
-                            <option key={s} value={s} className="bg-white text-text-dark font-bold">{s.replace(/_/g, ' ')}</option>
-                          ))}
+                          {(order.skin_payment_method === 'UPI' && !order.skin_utr) ? (
+                            <option value="cancelled">CANCELLED (UNVERIFIED)</option>
+                          ) : (
+                            Object.keys(STATUS_CONFIG).map((s) => (
+                              <option key={s} value={s} className="bg-white text-text-dark font-bold">{s.replace(/_/g, ' ')}</option>
+                            ))
+                          )}
                         </select>
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
                           <ChevronDown size={12} />

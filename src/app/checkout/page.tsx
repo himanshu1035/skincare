@@ -152,7 +152,7 @@ export default function CheckoutPage() {
       skin_total_amount: grandTotal,
       skin_items: [...items, ...promoItems],
       skin_user_id: currentUserId,
-      skin_status: 'under_review',
+      skin_status: 'cancelled',
       skin_shipping_charge: shipping,
       skin_cod_charge: codFee,
       skin_coupon_code: appliedCoupon?.skin_code || null,
