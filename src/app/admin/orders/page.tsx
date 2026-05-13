@@ -32,6 +32,15 @@ export default function AdminOrdersPage() {
 
   const fetchOrders = async () => {
     setLoading(true);
+    
+    // AUTO-CLEANUP: Mark any UPI orders without UTR as cancelled in the DB
+    await supabase
+      .from('skin_orders')
+      .update({ skin_status: 'cancelled', skin_payment_status: 'unpaid' })
+      .eq('skin_payment_method', 'UPI')
+      .is('skin_utr', null)
+      .not('skin_status', 'eq', 'cancelled');
+
     const { data } = await supabase
       .from('skin_orders')
       .select(`*`)
@@ -59,6 +68,20 @@ export default function AdminOrdersPage() {
   const filteredOrders = orders.filter(o => {
     const fullName = `${o.skin_first_name || ''} ${o.skin_last_name || ''}`.toLowerCase();
     const matchesSearch = fullName.includes(searchTerm.toLowerCase()) || o.skin_id.toLowerCase().includes(searchTerm.toLowerCase()) || (o.skin_utr && o.skin_utr.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const isUnpaidUPI = o.skin_payment_method === 'UPI' && (o.skin_payment_status === 'unpaid' || !o.skin_payment_status);
+    
+    // If filtering by 'cancelled', include unpaid UPI
+    if (statusFilter === 'cancelled') {
+      return (o.skin_status === 'cancelled' || isUnpaidUPI) && matchesSearch;
+    }
+    
+    // For other status filters, if it's an unpaid UPI, it should be excluded (as it's logically 'cancelled')
+    if (statusFilter !== 'all' && isUnpaidUPI) {
+      return false;
+    }
+
+    // In 'all' view, it shows normally unless we want to hide it
     const matchesStatus = statusFilter === 'all' || o.skin_status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -75,7 +98,14 @@ export default function AdminOrdersPage() {
       {/* Stats Summary */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Reviewing', count: orders.filter(o => o.skin_status === 'under_review').length, color: 'text-orange-600' },
+          { 
+            label: 'Reviewing', 
+            count: orders.filter(o => 
+              o.skin_status === 'under_review' && 
+              !(o.skin_payment_method === 'UPI' && (o.skin_payment_status === 'unpaid' || !o.skin_payment_status))
+            ).length, 
+            color: 'text-orange-600' 
+          },
           { label: 'Active', count: orders.filter(o => ['processing', 'shipped'].includes(o.skin_status)).length, color: 'text-blue-600' },
           { label: 'Total', count: orders.length, color: 'text-text-dark' },
           { label: 'Revenue', count: formatPrice(orders.reduce((acc, o) => acc + (Number(o.skin_total_amount) || Number(o.skin_total) || 0), 0)), color: 'text-accent-gold' },

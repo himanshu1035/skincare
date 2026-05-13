@@ -18,6 +18,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { AdminImageUpload } from '@/components/AdminImageUpload';
 
 interface CreateBannerModalProps {
   isOpen: boolean;
@@ -187,31 +188,19 @@ export default function CreateBannerModal({
                 <Monitor size={16} className="text-text-muted" />
                 <h3 className="text-[11px] font-black uppercase tracking-widest text-text-muted">Visual Assets (URLs)</h3>
               </div>
-              <div className="grid grid-cols-1 gap-6 bg-secondary-ivory/30 p-8 rounded-[2.5rem]">
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-text-muted ml-1 flex items-center gap-2">
-                    <Monitor size={12} /> Desktop Image URL (21:9 Recommended)
-                  </label>
-                  <input 
-                    type="text" 
-                    value={formData.skin_image_desktop}
-                    onChange={e => setFormData({...formData, skin_image_desktop: e.target.value})}
-                    placeholder="https://..."
-                    className="w-full h-12 bg-white rounded-xl px-4 text-xs font-bold shadow-sm"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-text-muted ml-1 flex items-center gap-2">
-                    <Smartphone size={12} /> Mobile Image URL (Optional)
-                  </label>
-                  <input 
-                    type="text" 
-                    value={formData.skin_image_mobile}
-                    onChange={e => setFormData({...formData, skin_image_mobile: e.target.value})}
-                    placeholder="https://..."
-                    className="w-full h-12 bg-white rounded-xl px-4 text-xs font-bold shadow-sm"
-                  />
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-secondary-ivory/30 p-8 rounded-[2.5rem]">
+                <AdminImageUpload 
+                  value={formData.skin_image_desktop}
+                  onChange={(url) => setFormData(prev => ({ ...prev, skin_image_desktop: url }))}
+                  label="Desktop Banner"
+                  dimensions="1920x800px recommended"
+                />
+                <AdminImageUpload 
+                  value={formData.skin_image_mobile}
+                  onChange={(url) => setFormData(prev => ({ ...prev, skin_image_mobile: url }))}
+                  label="Mobile Banner (Optional)"
+                  dimensions="800x800px recommended"
+                />
               </div>
             </section>
 

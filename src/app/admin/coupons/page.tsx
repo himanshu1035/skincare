@@ -35,24 +35,60 @@ export default function AdminCouponsPage() {
   
   const supabase = createClient();
 
+  const [statsData, setStatsData] = useState({ usage: 0, savings: 0 });
+
   useEffect(() => {
     fetchCoupons();
+    fetchStats();
   }, []);
+
+  const fetchStats = async () => {
+    const { data: orders } = await supabase
+      .from('skin_orders')
+      .select('skin_discount_amount')
+      .not('skin_coupon_code', 'is', null);
+    
+    if (orders) {
+      const usage = orders.length;
+      const savings = orders.reduce((acc, o) => acc + (Number(o.skin_discount_amount) || 0), 0);
+      setStatsData({ usage, savings });
+    }
+  };
 
   const fetchCoupons = async () => {
     setLoading(true);
-    const { data } = await supabase
+    
+    // 1. Fetch Admin Coupons
+    const { data: adminCoupons } = await supabase
       .from('skin_coupons')
       .select('*')
       .order('skin_created_at', { ascending: false });
+
+    // 2. Fetch Marketer Coupons
+    const { data: marketerCoupons } = await supabase
+      .from('skin_marketer_coupons')
+      .select('*, skin_marketers(skin_name)')
+      .order('skin_created_at', { ascending: false });
     
-    if (data) setCoupons(data);
+    const combined = [
+      ...(adminCoupons || []).map(c => ({ ...c, source: 'admin' })),
+      ...(marketerCoupons || []).map(c => ({ 
+        ...c, 
+        source: 'marketer',
+        skin_type: 'percentage', // Marketer coupons are fixed to percentage for now
+        skin_value: c.skin_discount_percent,
+        marketer_name: c.skin_marketers?.skin_name
+      }))
+    ].sort((a, b) => new Date(b.skin_created_at).getTime() - new Date(a.skin_created_at).getTime());
+
+    setCoupons(combined);
     setLoading(false);
   };
 
-  const toggleCouponStatus = async (id: string, currentStatus: boolean) => {
+  const toggleCouponStatus = async (id: string, currentStatus: boolean, source: string) => {
+    const table = source === 'admin' ? 'skin_coupons' : 'skin_marketer_coupons';
     const { error } = await supabase
-      .from('skin_coupons')
+      .from(table)
       .update({ skin_is_active: !currentStatus })
       .eq('skin_id', id);
     
@@ -81,9 +117,9 @@ export default function AdminCouponsPage() {
   });
 
   const stats = [
-    { label: 'Active Coupons', value: coupons.filter(c => c.skin_is_active).length, icon: <Ticket className="text-green-600" />, bg: 'bg-green-50' },
-    { label: 'Total Usage', value: '1,248', icon: <Users className="text-blue-600" />, bg: 'bg-blue-50' },
-    { label: 'Total Savings', value: formatPrice(45200), icon: <TrendingUp className="text-accent-gold" />, bg: 'bg-accent-gold/10' },
+    { label: 'Active Campaigns', value: coupons.filter(c => c.skin_is_active).length, icon: <Ticket className="text-green-600" />, bg: 'bg-green-50' },
+    { label: 'Total Usage', value: statsData.usage.toLocaleString(), icon: <Users className="text-blue-600" />, bg: 'bg-blue-50' },
+    { label: 'Total Savings', value: formatPrice(statsData.savings), icon: <TrendingUp className="text-accent-gold" />, bg: 'bg-accent-gold/10' },
     { label: 'Expiring Soon', value: coupons.filter(c => c.skin_expiry_date && new Date(c.skin_expiry_date) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)).length, icon: <Calendar className="text-red-600" />, bg: 'bg-red-50' },
   ];
 
@@ -148,7 +184,8 @@ export default function AdminCouponsPage() {
             <thead>
               <tr className="border-b border-secondary-ivory bg-secondary-ivory/30">
                 <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-text-muted">Code & Type</th>
-                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-text-muted">Discount Value</th>
+                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-text-muted">Source</th>
+                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-text-muted">Discount</th>
                 <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-text-muted">Conditions</th>
                 <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-text-muted">Expiry</th>
                 <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-text-muted">Status</th>
@@ -157,7 +194,7 @@ export default function AdminCouponsPage() {
             </thead>
             <tbody className="divide-y divide-secondary-ivory">
               {loading ? (
-                <tr><td colSpan={6} className="py-20 text-center"><Loader2 className="animate-spin inline-block text-accent-gold" /></td></tr>
+                <tr><td colSpan={7} className="py-20 text-center"><Loader2 className="animate-spin inline-block text-accent-gold" /></td></tr>
               ) : filteredCoupons.length > 0 ? (
                 filteredCoupons.map((coupon) => (
                   <tr key={coupon.skin_id} className="hover:bg-secondary-ivory/10 transition-colors group">
@@ -170,6 +207,12 @@ export default function AdminCouponsPage() {
                           <p className="font-black text-text-dark tracking-tight uppercase">{coupon.skin_code}</p>
                           <p className="text-[10px] text-text-muted font-black uppercase mt-0.5">{coupon.skin_type.replace('_', ' ')}</p>
                         </div>
+                      </div>
+                    </td>
+                    <td className="px-8 py-6">
+                      <div className={`flex flex-col gap-1 px-3 py-1.5 rounded-2xl w-fit ${coupon.source === 'admin' ? 'bg-accent-gold/5 text-accent-gold border border-accent-gold/10' : 'bg-purple-50 text-purple-600 border border-purple-100'}`}>
+                        <span className="text-[9px] font-black uppercase tracking-widest">{coupon.source}</span>
+                        {coupon.marketer_name && <span className="text-[8px] font-bold italic line-clamp-1">By: {coupon.marketer_name}</span>}
                       </div>
                     </td>
                     <td className="px-8 py-6">
@@ -192,7 +235,7 @@ export default function AdminCouponsPage() {
                     </td>
                     <td className="px-8 py-6">
                        <button 
-                         onClick={() => toggleCouponStatus(coupon.skin_id, coupon.skin_is_active)}
+                         onClick={() => toggleCouponStatus(coupon.skin_id, coupon.skin_is_active, coupon.source)}
                          className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${
                            coupon.skin_is_active ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
                          }`}
@@ -202,15 +245,20 @@ export default function AdminCouponsPage() {
                     </td>
                     <td className="px-8 py-6 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        {coupon.source === 'admin' && (
+                          <button 
+                            onClick={() => { setSelectedCoupon(coupon); setIsModalOpen(true); }}
+                            className="p-2.5 bg-secondary-ivory/50 rounded-xl text-text-muted hover:text-accent-gold hover:bg-white hover:shadow-md transition-all"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                        )}
                         <button 
-                          onClick={() => { setSelectedCoupon(coupon); setIsModalOpen(true); }}
-                          className="p-2.5 bg-secondary-ivory/50 rounded-xl text-text-muted hover:text-accent-gold hover:bg-white hover:shadow-md transition-all"
-                        >
-                          <Edit2 size={16} />
-                        </button>
-                        <button 
-                          onClick={() => deleteCoupon(coupon.skin_id)}
-                          className="p-2.5 bg-secondary-ivory/50 rounded-xl text-text-muted hover:text-red-500 hover:bg-white hover:shadow-md transition-all"
+                          onClick={() => {
+                            if (coupon.source === 'admin') deleteCoupon(coupon.skin_id);
+                            // Optionally handle marketer coupon deletion if allowed
+                          }}
+                          className={`p-2.5 bg-secondary-ivory/50 rounded-xl text-text-muted hover:bg-white hover:shadow-md transition-all ${coupon.source === 'admin' ? 'hover:text-red-500' : 'opacity-30 cursor-not-allowed'}`}
                         >
                           <Trash2 size={16} />
                         </button>

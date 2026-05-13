@@ -40,13 +40,13 @@ export default async function Home() {
     activeBanners = simpleBanners || [];
   }
 
-  // Final fallback for premium experience
+  // Final fallback for premium experience with requested purple image
   if (activeBanners.length === 0) {
     activeBanners = [{
       skin_id: 'default',
       skin_title: 'Unveil Your Glow',
       skin_subtitle: 'Discover the power of dermatologist-recommended Korean skincare.',
-      skin_image_desktop: 'https://images.unsplash.com/photo-1612817288484-6f916006741a?q=80&w=2000&auto=format&fit=crop',
+      skin_image_desktop: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?q=80&w=2000&auto=format&fit=crop',
       skin_cta_text: 'EXPLORE COLLECTIONS',
       skin_link_type: 'collection',
       skin_link_id: 'all'

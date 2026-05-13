@@ -3,6 +3,9 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { ProductCard } from '@/components/ProductCard';
 import { createClient } from '@/lib/supabase';
+import { CampaignTimer } from '@/components/CampaignTimer';
+import { getEligibleProductsForPromotion, fetchActivePromotions, getPromotionMetadata } from '@/lib/promotionEngine';
+import { Sparkles, Calendar, Zap, Gift } from 'lucide-react';
 
 import { notFound } from 'next/navigation';
 
@@ -18,14 +21,17 @@ export default async function CollectionPage({ params }: { params: Promise<{ han
   // Fetch collection details
   const { data: collection } = await supabase
     .from('skin_collections')
-    .select('*')
+    .select('*, skin_promotions(*), skin_campaigns(*)')
     .eq('skin_slug', handle)
     .single();
 
   // Fetch products in this collection
   let products: any[] = [];
   try {
-    if (collection) {
+    if (collection?.skin_is_dynamic && collection.skin_promotion_id) {
+       // Dynamic Collection Logic: Fetch products eligible for the promotion
+       products = await getEligibleProductsForPromotion(collection.skin_promotion_id);
+    } else if (collection) {
       const { data: collectionProducts } = await supabase
         .from('skin_collection_products')
         .select('skin_product_id')
@@ -96,12 +102,41 @@ export default async function CollectionPage({ params }: { params: Promise<{ han
       
       <div className="pt-32 pb-24">
         <div className="container">
+          {collection?.skin_is_dynamic && (
+            <div className="mb-12 p-8 bg-secondary-ivory rounded-[3rem] border border-accent-gold/20 flex flex-col md:flex-row items-center justify-between gap-8 shadow-sm">
+               <div className="flex items-center gap-6">
+                  <div className="w-16 h-16 bg-text-dark rounded-2xl flex items-center justify-center text-accent-gold shadow-xl">
+                     <Zap size={32} />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-black text-text-dark tracking-tighter uppercase leading-tight">
+                      {collection.skin_promotions?.skin_title || 'Limited Time Offer'}
+                    </h2>
+                    <div className="flex items-center gap-2 mt-2">
+                       <span className="px-3 py-1 bg-accent-gold text-white text-[10px] font-black uppercase tracking-widest rounded-full flex items-center gap-1.5">
+                          <Gift size={12} /> {getPromotionMetadata(collection.skin_promotions as any)}
+                       </span>
+                    </div>
+                  </div>
+               </div>
+               
+               {collection.skin_promotions?.skin_end_date && (
+                 <div className="flex flex-col items-center md:items-end gap-3">
+                   <p className="text-[10px] font-black text-text-muted uppercase tracking-[0.3em] flex items-center gap-2">
+                     <Calendar size={12} /> Offer Ends In:
+                   </p>
+                   <CampaignTimer endDate={collection.skin_promotions.skin_end_date} />
+                 </div>
+               )}
+            </div>
+          )}
+
           <header className="mb-16">
-            <span className="text-accent-gold font-bold tracking-[0.2em] uppercase text-xs mb-4 block">
-              Collection
+            <span className="text-accent-gold font-bold tracking-[0.2em] uppercase text-[10px] mb-4 block flex items-center gap-2">
+              {collection?.skin_is_dynamic ? <><Sparkles size={14} /> Dynamic Collection</> : 'Collection'}
             </span>
-            <h1 className="text-5xl font-bold mb-6 capitalize">{collection?.skin_name || handle.replace('-', ' ')}</h1>
-            <p className="text-text-muted max-w-2xl leading-relaxed">
+            <h1 className="text-5xl font-black text-text-dark tracking-tighter uppercase mb-6">{collection?.skin_name || handle.replace('-', ' ')}</h1>
+            <p className="text-text-muted max-w-2xl leading-relaxed text-sm font-medium italic">
               {collection?.skin_description || `Discover our curated selection of ${handle.replace('-', ' ')} products designed for your skin concerns.`}
             </p>
           </header>

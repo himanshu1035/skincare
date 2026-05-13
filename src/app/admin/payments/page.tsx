@@ -18,10 +18,20 @@ export default function AdminPaymentsPage() {
 
   const fetchPendingPayments = async () => {
     setLoading(true);
+
+    // AUTO-CLEANUP: Mark any UPI orders without UTR as cancelled in the DB
+    await supabase
+      .from('skin_orders')
+      .update({ skin_status: 'cancelled', skin_payment_status: 'unpaid' })
+      .eq('skin_payment_method', 'UPI')
+      .is('skin_utr', null)
+      .not('skin_status', 'eq', 'cancelled');
+
     const { data } = await supabase
       .from('skin_orders')
       .select('*')
       .eq('skin_status', 'under_review')
+      .not('skin_utr', 'is', null) // Only show orders that HAVE a UTR for verification
       .order('skin_created_at', { ascending: false });
     
     if (data) setOrders(data);
@@ -32,10 +42,14 @@ export default function AdminPaymentsPage() {
     setProcessingId(orderId);
     const { error } = await supabase
       .from('skin_orders')
-      .update({ skin_status: status })
+      .update({ skin_status: status, skin_payment_status: status === 'processing' ? 'verified' : 'unpaid' })
       .eq('skin_id', orderId);
     
     if (!error) {
+      if (status === 'processing') {
+        const { recordMarketerCommission } = await import('@/lib/marketerUtils');
+        await recordMarketerCommission(orderId);
+      }
       setOrders(orders.filter(o => o.skin_id !== orderId));
     }
     setProcessingId(null);

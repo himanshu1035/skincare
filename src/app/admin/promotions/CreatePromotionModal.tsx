@@ -18,6 +18,7 @@ import {
   Info
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { DynamicCollectionService } from '@/lib/DynamicCollectionService';
 
 interface CreatePromotionModalProps {
   isOpen: boolean;
@@ -133,6 +134,15 @@ export const CreatePromotionModal: React.FC<CreatePromotionModalProps> = ({
           }))
         );
       }
+    }
+
+    // Sync Dynamic Collection
+    if (promoId) {
+       try {
+         await DynamicCollectionService.syncFromPromotion(promoId);
+       } catch (e) {
+         console.error('Error syncing dynamic collection:', e);
+       }
     }
 
     setLoading(false);

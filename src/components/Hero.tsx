@@ -8,27 +8,20 @@ import { Button } from '@/components/ui/Button';
 const Hero = () => {
   const [imageError, setImageError] = useState(false);
 
-  // Ultimate stable high-quality banner images
+  // Premium clean banner image for better text legibility
   const bannerImage = imageError 
     ? 'https://images.unsplash.com/photo-1556228720-195a672e8a03?q=80&w=2000&auto=format&fit=crop'
-    : 'https://cdn.shopify.com/s/files/1/0511/4845/6114/files/main_banner_pc_blue_peptide_1.jpg';
+    : '/hero-snail.png';
 
   return (
-    <section className="relative h-screen w-full overflow-hidden bg-secondary-ivory">
-      {/* Background Image - Using standard img for reliability */}
+    <section className="relative h-[80vh] w-full overflow-hidden bg-[#FAF9F6] border-b border-secondary-ivory">
+      {/* Clean Minimalist Background - No Image */}
       <div className="absolute inset-0 z-0">
-        <img
-          src={bannerImage}
-          alt="COSRX Premium Skincare"
-          className="w-full h-full object-cover object-center lg:object-right-top transition-opacity duration-1000"
-          onError={() => setImageError(true)}
-        />
-        {/* Deep gradient overlay to guarantee text legibility even if image is bright */}
-        <div className="absolute inset-0 bg-gradient-to-r from-white/80 via-white/40 to-transparent lg:from-white/60" />
+        <div className="absolute top-0 right-0 w-[60%] h-full bg-accent-gold/5 rounded-l-[10rem] blur-3xl opacity-50" />
       </div>
 
       {/* Content */}
-      <div className="container relative z-10 h-full flex flex-col justify-center items-start pt-32">
+      <div className="container relative z-10 h-full flex flex-col justify-center items-start pt-20">
         <motion.div
           initial={{ opacity: 0, x: -30 }}
           animate={{ opacity: 1, x: 0 }}
@@ -41,26 +34,23 @@ const Hero = () => {
             transition={{ delay: 0.5 }}
             className="inline-block text-accent-gold font-black tracking-[0.4em] uppercase mb-6 text-[10px] sm:text-xs"
           >
-            NEW ARRIVAL
+            BEST SELLER EXCLUSIVE
           </motion.span>
-          
-          <h1 className="text-6xl md:text-8xl font-black text-text-dark leading-[0.9] mb-8 tracking-tighter">
-            The Blue <br />
-            Peptide <br />
-            <span className="text-accent-gold italic font-serif font-medium tracking-normal text-5xl md:text-7xl block mt-4">
-              Plump & Glow
-            </span>
+
+          <h1 className="text-6xl sm:text-7xl lg:text-8xl font-black text-text-dark tracking-tighter leading-[0.9] mb-8">
+            THE GLOW OF<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-text-dark to-accent-gold">CONFIDENCE</span>
           </h1>
           
           <p className="text-lg text-text-dark font-medium mb-12 max-w-md leading-relaxed opacity-80">
-            Experience the next level of hydration with our advanced peptide formula. 
-            Designed to restore elasticity and provide a radiant, youthful glow.
+            Advanced Snail Mucin & Propolis Synergy. Experience the 
+            dermatologist-loved formula for a radiant, glass-skin finish.
           </p>
           
           <div className="flex flex-wrap gap-5">
-            <Link href="/products/cosrx-the-blue-peptide-bakuchiol-plump-glow-serum">
+            <Link href="/collections/snail-mucin">
               <Button size="lg" className="h-16 px-10 text-sm font-black tracking-widest bg-text-dark hover:bg-accent-gold text-white border-none rounded-none shadow-2xl transition-all active:scale-95">
-                SHOP NOW
+                SHOP THE GLOW
               </Button>
             </Link>
             <Link href="/collections/peptide">

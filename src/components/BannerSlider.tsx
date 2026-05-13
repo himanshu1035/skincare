@@ -59,28 +59,28 @@ export const BannerSlider: React.FC<{ initialBanners: Banner[] }> = ({ initialBa
           transition={{ duration: 1.2, ease: [0.43, 0.13, 0.23, 0.96] }}
           className="absolute inset-0 w-full h-full"
         >
-          {/* Desktop Image */}
+          {/* Desktop View - Premium Grid Editorial */}
           <div className="hidden md:block absolute inset-0">
              <img 
                src={currentBanner.skin_image_desktop} 
                alt={currentBanner.skin_title} 
-               className="w-full h-full object-cover"
+               className="w-full h-full object-cover object-right-top"
              />
+             <div className="absolute inset-0 bg-gradient-to-r from-white via-white/40 to-transparent" />
           </div>
-          {/* Mobile Image */}
+
+          {/* Mobile View - Original Cover */}
           <div className="md:hidden absolute inset-0">
              <img 
                src={currentBanner.skin_image_mobile || currentBanner.skin_image_desktop} 
                alt={currentBanner.skin_title} 
                className="w-full h-full object-cover"
              />
+             <div className="absolute inset-0 bg-text-dark/20 backdrop-blur-[1px]" />
           </div>
 
-          {/* Overlay Gradient */}
-          <div className="absolute inset-0 bg-gradient-to-r from-text-dark/40 via-text-dark/10 to-transparent" />
-
           {/* Content */}
-          <div className="container relative h-full flex flex-col justify-center items-start pt-20">
+          <div className="container relative h-full flex flex-col justify-center items-start pt-20 z-10">
             <motion.div
               initial={{ y: 40, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -97,14 +97,12 @@ export const BannerSlider: React.FC<{ initialBanners: Banner[] }> = ({ initialBa
                   Limited Time Exclusive
                 </motion.span>
                 <h1 
-                  style={{ color: currentBanner.skin_text_color || '#FFFFFF' }}
-                  className="text-6xl md:text-8xl font-black tracking-tighter leading-[0.9] uppercase"
+                  className="text-6xl md:text-8xl font-black tracking-tighter leading-[0.9] uppercase text-text-dark"
                 >
                   {currentBanner.skin_title}
                 </h1>
                 <p 
-                  style={{ color: (currentBanner.skin_text_color || '#FFFFFF') + 'CC' }}
-                  className="text-lg md:text-xl font-medium max-w-lg leading-relaxed italic"
+                  className="text-lg md:text-xl font-medium max-w-lg leading-relaxed italic text-text-muted"
                 >
                   {currentBanner.skin_subtitle}
                 </p>
@@ -114,7 +112,7 @@ export const BannerSlider: React.FC<{ initialBanners: Banner[] }> = ({ initialBa
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="group px-10 py-5 bg-white text-text-dark rounded-full font-black text-xs tracking-[0.2em] uppercase flex items-center gap-4 shadow-2xl hover:bg-accent-gold hover:text-white transition-all mt-10"
+                  className="group px-10 py-5 bg-text-dark text-white rounded-full font-black text-xs tracking-[0.2em] uppercase flex items-center gap-4 shadow-2xl hover:bg-accent-gold transition-all mt-10"
                 >
                   {currentBanner.skin_cta_text}
                   <ArrowRight size={18} className="group-hover:translate-x-2 transition-transform" />

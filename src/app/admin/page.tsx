@@ -14,6 +14,15 @@ import { QuickCollectionSelect } from '@/components/QuickCollectionSelect';
 export default async function AdminDashboard() {
   const supabase = createClient();
 
+  // 0. AUTO-CLEANUP: Permanently mark non-finalized UPI orders as cancelled in the DB
+  // This ensures stats and lists are clean across ALL admin pages.
+  await supabase
+    .from('skin_orders')
+    .update({ skin_status: 'cancelled', skin_payment_status: 'unpaid' })
+    .eq('skin_payment_method', 'UPI')
+    .is('skin_utr', null)
+    .not('skin_status', 'eq', 'cancelled');
+
   // 1. Fetch Real Stats & Collections
   const [
     { count: productCount },

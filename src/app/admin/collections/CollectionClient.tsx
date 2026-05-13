@@ -8,7 +8,11 @@ import {
   Edit2, 
   Trash2, 
   ArrowRight,
-  PackageCheck
+  PackageCheck,
+  Zap,
+  Sparkles,
+  Globe,
+  Home
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
@@ -61,22 +65,28 @@ export const CollectionClient = ({ collections: initialCollections }: Collection
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {initialCollections?.map((col) => {
           const isFeatured = col.skin_name.toLowerCase().includes('best');
+          const isDynamic = col.skin_is_dynamic;
           return (
             <div key={col.skin_id} className={cn(
               "bg-white p-8 rounded-[2.5rem] border transition-all duration-500 relative overflow-hidden shadow-sm hover:shadow-2xl group",
-              isFeatured ? "border-accent-gold/30 bg-accent-gold/5" : "border-secondary-ivory"
+              isDynamic ? "border-accent-gold/40 bg-accent-gold/[0.02]" : (isFeatured ? "border-accent-gold/30 bg-accent-gold/5" : "border-secondary-ivory")
             )}>
-              {isFeatured && (
-                <div className="absolute top-0 right-0 bg-accent-gold text-white text-[8px] font-black px-4 py-2 rounded-bl-2xl uppercase tracking-widest">
+              {isDynamic && (
+                <div className="absolute top-0 right-0 bg-accent-gold text-white text-[8px] font-black px-4 py-2 rounded-bl-2xl uppercase tracking-widest flex items-center gap-1.5 shadow-lg">
+                   <Zap size={10} className="animate-pulse" /> LIVE OFFER
+                </div>
+              )}
+              {isFeatured && !isDynamic && (
+                <div className="absolute top-0 right-0 bg-text-dark text-white text-[8px] font-black px-4 py-2 rounded-bl-2xl uppercase tracking-widest">
                   Featured Menu
                 </div>
               )}
               <div className="flex items-start justify-between mb-6">
                 <div className={cn(
                   "w-14 h-14 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 duration-500 shadow-inner",
-                  isFeatured ? "bg-accent-gold text-white" : "bg-secondary-ivory text-text-dark"
+                  isDynamic ? "bg-text-dark text-accent-gold" : (isFeatured ? "bg-accent-gold text-white" : "bg-secondary-ivory text-text-dark")
                 )}>
-                  <Tag size={24} />
+                  {isDynamic ? <Sparkles size={24} /> : <Tag size={24} />}
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => handleEdit(col)} className="w-10 h-10 rounded-full bg-secondary-ivory/50 flex items-center justify-center text-text-muted hover:text-text-dark hover:bg-white hover:shadow-md transition-all"><Edit2 size={16} /></button>
@@ -89,8 +99,8 @@ export const CollectionClient = ({ collections: initialCollections }: Collection
               
               <div className="flex items-center justify-between pt-8 border-t border-secondary-ivory">
                 <div className="flex items-center gap-2 text-[10px] font-black text-text-muted uppercase tracking-widest">
-                  <PackageCheck size={14} className="text-accent-gold" />
-                  {col.skin_collection_products?.[0]?.count || 0} Products
+                  {isDynamic ? <Zap size={14} className="text-accent-gold" /> : <PackageCheck size={14} className="text-accent-gold" />}
+                  {isDynamic ? 'Auto-Sync Active' : `${col.skin_collection_products?.[0]?.count || 0} Products`}
                 </div>
                 <Link href={`/admin/collections/${col.skin_id}/assign`}>
                   <button className="text-[10px] font-black text-text-dark hover:text-accent-gold transition-colors flex items-center gap-2 uppercase tracking-widest">

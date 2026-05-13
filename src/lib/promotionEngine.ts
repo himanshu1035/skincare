@@ -174,3 +174,83 @@ export const evaluatePromotions = (cartItems: any[], promotions: Promotion[]) =>
     appliedPromotionIds 
   };
 };
+
+export const getEligibleProductsForPromotion = async (promotionId: string) => {
+  const supabase = createClient();
+  
+  // 1. Fetch promotion and its targets
+  const { data: promo } = await supabase
+    .from('skin_promotions')
+    .select('*, targets:skin_promotion_targets(*)')
+    .eq('skin_id', promotionId)
+    .single();
+
+  if (!promo) return [];
+
+  const targets = promo.targets || [];
+  
+  // 2. Build Query
+  let query = supabase.from('skin_products').select('*');
+
+  if (targets.length === 0) {
+    // Storewide
+    const { data } = await query;
+    return data || [];
+  }
+
+  // Handle inclusions
+  // Handle inclusions and exclusions with defensive checks
+  const targetList = Array.isArray(targets) ? targets : [];
+  
+  const inclusions = targetList.filter(t => t && !t.skin_is_exclusion);
+  const exclusions = targetList.filter(t => t && t.skin_is_exclusion);
+
+  const inclusionProductIds = inclusions
+    .filter(t => t.skin_target_type === 'product' && t.skin_target_id)
+    .map(t => t.skin_target_id);
+    
+  const inclusionCategoryIds = inclusions
+    .filter(t => t.skin_target_type === 'category' && t.skin_target_id)
+    .map(t => t.skin_target_id);
+
+  const exclusionProductIds = exclusions
+    .filter(t => t.skin_target_type === 'product' && t.skin_target_id)
+    .map(t => t.skin_target_id);
+    
+  const exclusionCategoryIds = exclusions
+    .filter(t => t.skin_target_type === 'category' && t.skin_target_id)
+    .map(t => t.skin_target_id);
+
+  // This is a bit complex for a single Supabase query if both products and categories are involved
+  // We'll fetch all and filter for now, or build a smart query
+  const { data: allProducts } = await supabase.from('skin_products').select('*');
+  if (!allProducts) return [];
+
+  return allProducts.filter(p => {
+    // Must be in inclusions if inclusions exist
+    if (inclusions.length > 0) {
+      const isIncluded = inclusionProductIds.includes(p.skin_id) || inclusionCategoryIds.includes(p.skin_category_id);
+      if (!isIncluded) return false;
+    }
+    // Must NOT be in exclusions
+    const isExcluded = exclusionProductIds.includes(p.skin_id) || exclusionCategoryIds.includes(p.skin_category_id);
+    return !isExcluded;
+  });
+};
+
+export const getPromotionMetadata = (promo: Promotion) => {
+  switch (promo.skin_type) {
+    case 'bogo':
+      return `Buy ${promo.skin_buy_quantity} Get ${promo.skin_get_quantity} FREE`;
+    case 'free_gift':
+      return 'Free Gift with Purchase';
+    case 'cart_value':
+      return `Extra Discount on ₹${promo.skin_min_cart_value}+`;
+    case 'quantity':
+      return `Bulk Discount (${promo.skin_min_quantity}+ items)`;
+    case 'combo':
+      return 'Special Combo Price';
+    default:
+      return 'Special Offer';
+  }
+};

@@ -15,7 +15,10 @@ import {
   ShieldCheck,
   Compass,
   MessageSquare,
-  Ticket
+  Ticket,
+  Zap,
+  Image as ImageIcon,
+  Sparkles
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion } from 'framer-motion';
@@ -29,9 +32,18 @@ export const AdminSidebar = React.memo(() => {
       title: "Store Overview",
       items: [
         { name: 'Dashboard', href: '/admin', icon: <LayoutDashboard size={16} /> },
-        { name: 'Coupons', href: '/admin/coupons', icon: <Ticket size={16} /> },
-        { name: 'Support Center', href: '/admin/support', icon: <MessageSquare size={16} /> },
         { name: 'Payments Review', href: '/admin/payments', icon: <ShieldCheck size={16} /> },
+        { name: 'Support Center', href: '/admin/support', icon: <MessageSquare size={16} /> },
+      ]
+    },
+    {
+      title: "Marketing",
+      items: [
+        { name: 'Campaigns', href: '/admin/campaigns', icon: <Sparkles size={16} /> },
+        { name: 'Promotions', href: '/admin/promotions', icon: <Zap size={16} /> },
+        { name: 'Coupons', href: '/admin/coupons', icon: <Ticket size={16} /> },
+        { name: 'Affiliates', href: '/admin/marketers', icon: <Users size={16} /> },
+        { name: 'Banners', href: '/admin/banners', icon: <ImageIcon size={16} /> },
       ]
     },
     {

@@ -29,6 +29,7 @@ export const CreateCouponModal = ({ isOpen, onClose, coupon, onSave }: CreateCou
     skin_is_active: coupon ? coupon.skin_is_active : true,
     skin_is_first_order_only: coupon?.skin_is_first_order_only || false,
     skin_is_stackable: coupon?.skin_is_stackable || false,
+    skin_is_prepaid_only: coupon?.skin_is_prepaid_only || false,
     skin_is_suggested: coupon?.skin_is_suggested || false
   });
 
@@ -200,7 +201,7 @@ export const CreateCouponModal = ({ isOpen, onClose, coupon, onSave }: CreateCou
             </div>
 
             {/* Toggle Settings */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
               <label className="flex items-center gap-3 p-4 bg-secondary-ivory/30 rounded-2xl cursor-pointer hover:bg-secondary-ivory/50 transition-colors">
                 <input 
                   type="checkbox" 
@@ -223,6 +224,18 @@ export const CreateCouponModal = ({ isOpen, onClose, coupon, onSave }: CreateCou
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-widest text-text-dark">Stackable</p>
                   <p className="text-[8px] font-bold text-text-muted uppercase text-xs">Combo deals</p>
+                </div>
+              </label>
+              <label className="flex items-center gap-3 p-4 bg-secondary-ivory/30 rounded-2xl cursor-pointer hover:bg-secondary-ivory/50 transition-colors">
+                <input 
+                  type="checkbox" 
+                  checked={formData.skin_is_prepaid_only}
+                  onChange={e => setFormData({...formData, skin_is_prepaid_only: e.target.checked})}
+                  className="w-5 h-5 accent-accent-gold rounded-lg"
+                />
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-text-dark">Prepaid Only</p>
+                  <p className="text-[8px] font-bold text-text-muted uppercase text-xs">UPI Required</p>
                 </div>
               </label>
               <label className="flex items-center gap-3 p-4 bg-accent-gold/10 border border-accent-gold/20 rounded-2xl cursor-pointer hover:bg-accent-gold/20 transition-colors">

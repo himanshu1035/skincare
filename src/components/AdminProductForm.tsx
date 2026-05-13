@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { createClient } from '@/lib/supabase';
+import { AdminImageUpload } from './AdminImageUpload';
 import { cn } from '@/lib/utils';
 
 interface AdminProductFormProps {
@@ -235,22 +236,12 @@ export const AdminProductForm: React.FC<AdminProductFormProps> = ({ initialData,
             <h2 className="text-xl font-black tracking-tighter text-text-dark flex items-center gap-3">
               <Upload size={20} className="text-accent-gold" /> Media
             </h2>
-            <div className="space-y-6">
-              <div className="aspect-square bg-secondary-ivory rounded-[2.5rem] flex items-center justify-center overflow-hidden border-2 border-dashed border-secondary-ivory group relative">
-                {formData.skin_image_url ? (
-                  <>
-                    <img src={formData.skin_image_url} alt="Preview" className="w-full h-full object-cover p-8 mix-blend-multiply" />
-                    <button type="button" onClick={() => setFormData(p => ({ ...p, skin_image_url: '' }))} className="absolute top-4 right-4 w-10 h-10 bg-white shadow-xl rounded-full flex items-center justify-center text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><X size={18} /></button>
-                  </>
-                ) : (
-                  <div className="text-center p-8">
-                    <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 text-text-muted shadow-sm"><Upload size={24} /></div>
-                    <p className="text-xs font-bold text-text-muted uppercase tracking-widest">No Image</p>
-                  </div>
-                )}
-              </div>
-              <input name="skin_image_url" value={formData.skin_image_url} onChange={handleChange} type="url" placeholder="Image URL" className="w-full bg-secondary-ivory/50 border-none rounded-2xl px-6 py-5 text-xs focus:ring-2 focus:ring-accent-gold outline-none font-medium" required />
-            </div>
+            <AdminImageUpload 
+              value={formData.skin_image_url}
+              onChange={(url) => setFormData(prev => ({ ...prev, skin_image_url: url }))}
+              label="Product Image"
+              dimensions="1000x1000px recommended"
+            />
           </section>
 
           <section className="bg-white p-10 rounded-[3rem] shadow-sm border border-secondary-ivory space-y-8">

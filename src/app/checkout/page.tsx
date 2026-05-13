@@ -16,7 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CouponInput } from '@/components/CouponInput';
 
 export default function CheckoutPage() {
-  const { items, promoItems, getTotal, discountAmount, appliedCoupon, promoSavings, getGrandTotal } = useCartStore();
+  const { items, promoItems, getTotal, discountAmount, appliedCoupon, promoSavings, getGrandTotal, removeCoupon } = useCartStore();
   const { user } = useAuthStore();
   const { data: savedData, setData: setSavedData } = useCheckoutStore();
   
@@ -44,6 +44,13 @@ export default function CheckoutPage() {
     }
     fetchSettings();
   }, [items, router]);
+
+  // Auto-remove prepaid only coupons if switching to COD
+  useEffect(() => {
+    if (paymentMethod === 'COD' && appliedCoupon?.skin_is_prepaid_only) {
+      removeCoupon();
+    }
+  }, [paymentMethod, appliedCoupon, removeCoupon]);
 
   const fetchSettings = async () => {
     const { data } = await supabase.from('skin_settings').select('*');
@@ -132,8 +139,8 @@ export default function CheckoutPage() {
       ? shippingAddress 
       : `${data.billingStreet}, ${data.billingLine2 ? data.billingLine2 + ', ' : ''}${data.billingCity}, ${data.billingState} - ${data.billingZip}, ${data.billingCountry}`;
 
-    const { data: order, error: orderError } = await supabase.from('skin_orders').insert({
-      skin_id: crypto.randomUUID(), // Always new ID
+    const orderPayload = {
+      skin_id: crypto.randomUUID(),
       skin_customer_email: data.email,
       skin_customer_mobile: data.primaryPhone,
       skin_alternate_mobile: data.alternatePhone,
@@ -150,8 +157,24 @@ export default function CheckoutPage() {
       skin_cod_charge: codFee,
       skin_coupon_code: appliedCoupon?.skin_code || null,
       skin_discount_amount: discountAmount,
-      skin_promo_savings: promoSavings
-    }).select().single();
+      skin_promo_savings: promoSavings,
+      skin_marketer_id: appliedCoupon?.skin_marketer_id || null,
+      skin_marketer_coupon_id: appliedCoupon?.skin_marketer_id ? appliedCoupon.skin_id : null
+    };
+
+    let { data: order, error: orderError } = await supabase.from('skin_orders').insert(orderPayload).select().single();
+
+    // FAILSAFE: If foreign key violation occurs, retry as Guest Order to save the sale
+    if (orderError && orderError.message.includes('violates foreign key constraint')) {
+      console.warn("Foreign Key Violation: Retrying as Guest Order to prevent checkout failure.");
+      const { data: retryData, error: retryError } = await supabase.from('skin_orders').insert({
+        ...orderPayload,
+        skin_user_id: null
+      }).select().single();
+      
+      order = retryData;
+      orderError = retryError;
+    }
 
     if (orderError) {
       alert('Order Error: ' + orderError.message);
@@ -310,7 +333,7 @@ export default function CheckoutPage() {
               </div>
 
               <div className="mb-8">
-                <CouponInput />
+                <CouponInput paymentMethod={paymentMethod} />
               </div>
 
               <div className="space-y-4 pt-8 border-t-2 border-dashed border-secondary-ivory">

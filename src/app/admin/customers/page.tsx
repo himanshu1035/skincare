@@ -7,21 +7,29 @@ import { CustomerTable } from './CustomerTable';
 export default async function AdminCustomersPage() {
   const supabase = createClient();
   
-  const { data: customers, error } = await supabase
+  // 1. Fetch Customers
+  const { data: customers, error: customerError } = await supabase
     .from('skin_user_profiles')
-    .select(`
-      *,
-      skin_orders (*)
-    `)
+    .select('*')
     .order('skin_created_at', { ascending: false });
 
-  if (error) {
-    console.error("Supabase Fetch Error:", error);
+  if (customerError) {
+    console.error("Supabase Customer Fetch Error:", customerError);
   }
 
-  // Calculate stats for each customer
-  const customersWithStats = customers?.map(customer => {
-    const orders = customer.skin_orders || [];
+  // 2. Fetch ALL orders to join in-memory (Failsafe for Join Errors)
+  const { data: allOrders, error: orderError } = await supabase
+    .from('skin_orders')
+    .select('*');
+
+  if (orderError) {
+    console.error("Supabase Orders Fetch Error:", orderError);
+  }
+
+  // 3. Join in memory and Calculate stats
+  const customersWithStats = (customers || []).map(customer => {
+    const orders = (allOrders || []).filter(o => o.skin_user_id === customer.skin_id);
+    
     const totalSpent = orders
       .filter((o: any) => o.skin_payment_status === 'verified' || o.skin_status === 'delivered')
       .reduce((acc: number, o: any) => acc + (Number(o.skin_total_amount) || Number(o.skin_total) || 0), 0);

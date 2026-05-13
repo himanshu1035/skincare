@@ -15,6 +15,8 @@ import {
   Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { DynamicCollectionService } from '@/lib/DynamicCollectionService';
+import { AdminImageUpload } from '@/components/AdminImageUpload';
 
 interface CreateCampaignModalProps {
   isOpen: boolean;
@@ -91,6 +93,14 @@ export default function CreateCampaignModal({
       if (error) alert(error.message);
     }
 
+    if (formData.skin_offer_id) {
+       try {
+         await DynamicCollectionService.syncFromPromotion(formData.skin_offer_id);
+       } catch (e) {
+         console.error('Error syncing dynamic collection from campaign:', e);
+       }
+    }
+
     setLoading(false);
     onSave();
     onClose();
@@ -165,13 +175,11 @@ export default function CreateCampaignModal({
                </div>
                <div className="grid grid-cols-1 gap-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest ml-1">Header Banner Image URL</label>
-                    <input 
-                      type="text" 
+                    <AdminImageUpload 
                       value={formData.skin_banner_image}
-                      onChange={e => setFormData({...formData, skin_banner_image: e.target.value})}
-                      placeholder="https://..."
-                      className="w-full h-14 bg-secondary-ivory/50 rounded-2xl px-6 text-sm font-bold outline-none"
+                      onChange={(url) => setFormData(prev => ({ ...prev, skin_banner_image: url }))}
+                      label="Header Banner Image"
+                      dimensions="1200x600px recommended"
                     />
                   </div>
                   <div className="space-y-2">

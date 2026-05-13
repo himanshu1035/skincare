@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Search, ShoppingBag, User, Menu, X, ChevronDown, Package, Truck } from 'lucide-react';
+import { Search, ShoppingBag, User, Menu, X, ChevronDown, Package, Truck, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -19,6 +19,7 @@ export const Navbar = React.memo(() => {
   const [collections, setCollections] = useState<any[]>([]);
   const [announcementText, setAnnouncementText] = useState('FREE SHIPPING ON ORDERS OVER ₹1000');
   const [activeCampaignsCount, setActiveCampaignsCount] = useState(0);
+  const [dynamicCollections, setDynamicCollections] = useState<any[]>([]);
   
   const { items } = useCartStore();
   const { user } = useAuthStore();
@@ -54,6 +55,14 @@ export const Navbar = React.memo(() => {
         .select('*', { count: 'exact', head: true })
         .eq('skin_is_active', true);
       setActiveCampaignsCount(count || 0);
+
+      const { data: dynamicCols } = await supabase
+        .from('skin_collections')
+        .select('skin_name, skin_slug')
+        .eq('skin_is_dynamic', true)
+        .eq('skin_is_active', true)
+        .eq('skin_show_in_navbar', true);
+      if (dynamicCols) setDynamicCollections(dynamicCols);
     };
 
     fetchSettings();
@@ -135,6 +144,27 @@ export const Navbar = React.memo(() => {
                         {col.skin_name}
                       </Link>
                     ))}
+                  </div>
+                </div>
+
+                <div className="mt-10 pt-8 border-t border-secondary-ivory bg-secondary-ivory/30 -mx-10 px-10 rounded-b-3xl">
+                  <p className="text-[10px] font-black text-accent-gold uppercase tracking-[0.4em] mb-6">Limited Time Offers</p>
+                  <div className="flex flex-wrap gap-4">
+                    {dynamicCollections.map(col => (
+                      <Link 
+                        key={col.skin_slug} 
+                        href={`/collections/${col.skin_slug}`}
+                        className="px-5 py-2.5 bg-white text-text-dark text-[10px] font-black uppercase tracking-widest rounded-full hover:bg-accent-gold hover:text-white transition-all shadow-sm border border-secondary-ivory flex items-center gap-2 group"
+                      >
+                        <Zap size={12} className="text-accent-gold group-hover:text-white" />
+                        {col.skin_name}
+                      </Link>
+                    ))}
+                    {dynamicCollections.length === 0 && (
+                       <Link href="/campaign/all" className="text-[10px] font-bold text-text-muted hover:text-accent-gold transition-colors italic">
+                         View All Active Campaigns →
+                       </Link>
+                    )}
                   </div>
                 </div>
               </div>

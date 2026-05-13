@@ -1,0 +1,1 @@
+ALTER TABLE skin_coupons ADD COLUMN IF NOT EXISTS skin_is_prepaid_only BOOLEAN DEFAULT FALSE;

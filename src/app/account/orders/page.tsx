@@ -132,24 +132,67 @@ export default function UserOrdersPage() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-4 items-start">
+                        {/* 1. Products Preview (New Always-Visible) */}
+                        <div className="space-y-3">
+                           <p className="text-[10px] font-black text-text-muted uppercase tracking-widest flex items-center gap-2"><ShoppingBag size={12} /> Items Preview</p>
+                           <div className="flex -space-x-4 overflow-hidden py-1">
+                              {order.skin_items?.slice(0, 4).map((item: any, idx: number) => (
+                                <div key={idx} className="relative w-12 h-12 rounded-xl bg-white border-2 border-white shadow-md overflow-hidden shrink-0 transition-transform hover:scale-110 hover:z-20 group">
+                                  <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" title={item.name} />
+                                </div>
+                              ))}
+                              {(order.skin_items?.length || 0) > 4 && (
+                                <div className="w-12 h-12 rounded-xl bg-secondary-ivory border-2 border-white shadow-md flex items-center justify-center text-[10px] font-black text-text-muted z-10">
+                                  +{order.skin_items.length - 4}
+                                </div>
+                              )}
+                           </div>
+                           <p className="text-[9px] font-bold text-text-muted uppercase tracking-tight italic line-clamp-1">
+                             {order.skin_items?.[0]?.name} {(order.skin_items?.length || 0) > 1 ? `& ${order.skin_items.length - 1} more...` : ''}
+                           </p>
+                        </div>
+
+                        {/* 2. Destination */}
                         <div className="space-y-1">
-                           <p className="text-[10px] font-black text-text-muted uppercase tracking-widest flex items-center gap-2"><MapPin size={12} /> Delivery Address</p>
-                           <p className="text-xs font-bold text-text-dark leading-relaxed">
+                           <p className="text-[10px] font-black text-text-muted uppercase tracking-widest flex items-center gap-2"><MapPin size={12} /> Destination</p>
+                           <p className="text-xs font-bold text-text-dark leading-relaxed line-clamp-2">
                              {order.skin_customer_address || order.skin_shipping_address}
                            </p>
                         </div>
-                        <div className="space-y-1">
-                           <p className="text-[10px] font-black text-text-muted uppercase tracking-widest flex items-center gap-2"><CreditCard size={12} /> Payment Detail</p>
-                           <div className="text-xs font-bold text-text-dark uppercase flex flex-col">
-                             <span>{order.skin_payment_method} - {order.skin_payment_status || 'UNPAID'}</span>
-                             {handlingPaid > 0 && <span className="text-accent-gold mt-0.5 font-black">₹{totalAmount - handlingPaid} Cash Due at Doorstep</span>}
+
+                        {/* 3. Payment Details (Enhanced) */}
+                        <div className="space-y-2">
+                           <p className="text-[10px] font-black text-text-muted uppercase tracking-widest flex items-center gap-2"><CreditCard size={12} /> Payment Account</p>
+                           <div className="text-xs font-bold text-text-dark uppercase flex flex-col gap-1">
+                             <div className="flex items-center gap-2">
+                               <span className="px-2 py-0.5 bg-secondary-ivory rounded text-[9px] font-black">{order.skin_payment_method}</span>
+                               <span className={`px-2 py-0.5 rounded text-[9px] font-black ${order.skin_payment_status === 'verified' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'}`}>
+                                 {order.skin_payment_status || 'UNPAID'}
+                               </span>
+                             </div>
+                             {order.skin_utr && (
+                               <span className="text-[9px] font-black text-accent-gold border border-accent-gold/20 px-2 py-1 rounded-lg w-fit">
+                                 UTR: {order.skin_utr}
+                               </span>
+                             )}
+                             {handlingPaid > 0 && <span className="text-accent-gold mt-1 font-black text-[9px]">₹{totalAmount - handlingPaid} DUE ON DELIVERY</span>}
                            </div>
                         </div>
-                        <div className="space-y-1">
-                           <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">Order Reference</p>
-                           <p className="text-xs font-bold text-text-dark">#{order.skin_id.slice(0, 8).toUpperCase()}</p>
-                           <p className="text-[10px] text-text-muted font-bold">{new Date(order.skin_created_at).toLocaleDateString()}</p>
+
+                        {/* 4. Order Reference & Coupon */}
+                        <div className="space-y-2">
+                           <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">Order Summary</p>
+                           <div className="flex flex-col gap-1">
+                             <p className="text-xs font-black text-text-dark">#{order.skin_id.slice(0, 8).toUpperCase()}</p>
+                             <p className="text-[9px] text-text-muted font-bold italic">{new Date(order.skin_created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                             {order.skin_coupon_code && (
+                               <div className="mt-1 inline-flex items-center gap-1.5 px-2 py-1 bg-accent-gold/5 border border-accent-gold/20 rounded-lg w-fit">
+                                 <span className="w-1.5 h-1.5 rounded-full bg-accent-gold animate-pulse" />
+                                 <p className="text-[9px] font-black text-accent-gold uppercase tracking-tighter">Code: {order.skin_coupon_code}</p>
+                               </div>
+                             )}
+                           </div>
                         </div>
                       </div>
 
