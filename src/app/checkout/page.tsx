@@ -16,7 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CouponInput } from '@/components/CouponInput';
 
 export default function CheckoutPage() {
-  const { items, getTotal, discountAmount, appliedCoupon } = useCartStore();
+  const { items, promoItems, getTotal, discountAmount, appliedCoupon, promoSavings, getGrandTotal } = useCartStore();
   const { user } = useAuthStore();
   const { data: savedData, setData: setSavedData } = useCheckoutStore();
   
@@ -70,7 +70,7 @@ export default function CheckoutPage() {
   const shippingPrice = Number(settings?.shipping_price || 100);
   const shipping = total >= freeThreshold ? 0 : shippingPrice;
   const codFee = paymentMethod === 'COD' ? Number(settings?.cod_handling_price || 50) : 0;
-  const grandTotal = total + shipping + codFee - discountAmount;
+  const grandTotal = getGrandTotal() + shipping + codFee;
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -143,13 +143,14 @@ export default function CheckoutPage() {
       skin_billing_address: billingAddress,
       skin_payment_method: paymentMethod,
       skin_total_amount: grandTotal,
-      skin_items: items,
+      skin_items: [...items, ...promoItems],
       skin_user_id: currentUserId,
       skin_status: 'under_review',
       skin_shipping_charge: shipping,
       skin_cod_charge: codFee,
       skin_coupon_code: appliedCoupon?.skin_code || null,
-      skin_discount_amount: discountAmount
+      skin_discount_amount: discountAmount,
+      skin_promo_savings: promoSavings
     }).select().single();
 
     if (orderError) {
@@ -319,8 +320,14 @@ export default function CheckoutPage() {
                 </div>
                 {discountAmount > 0 && (
                   <div className="flex justify-between text-[11px] font-bold uppercase tracking-widest text-green-600">
-                    <span>Promotional Discount</span>
+                    <span>Coupon Discount</span>
                     <span>-{formatPrice(discountAmount)}</span>
+                  </div>
+                )}
+                {promoSavings > 0 && (
+                  <div className="flex justify-between text-[11px] font-bold uppercase tracking-widest text-accent-gold">
+                    <span>Promotional Savings</span>
+                    <span>-{formatPrice(promoSavings)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-[11px] font-bold uppercase tracking-widest text-text-muted">

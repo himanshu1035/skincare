@@ -19,6 +19,8 @@ interface ProductCardProps {
     skin_brand?: string;
     skin_rating?: number;
     skin_review_count?: number;
+    isBOGO?: boolean;
+    isGift?: boolean;
   };
 }
 
@@ -40,7 +42,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       price: product.skin_price,
       image_url: displayImage,
       quantity: 1,
-      handle: product.skin_slug
+      handle: product.skin_slug,
+      category_id: (product as any).skin_category_id
     });
   };
 
@@ -62,11 +65,23 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         />
         
         {/* Badges */}
-        {product.skin_original_price && product.skin_original_price > product.skin_price && (
-          <div className="absolute top-4 left-4 bg-accent-gold text-white text-[9px] font-bold px-2 py-1 tracking-widest uppercase rounded-sm shadow-sm z-10">
-            Sale
-          </div>
-        )}
+        <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
+          {product.skin_original_price && product.skin_original_price > product.skin_price && (
+            <div className="bg-text-dark text-white text-[9px] font-black px-3 py-1.5 tracking-widest uppercase rounded-lg shadow-xl">
+              SALE
+            </div>
+          )}
+          {product.isBOGO && (
+            <div className="bg-accent-gold text-white text-[9px] font-black px-3 py-1.5 tracking-widest uppercase rounded-lg shadow-xl">
+              BOGO
+            </div>
+          )}
+          {product.isGift && (
+            <div className="bg-pink-600 text-white text-[9px] font-black px-3 py-1.5 tracking-widest uppercase rounded-lg shadow-xl">
+              GIFT
+            </div>
+          )}
+        </div>
 
         {/* Quick Add Overlay */}
         <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">

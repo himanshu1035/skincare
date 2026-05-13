@@ -72,6 +72,24 @@ export default async function CollectionPage({ params }: { params: Promise<{ han
     ];
   }
 
+  // Fetch promotions to show badges
+  const { fetchActivePromotions } = await import('@/lib/promotionEngine');
+  const allPromotions = await fetchActivePromotions();
+
+  const productsWithPromos = products.map(product => {
+    const isBOGO = allPromotions.some(promo => 
+      promo.skin_type === 'bogo' && promo.targets.some(t => 
+        !t.skin_is_exclusion && (t.skin_target_type === 'product' ? t.skin_target_id === product.skin_id : t.skin_target_id === product.skin_category_id)
+      )
+    );
+    const isGift = allPromotions.some(promo => 
+      promo.skin_type === 'free_gift' && promo.targets.some(t => 
+        !t.skin_is_exclusion && (t.skin_target_type === 'product' ? t.skin_target_id === product.skin_id : t.skin_target_id === product.skin_category_id)
+      )
+    );
+    return { ...product, isBOGO, isGift };
+  });
+
   return (
     <main className="min-h-screen bg-white">
       <Navbar />
@@ -89,7 +107,7 @@ export default async function CollectionPage({ params }: { params: Promise<{ han
           </header>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-12">
-            {products.map((product: any) => (
+            {productsWithPromos.map((product: any) => (
               <ProductCard key={product.skin_id} product={product} />
             ))}
           </div>

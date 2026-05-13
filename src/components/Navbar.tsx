@@ -18,6 +18,7 @@ export const Navbar = React.memo(() => {
   const [isMounted, setIsMounted] = useState(false);
   const [collections, setCollections] = useState<any[]>([]);
   const [announcementText, setAnnouncementText] = useState('FREE SHIPPING ON ORDERS OVER ₹1000');
+  const [activeCampaignsCount, setActiveCampaignsCount] = useState(0);
   
   const { items } = useCartStore();
   const { user } = useAuthStore();
@@ -47,8 +48,17 @@ export const Navbar = React.memo(() => {
       if (data) setCollections(data);
     };
 
+    const fetchCampaigns = async () => {
+      const { count } = await supabase
+        .from('skin_campaigns')
+        .select('*', { count: 'exact', head: true })
+        .eq('skin_is_active', true);
+      setActiveCampaignsCount(count || 0);
+    };
+
     fetchSettings();
     fetchCollections();
+    fetchCampaigns();
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -88,6 +98,16 @@ export const Navbar = React.memo(() => {
                 {link.name}
               </Link>
             ))}
+
+            {activeCampaignsCount > 0 && (
+              <Link 
+                href="/campaign/all" 
+                className="relative group flex items-center gap-2 text-[11px] font-black text-accent-gold hover:text-text-dark transition-colors tracking-[0.2em] uppercase"
+              >
+                Campaigns
+                <span className="absolute -top-3 -right-6 bg-accent-gold text-white text-[7px] font-black px-1.5 py-0.5 rounded-sm animate-pulse">HOT</span>
+              </Link>
+            )}
             
             {/* Mega Menu Dropdown */}
             <div className="relative group">
@@ -180,14 +200,19 @@ export const Navbar = React.memo(() => {
                   >
                     <Search size={24} /> SEARCH
                   </button>
-                  <div className="space-y-4">
-                    <p className="text-[10px] font-black text-accent-gold uppercase tracking-[0.4em]">Quick Access</p>
-                    {topNavLinks.map((link) => (
-                      <Link key={link.href} href={link.href} className="block text-xl font-bold uppercase tracking-tight" onClick={() => setIsMobileMenuOpen(false)}>
-                        {link.name}
-                      </Link>
-                    ))}
-                  </div>
+                    <div className="space-y-4">
+                      <p className="text-[10px] font-black text-accent-gold uppercase tracking-[0.4em]">Quick Access</p>
+                      {topNavLinks.map((link) => (
+                        <Link key={link.href} href={link.href} className="block text-xl font-bold uppercase tracking-tight" onClick={() => setIsMobileMenuOpen(false)}>
+                          {link.name}
+                        </Link>
+                      ))}
+                      {activeCampaignsCount > 0 && (
+                         <Link href="/campaign/all" className="flex items-center justify-between text-xl font-black text-accent-gold uppercase tracking-tight" onClick={() => setIsMobileMenuOpen(false)}>
+                            OFFERS & CAMPAIGNS <span className="bg-accent-gold text-white text-[10px] px-2 py-1 rounded-lg">HOT</span>
+                         </Link>
+                      )}
+                    </div>
                   <div className="pt-8 border-t border-gray-100">
                     <p className="text-[10px] font-black text-text-muted uppercase tracking-[0.4em] mb-6">Explore Collections</p>
                     <div className="grid grid-cols-1 gap-4">

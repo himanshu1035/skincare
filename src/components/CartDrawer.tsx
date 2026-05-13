@@ -4,7 +4,7 @@ import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ShoppingBag, Plus, Minus, Trash2, ArrowRight, ShoppingCart } from 'lucide-react';
+import { X, ShoppingBag, Plus, Minus, Trash2, ArrowRight, ShoppingCart, Sparkles } from 'lucide-react';
 import { useCartStore } from '@/store/useCartStore';
 import { Button } from './ui/Button';
 import { formatPrice, SHIPPING_THRESHOLD } from '@/lib/utils';
@@ -16,7 +16,7 @@ interface CartDrawerProps {
 }
 
 export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
-  const { items, removeItem, updateQuantity, getTotal, discountAmount } = useCartStore();
+  const { items, promoItems, removeItem, updateQuantity, getTotal, discountAmount, promoSavings, getGrandTotal } = useCartStore();
   const [threshold, setThreshold] = React.useState(1000);
   
   React.useEffect(() => {
@@ -96,10 +96,13 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
 
             {/* Items List */}
             <div className="flex-1 overflow-y-auto p-8 space-y-8 scrollbar-hide">
-              {items.length > 0 ? (
-                items.map((item) => (
-                  <div key={item.id} className="flex gap-6 group animate-in fade-in slide-in-from-right-4 duration-500">
+              {(items.length + promoItems.length) > 0 ? (
+                [...items, ...promoItems].map((item) => (
+                  <div key={item.is_free ? `promo-${item.id}` : item.id} className="flex gap-6 group animate-in fade-in slide-in-from-right-4 duration-500">
                     <div className="relative w-32 h-32 bg-secondary-ivory rounded-3xl overflow-hidden flex-shrink-0 shadow-sm">
+                      {item.is_free && (
+                         <div className="absolute top-2 left-2 z-10 bg-accent-gold text-white text-[8px] font-black px-2 py-1 rounded-lg shadow-lg">GIFT</div>
+                      )}
                       <Image
                         src={item.image_url}
                         alt={item.name}
@@ -115,33 +118,43 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                               {item.name}
                             </h3>
                           </Link>
-                          <button 
-                            onClick={() => removeItem(item.id)}
-                            className="text-text-muted hover:text-red-500 transition-colors flex-shrink-0"
-                          >
-                            <Trash2 size={18} />
-                          </button>
+                          {!item.is_free && (
+                            <button 
+                              onClick={() => removeItem(item.id)}
+                              className="text-text-muted hover:text-red-500 transition-colors flex-shrink-0"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          )}
                         </div>
-                        <p className="text-[10px] text-text-muted uppercase font-black tracking-widest">COSRX Official</p>
+                        <p className="text-[10px] text-text-muted uppercase font-black tracking-widest">{item.is_free ? 'Promotional Gift' : 'COSRX Official'}</p>
                       </div>
                       
                       <div className="flex items-center justify-between mt-4">
-                        <div className="flex items-center border-2 border-secondary-ivory rounded-xl h-10 bg-white">
-                          <button 
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            className="px-3 hover:bg-secondary-ivory transition-colors"
-                          >
-                            <Minus size={14} />
-                          </button>
-                          <span className="px-4 text-xs font-black w-10 text-center">{item.quantity}</span>
-                          <button 
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            className="px-3 hover:bg-secondary-ivory transition-colors"
-                          >
-                            <Plus size={14} />
-                          </button>
-                        </div>
-                        <span className="text-base font-black text-text-dark">{formatPrice(item.price * item.quantity)}</span>
+                        {!item.is_free ? (
+                          <div className="flex items-center border-2 border-secondary-ivory rounded-xl h-10 bg-white">
+                            <button 
+                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                              className="px-3 hover:bg-secondary-ivory transition-colors"
+                            >
+                              <Minus size={14} />
+                            </button>
+                            <span className="px-4 text-xs font-black w-10 text-center">{item.quantity}</span>
+                            <button 
+                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                              className="px-3 hover:bg-secondary-ivory transition-colors"
+                            >
+                              <Plus size={14} />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 text-[10px] font-black text-accent-gold uppercase tracking-widest">
+                            <Sparkles size={12} /> Auto-Applied
+                          </div>
+                        )}
+                        <span className={`text-base font-black ${item.is_free ? 'text-accent-gold' : 'text-text-dark'}`}>
+                          {item.is_free ? 'FREE' : formatPrice(item.price * item.quantity)}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -174,18 +187,24 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                   </div>
                   {discountAmount > 0 && (
                     <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-green-600">
-                      <span>Discount</span>
+                      <span>Coupon Discount</span>
                       <span>-{formatPrice(discountAmount)}</span>
+                    </div>
+                  )}
+                  {promoSavings > 0 && (
+                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-accent-gold">
+                      <span>Promotional Savings</span>
+                      <span>-{formatPrice(promoSavings)}</span>
                     </div>
                   )}
                   <div className="flex justify-between items-end pt-2 border-t border-secondary-ivory">
                     <div className="space-y-1">
-                      <p className="text-[10px] text-text-muted uppercase font-black tracking-[0.2em]">Total</p>
-                      <p className="text-3xl font-black text-text-dark">{formatPrice(total - discountAmount)}</p>
+                      <p className="text-[10px] text-text-muted uppercase font-black tracking-[0.2em]">Final Total</p>
+                      <p className="text-3xl font-black text-text-dark">{formatPrice(getGrandTotal())}</p>
                     </div>
-                    {discountAmount > 0 && (
+                    {(discountAmount + promoSavings) > 0 && (
                       <div className="bg-green-50 px-3 py-1.5 rounded-lg border border-green-100">
-                        <p className="text-[9px] font-black text-green-700 uppercase">You saved {formatPrice(discountAmount)}!</p>
+                        <p className="text-[9px] font-black text-green-700 uppercase">Total Saved {formatPrice(discountAmount + promoSavings)}!</p>
                       </div>
                     )}
                   </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import Hero from '@/components/Hero';
+import { BannerSlider } from '@/components/BannerSlider';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { ProductCard } from '@/components/ProductCard';
@@ -12,15 +12,46 @@ export default async function Home() {
   const supabase = createClient();
   
   // 1. Parallel data fetching for maximum performance
-  const [collectionsRes, bestSellerColRes, shippingSettingsRes] = await Promise.all([
+  const [collectionsRes, bestSellerColRes, shippingSettingsRes, bannersRes] = await Promise.all([
     supabase.from('skin_collections').select('*').neq('skin_slug', 'dermskincare-guide').limit(3),
     supabase.from('skin_collections').select('skin_id').ilike('skin_name', '%best seller%').single(),
-    supabase.from('skin_settings').select('*').in('skin_key', ['free_shipping_threshold'])
+    supabase.from('skin_settings').select('*').in('skin_key', ['free_shipping_threshold']),
+    supabase.from('skin_banners')
+      .select('*')
+      .eq('skin_is_active', true)
+      .lte('skin_start_date', new Date().toISOString())
+      .gte('skin_end_date', new Date().toISOString())
+      .order('skin_priority', { ascending: false })
   ]);
 
   const collections = collectionsRes.data;
   const bestSellerCollection = bestSellerColRes.data;
   const shippingSettings = shippingSettingsRes.data;
+  let activeBanners = bannersRes?.data || [];
+  
+  // If no scheduled banners, fetch those without dates
+  if (activeBanners.length === 0) {
+    const { data: simpleBanners } = await supabase
+      .from('skin_banners')
+      .select('*')
+      .eq('skin_is_active', true)
+      .is('skin_start_date', null)
+      .order('skin_priority', { ascending: false });
+    activeBanners = simpleBanners || [];
+  }
+
+  // Final fallback for premium experience
+  if (activeBanners.length === 0) {
+    activeBanners = [{
+      skin_id: 'default',
+      skin_title: 'Unveil Your Glow',
+      skin_subtitle: 'Discover the power of dermatologist-recommended Korean skincare.',
+      skin_image_desktop: 'https://images.unsplash.com/photo-1612817288484-6f916006741a?q=80&w=2000&auto=format&fit=crop',
+      skin_cta_text: 'EXPLORE COLLECTIONS',
+      skin_link_type: 'collection',
+      skin_link_id: 'all'
+    }];
+  }
   
   const freeShippingThreshold = shippingSettings?.find(s => s.skin_key === 'free_shipping_threshold')?.skin_value || '1000';
 
@@ -62,7 +93,7 @@ export default async function Home() {
   return (
     <main className="min-h-screen bg-white selection:bg-accent-gold selection:text-white">
       <Navbar />
-      <Hero />
+      <BannerSlider initialBanners={activeBanners} />
       
       {/* 1. Value Props */}
       <section className="py-16 bg-white border-b border-secondary-ivory">
