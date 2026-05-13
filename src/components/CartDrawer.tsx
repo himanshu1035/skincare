@@ -167,10 +167,6 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
             {/* Footer */}
             {items.length > 0 && (
               <div className="p-8 bg-white border-t border-secondary-ivory shadow-[0_-20px_50px_rgba(0,0,0,0.05)] sticky bottom-0 z-10">
-                <div className="mb-8">
-                  <CouponInput />
-                </div>
-                
                 <div className="space-y-4 mb-8">
                   <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-text-muted">
                     <span>Subtotal</span>

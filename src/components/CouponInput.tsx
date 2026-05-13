@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { createClient } from '@/lib/supabase';
 import { useCartStore } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/useAuthStore';
-import { Ticket, X, Check, Loader2, AlertCircle } from 'lucide-react';
+import { Ticket, X, Check, Loader2, AlertCircle, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const CouponInput = () => {
@@ -12,13 +12,29 @@ export const CouponInput = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [suggestions, setSuggestions] = useState<any[]>([]);
 
   const { getTotal, applyCoupon, appliedCoupon, removeCoupon } = useCartStore();
   const { user } = useAuthStore();
   const supabase = createClient();
 
-  const handleApply = async () => {
-    if (!code.trim()) return;
+  React.useEffect(() => {
+    fetchSuggestions();
+  }, []);
+
+  const fetchSuggestions = async () => {
+    const { data } = await supabase
+      .from('skin_coupons')
+      .select('*')
+      .eq('skin_is_active', true)
+      .eq('skin_is_suggested', true)
+      .limit(5);
+    if (data) setSuggestions(data);
+  };
+
+  const handleApply = async (targetCode?: string) => {
+    const finalCode = targetCode || code;
+    if (!finalCode.trim()) return;
     setLoading(true);
     setError(null);
     setSuccess(false);
@@ -28,7 +44,7 @@ export const CouponInput = () => {
       const { data: coupon, error: fetchError } = await supabase
         .from('skin_coupons')
         .select('*')
-        .eq('skin_code', code.toUpperCase().trim())
+        .eq('skin_code', finalCode.toUpperCase().trim())
         .eq('skin_is_active', true)
         .single();
 
@@ -117,25 +133,51 @@ export const CouponInput = () => {
       </div>
 
       {!appliedCoupon ? (
-        <div className="relative group">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-accent-gold transition-colors">
-            <Ticket size={18} />
+        <>
+          <div className="relative group">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-accent-gold transition-colors">
+              <Ticket size={18} />
+            </div>
+            <input 
+              type="text"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="ENTER COUPON CODE"
+              className="w-full h-14 bg-secondary-ivory/50 border-none rounded-2xl pl-12 pr-32 text-xs font-black uppercase tracking-widest focus:ring-2 focus:ring-accent-gold outline-none transition-all"
+            />
+            <button 
+              onClick={() => handleApply()}
+              disabled={loading || !code.trim()}
+              className="absolute right-2 top-1/2 -translate-y-1/2 h-10 px-6 bg-text-dark text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-accent-gold transition-all disabled:opacity-50"
+            >
+              {loading ? <Loader2 className="animate-spin" size={14} /> : 'Apply'}
+            </button>
           </div>
-          <input 
-            type="text"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            placeholder="ENTER COUPON CODE"
-            className="w-full h-14 bg-secondary-ivory/50 border-none rounded-2xl pl-12 pr-32 text-xs font-black uppercase tracking-widest focus:ring-2 focus:ring-accent-gold outline-none transition-all"
-          />
-          <button 
-            onClick={handleApply}
-            disabled={loading || !code.trim()}
-            className="absolute right-2 top-1/2 -translate-y-1/2 h-10 px-6 bg-text-dark text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-accent-gold transition-all disabled:opacity-50"
-          >
-            {loading ? <Loader2 className="animate-spin" size={14} /> : 'Apply'}
-          </button>
-        </div>
+
+          {/* Suggested Coupons */}
+          {suggestions.length > 0 && (
+            <div className="space-y-2">
+               <div className="flex items-center gap-2 px-1">
+                 <Sparkles size={10} className="text-accent-gold" />
+                 <p className="text-[8px] font-black text-accent-gold uppercase tracking-widest">Available Offers</p>
+               </div>
+               <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                  {suggestions.map((s) => (
+                    <button
+                      key={s.skin_id}
+                      onClick={() => handleApply(s.skin_code)}
+                      className="flex-shrink-0 px-4 py-2 bg-accent-gold/5 border border-accent-gold/20 rounded-xl hover:bg-accent-gold/10 transition-all text-left group"
+                    >
+                      <p className="text-[10px] font-black text-text-dark group-hover:text-accent-gold transition-colors">{s.skin_code}</p>
+                      <p className="text-[8px] font-bold text-text-muted uppercase">
+                        {s.skin_type === 'percentage' ? `${s.skin_value}% OFF` : `₹${s.skin_value} OFF`}
+                      </p>
+                    </button>
+                  ))}
+               </div>
+            </div>
+          )}
+        </>
       ) : (
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
