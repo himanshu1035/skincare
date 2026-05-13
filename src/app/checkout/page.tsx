@@ -288,10 +288,6 @@ export default function CheckoutPage() {
               </div>
             </section>
 
-            <div className="pt-8">
-              <Button type="submit" size="lg" className="w-full h-16 text-xs font-black tracking-[0.2em] shadow-2xl rounded-full bg-text-dark hover:bg-accent-gold" disabled={isSubmitting || items.length === 0}>
-                {isSubmitting ? 'SECURELY PROCESSING...' : `FINALIZE PURCHASE • ${formatPrice(grandTotal)}`}
-              </Button>
             </div>
           </div>
 
@@ -350,6 +346,15 @@ export default function CheckoutPage() {
                   <div className="text-right">
                     <p className="text-[9px] font-bold text-accent-gold uppercase tracking-widest">Inc. of all taxes</p>
                   </div>
+                </div>
+
+                <div className="mt-8">
+                  <Button type="submit" size="lg" className="w-full h-16 text-xs font-black tracking-[0.2em] shadow-2xl rounded-full bg-text-dark hover:bg-accent-gold" disabled={isSubmitting || items.length === 0}>
+                    {isSubmitting ? <Loader2 className="animate-spin" /> : `COMPLETE ORDER • ${formatPrice(grandTotal)}`}
+                  </Button>
+                  <p className="text-center text-[9px] font-black uppercase tracking-[0.2em] text-text-muted mt-4">
+                    Secure 256-bit SSL Encrypted Payment
+                  </p>
                 </div>
               </div>
             </div>
