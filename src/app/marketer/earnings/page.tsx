@@ -24,6 +24,7 @@ export default function MarketerEarningsPage() {
   const [stats, setStats] = useState({
     totalEarned: 0,
     pendingPayout: 0,
+    clearedBalance: 0,
     totalRevenue: 0,
     conversionRate: 0
   });
