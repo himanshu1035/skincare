@@ -60,9 +60,9 @@ export default function MarketerEarningsPage() {
       let unclear = 0;
       let revenue = 0;
 
-      data.forEach(c => {
+      data.forEach((c: any) => {
         const amount = Number(c.skin_commission_earned) + Number(c.skin_bonus_earned);
-        const order = c.skin_orders;
+        const order = c.skin_orders as any;
         const isCOD = order?.skin_payment_method === 'COD';
         const isDelivered = order?.skin_status === 'delivered';
 
