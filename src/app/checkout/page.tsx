@@ -287,8 +287,6 @@ export default function CheckoutPage() {
                 )}
               </div>
             </section>
-
-            </div>
           </div>
 
           <div className="lg:col-span-5 text-text-dark">
