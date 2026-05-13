@@ -147,16 +147,19 @@ function PaymentPageContent() {
 
   // Direct app handlers to avoid WhatsApp redirection and handle specific app logic
   const openPaymentApp = (app: string) => {
-    let link = upiLink;
-    let params = `pa=${upiId}&pn=${merchantName}&am=${amountToPayNow}&tr=${transactionId}&mc=5311&cu=INR`;
+    // Standard params: pa (vpa), pn (name), am (amount), cu (currency)
+    // We remove 'tr' and 'mc' for GPay to avoid "blank screen" bugs on personal VPAs
+    const baseParams = `pa=${upiId}&pn=${merchantName}&am=${amountToPayNow}&cu=INR`;
     
-    // For amounts > 2000, we provide a fallback without the amount parameter to bypass bank-level blocks
-    if (amountToPayNow > 2000) {
-      params = `pa=${upiId}&pn=${merchantName}&tr=${transactionId}&mc=0000&cu=INR`;
-    }
+    // Fallback for amount > 2000
+    const manualParams = `pa=${upiId}&pn=${merchantName}&cu=INR`;
+    const params = amountToPayNow > 2000 ? manualParams : baseParams;
+
+    let link = `upi://pay?${params}`;
 
     if (app === 'gpay') {
-      link = `tez://pay?${params}`;
+      // Use the standard upi:// scheme for GPay as tez:// can be unreliable for P2P
+      link = `upi://pay?${params}`;
     } else if (app === 'phonepe') {
       link = `phonepe://pay?${params}`;
     } else if (app === 'paytm') {
@@ -175,6 +178,11 @@ function PaymentPageContent() {
     }
     
     window.location.href = link;
+  };
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    alert(`${label} copied to clipboard!`);
   };
 
   const apps = [
@@ -256,6 +264,34 @@ function PaymentPageContent() {
                     <div className="relative inline-block p-4 bg-white border-2 border-secondary-ivory rounded-[2.5rem] shadow-sm overflow-hidden group">
                        <img src={qrUrl} alt="UPI Payment QR" className="w-60 h-60 object-contain relative z-10" />
                        <div className="absolute inset-0 bg-accent-gold/5 scale-0 group-hover:scale-150 transition-transform duration-700 rounded-full blur-3xl" />
+                    </div>
+
+                    {/* UPI ID Display & Copy */}
+                    <div className="bg-secondary-ivory/30 p-6 rounded-[2rem] border border-secondary-ivory/50 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="text-left">
+                          <p className="text-[9px] font-black text-text-muted uppercase tracking-widest mb-1">Merchant UPI ID</p>
+                          <p className="text-sm font-black text-text-dark select-all">{upiId}</p>
+                        </div>
+                        <button 
+                          onClick={() => copyToClipboard(upiId, 'UPI ID')}
+                          className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-text-dark hover:bg-accent-gold hover:text-white transition-all shadow-sm"
+                        >
+                          <ClipboardCheck size={18} />
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between pt-4 border-t border-secondary-ivory/50">
+                        <div className="text-left">
+                          <p className="text-[9px] font-black text-text-muted uppercase tracking-widest mb-1">Total Amount</p>
+                          <p className="text-xl font-black text-accent-gold">{formatPrice(amountToPayNow)}</p>
+                        </div>
+                        <button 
+                          onClick={() => copyToClipboard(amountToPayNow.toString(), 'Amount')}
+                          className="px-4 h-10 rounded-xl bg-white flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-text-dark hover:bg-accent-gold hover:text-white transition-all shadow-sm"
+                        >
+                          Copy ₹
+                        </button>
+                      </div>
                     </div>
 
                     {amountToPayNow > 2000 && (
