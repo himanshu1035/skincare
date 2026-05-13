@@ -15,7 +15,8 @@ import {
   Package,
   Layers,
   ArrowRight,
-  Info
+  Info,
+  Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DynamicCollectionService } from '@/lib/DynamicCollectionService';
