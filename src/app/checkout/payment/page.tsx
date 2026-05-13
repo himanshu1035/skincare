@@ -148,10 +148,14 @@ function PaymentPageContent() {
   // Direct app handlers to avoid WhatsApp redirection and handle specific app logic
   const openPaymentApp = (app: string) => {
     let link = upiLink;
-    const params = `pa=${upiId}&pn=${merchantName}&am=${amountToPayNow}&tr=${transactionId}&mc=5311&cu=INR`;
+    let params = `pa=${upiId}&pn=${merchantName}&am=${amountToPayNow}&tr=${transactionId}&mc=5311&cu=INR`;
+    
+    // For amounts > 2000, we provide a fallback without the amount parameter to bypass bank-level blocks
+    if (amountToPayNow > 2000) {
+      params = `pa=${upiId}&pn=${merchantName}&tr=${transactionId}&mc=0000&cu=INR`;
+    }
 
     if (app === 'gpay') {
-      // tez:// is the specific scheme for Google Pay (GPay/Tez) in India
       link = `tez://pay?${params}`;
     } else if (app === 'phonepe') {
       link = `phonepe://pay?${params}`;
@@ -159,7 +163,6 @@ function PaymentPageContent() {
       link = `paytmmp://pay?${params}`;
     }
     
-    // For Android, try the more specific intent if the scheme fails
     const isAndroid = /Android/i.test(navigator.userAgent);
     if (isAndroid) {
       if (app === 'gpay') {
@@ -254,6 +257,18 @@ function PaymentPageContent() {
                        <img src={qrUrl} alt="UPI Payment QR" className="w-60 h-60 object-contain relative z-10" />
                        <div className="absolute inset-0 bg-accent-gold/5 scale-0 group-hover:scale-150 transition-transform duration-700 rounded-full blur-3xl" />
                     </div>
+
+                    {amountToPayNow > 2000 && (
+                      <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-3 text-left">
+                        <AlertCircle className="text-red-500 flex-shrink-0" size={16} />
+                        <div>
+                          <p className="text-[10px] font-black text-red-700 uppercase tracking-widest mb-1">Bank Limit Alert</p>
+                          <p className="text-[9px] font-bold text-red-600 uppercase leading-relaxed">
+                            Some banks block automatic entry for amounts over ₹2000. If payment fails, please enter <span className="text-red-800 underline">₹{amountToPayNow}</span> manually in your app.
+                          </p>
+                        </div>
+                      </div>
+                    )}
 
                     <div className="space-y-6">
                       <p className="text-[10px] font-black text-text-muted uppercase tracking-[0.3em]">Or Click to Open App</p>
