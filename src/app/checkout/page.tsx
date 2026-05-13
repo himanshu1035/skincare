@@ -13,9 +13,10 @@ import { createClient } from '@/lib/supabase';
 import { Lock, Phone, ShieldCheck, Mail, IndianRupee, AlertCircle, Loader2, CreditCard, MapPin, CheckCircle2 } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { CouponInput } from '@/components/CouponInput';
 
 export default function CheckoutPage() {
-  const { items, getTotal } = useCartStore();
+  const { items, getTotal, discountAmount, appliedCoupon } = useCartStore();
   const { user } = useAuthStore();
   const { data: savedData, setData: setSavedData } = useCheckoutStore();
   
@@ -69,7 +70,7 @@ export default function CheckoutPage() {
   const shippingPrice = Number(settings?.shipping_price || 100);
   const shipping = total >= freeThreshold ? 0 : shippingPrice;
   const codFee = paymentMethod === 'COD' ? Number(settings?.cod_handling_price || 50) : 0;
-  const grandTotal = total + shipping + codFee;
+  const grandTotal = total + shipping + codFee - discountAmount;
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -146,7 +147,9 @@ export default function CheckoutPage() {
       skin_user_id: currentUserId,
       skin_status: 'under_review',
       skin_shipping_charge: shipping,
-      skin_cod_charge: codFee
+      skin_cod_charge: codFee,
+      skin_coupon_code: appliedCoupon?.skin_code || null,
+      skin_discount_amount: discountAmount
     }).select().single();
 
     if (orderError) {
@@ -311,11 +314,21 @@ export default function CheckoutPage() {
                 ))}
               </div>
 
+              <div className="mb-8">
+                <CouponInput />
+              </div>
+
               <div className="space-y-4 pt-8 border-t-2 border-dashed border-secondary-ivory">
                 <div className="flex justify-between text-[11px] font-bold uppercase tracking-widest text-text-muted">
                   <span>Subtotal</span>
                   <span className="text-text-dark">{formatPrice(total)}</span>
                 </div>
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-[11px] font-bold uppercase tracking-widest text-green-600">
+                    <span>Promotional Discount</span>
+                    <span>-{formatPrice(discountAmount)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-[11px] font-bold uppercase tracking-widest text-text-muted">
                   <span>Shipping & Delivery</span>
                   <div className="flex items-center gap-2">

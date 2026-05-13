@@ -8,6 +8,7 @@ import { X, ShoppingBag, Plus, Minus, Trash2, ArrowRight, ShoppingCart } from 'l
 import { useCartStore } from '@/store/useCartStore';
 import { Button } from './ui/Button';
 import { formatPrice, SHIPPING_THRESHOLD } from '@/lib/utils';
+import { CouponInput } from './CouponInput';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -15,7 +16,7 @@ interface CartDrawerProps {
 }
 
 export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
-  const { items, removeItem, updateQuantity, getTotal } = useCartStore();
+  const { items, removeItem, updateQuantity, getTotal, discountAmount } = useCartStore();
   const [threshold, setThreshold] = React.useState(1000);
   
   React.useEffect(() => {
@@ -166,15 +167,34 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
             {/* Footer */}
             {items.length > 0 && (
               <div className="p-8 bg-white border-t border-secondary-ivory shadow-[0_-20px_50px_rgba(0,0,0,0.05)] sticky bottom-0 z-10">
-                <div className="flex justify-between items-end mb-8">
-                  <div className="space-y-1">
-                    <p className="text-[10px] text-text-muted uppercase font-black tracking-[0.2em]">Estimated Total</p>
-                    <p className="text-3xl font-black text-text-dark">{formatPrice(total)}</p>
-                  </div>
-                  <p className="text-[10px] text-text-muted font-bold italic text-right max-w-[120px] leading-tight">
-                    Taxes and shipping calculated at checkout
-                  </p>
+                <div className="mb-8">
+                  <CouponInput />
                 </div>
+                
+                <div className="space-y-4 mb-8">
+                  <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-text-muted">
+                    <span>Subtotal</span>
+                    <span>{formatPrice(total)}</span>
+                  </div>
+                  {discountAmount > 0 && (
+                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-green-600">
+                      <span>Discount</span>
+                      <span>-{formatPrice(discountAmount)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-end pt-2 border-t border-secondary-ivory">
+                    <div className="space-y-1">
+                      <p className="text-[10px] text-text-muted uppercase font-black tracking-[0.2em]">Total</p>
+                      <p className="text-3xl font-black text-text-dark">{formatPrice(total - discountAmount)}</p>
+                    </div>
+                    {discountAmount > 0 && (
+                      <div className="bg-green-50 px-3 py-1.5 rounded-lg border border-green-100">
+                        <p className="text-[9px] font-black text-green-700 uppercase">You saved {formatPrice(discountAmount)}!</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 <Link href="/checkout" onClick={onClose} className="block">
                   <Button className="w-full h-16 text-sm font-black tracking-[0.2em] group rounded-none bg-text-dark hover:bg-accent-gold border-none text-white transition-all shadow-xl">
                     PROCEED TO CHECKOUT 
