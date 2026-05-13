@@ -41,17 +41,43 @@ export default function MarketerEarningsPage() {
     setLoading(true);
     const { data } = await supabase
       .from('skin_marketer_commissions')
-      .select('*, skin_orders(skin_total_amount, skin_discount_amount)')
+      .select(`
+        skin_id, 
+        skin_commission_earned, 
+        skin_bonus_earned, 
+        skin_order_amount, 
+        skin_created_at, 
+        skin_order_id,
+        skin_orders(skin_total_amount, skin_discount_amount, skin_payment_method, skin_status)
+      `)
       .eq('skin_marketer_id', session.user.id)
       .order('skin_created_at', { ascending: false });
 
     if (data) {
       setCommissions(data);
-      const earned = data.reduce((acc, c) => acc + Number(c.skin_commission_earned) + Number(c.skin_bonus_earned), 0);
-      const revenue = data.reduce((acc, c) => acc + Number(c.skin_order_amount), 0);
+      
+      let cleared = 0;
+      let unclear = 0;
+      let revenue = 0;
+
+      data.forEach(c => {
+        const amount = Number(c.skin_commission_earned) + Number(c.skin_bonus_earned);
+        const order = c.skin_orders;
+        const isCOD = order?.skin_payment_method === 'COD';
+        const isDelivered = order?.skin_status === 'delivered';
+
+        if (!isCOD || isDelivered) {
+          cleared += amount;
+        } else {
+          unclear += amount;
+        }
+        revenue += Number(c.skin_order_amount);
+      });
+
       setStats({
-        totalEarned: earned,
-        pendingPayout: earned, // For now assuming all is pending until payout system is added
+        totalEarned: cleared + unclear,
+        pendingPayout: unclear,
+        clearedBalance: cleared,
         totalRevenue: revenue,
         conversionRate: data.length > 0 ? (data.length / revenue) * 100 : 0
       });
@@ -88,10 +114,10 @@ export default function MarketerEarningsPage() {
       {/* Financial Summary */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {[
-          { label: 'Total Commission', value: formatPrice(stats.totalEarned), icon: <DollarSign size={20} />, color: 'bg-text-dark text-white' },
+          { label: 'Cleared Balance', value: formatPrice(stats.clearedBalance), icon: <CheckCircle2 size={20} />, color: 'bg-text-dark text-white' },
+          { label: 'Unclear Balance', value: formatPrice(stats.pendingPayout), icon: <Clock size={20} />, color: 'bg-white text-orange-600' },
+          { label: 'Total Earnings', value: formatPrice(stats.totalEarned), icon: <DollarSign size={20} />, color: 'bg-white text-text-dark' },
           { label: 'Net Revenue', value: formatPrice(stats.totalRevenue), icon: <TrendingUp size={20} />, color: 'bg-white text-blue-600' },
-          { label: 'Unpaid Balance', value: formatPrice(stats.pendingPayout), icon: <Clock size={20} />, color: 'bg-white text-orange-600' },
-          { label: 'Conversion Avg', value: stats.totalRevenue ? '8.4%' : '0%', icon: <BarChart3 size={20} />, color: 'bg-white text-purple-600' },
         ].map((stat, i) => (
           <motion.div 
             key={i}
@@ -148,25 +174,6 @@ export default function MarketerEarningsPage() {
 
         {/* Payout Information */}
         <div className="space-y-8">
-           <div className="bg-text-dark rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden group">
-              <TrendingUp className="absolute -right-8 -bottom-8 w-40 h-40 text-white/5 group-hover:scale-110 transition-transform duration-700" />
-              <h3 className="text-2xl font-black uppercase tracking-widest mb-4 italic">Next Payout</h3>
-              <p className="text-white/60 text-sm font-medium mb-8 leading-relaxed italic">Your earnings are processed automatically every 15 days once they exceed the minimum threshold of ₹500.</p>
-              
-              <div className="space-y-6">
-                 <div className="flex justify-between items-end">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Accumulated</p>
-                    <p className="text-3xl font-black tracking-tighter">{formatPrice(stats.pendingPayout)}</p>
-                 </div>
-                 <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full bg-accent-gold" style={{ width: `${Math.min((stats.pendingPayout / 500) * 100, 100)}%` }}></div>
-                 </div>
-                 <p className="text-[9px] font-black uppercase tracking-[0.2em] text-accent-gold italic">
-                    {stats.pendingPayout >= 500 ? 'Threshold reached. Ready for cycle.' : `₹${Math.max(500 - stats.pendingPayout, 0)} remaining for threshold.`}
-                 </p>
-              </div>
-           </div>
-
            <div className="bg-white rounded-[3rem] p-10 border border-secondary-ivory shadow-sm">
               <h3 className="text-xl font-black uppercase tracking-widest mb-4 text-text-dark italic">Payout Settings</h3>
               <p className="text-text-muted text-[10px] font-black uppercase tracking-widest mb-6">Settlement Method:</p>

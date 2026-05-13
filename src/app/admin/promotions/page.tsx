@@ -27,17 +27,25 @@ import { formatPrice } from '@/lib/utils';
 import { CreatePromotionModal } from './CreatePromotionModal';
 
 export default function AdminPromotionsPage() {
+  const [stats, setStats] = useState([
+    { label: 'Active Offers', value: '0', icon: <Zap className="text-accent-gold" />, bg: 'bg-accent-gold/10' },
+    { label: 'Free Gifts Sent', value: '0', icon: <Gift className="text-pink-600" />, bg: 'bg-pink-50' },
+    { label: 'Promo Revenue', value: formatPrice(0), icon: <TrendingUp className="text-green-600" />, bg: 'bg-green-50' },
+    { label: 'BOGO Claims', value: '0', icon: <Layers className="text-blue-600" />, bg: 'bg-blue-50' },
+  ]);
+
+  const supabase = createClient();
+
   const [promotions, setPromotions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPromotion, setSelectedPromotion] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
-  
-  const supabase = createClient();
 
   useEffect(() => {
     fetchPromotions();
+    fetchStats();
   }, []);
 
   const fetchPromotions = async () => {
@@ -81,12 +89,42 @@ export default function AdminPromotionsPage() {
     return matchesSearch && matchesFilter;
   });
 
-  const stats = [
-    { label: 'Active Offers', value: promotions.filter(p => p.skin_is_active).length, icon: <Zap className="text-accent-gold" />, bg: 'bg-accent-gold/10' },
-    { label: 'Free Gifts Sent', value: '432', icon: <Gift className="text-pink-600" />, bg: 'bg-pink-50' },
-    { label: 'Promo Revenue', value: formatPrice(125400), icon: <TrendingUp className="text-green-600" />, bg: 'bg-green-50' },
-    { label: 'BOGO Claims', value: '186', icon: <Layers className="text-blue-600" />, bg: 'bg-blue-50' },
-  ];
+  const fetchStats = async () => {
+    // 1. Active Promotions
+    const { count: activeCount } = await supabase
+      .from('skin_promotions')
+      .select('*', { count: 'exact', head: true })
+      .eq('skin_is_active', true);
+
+    // 2. Promo Orders & Revenue
+    const { data: promoOrders } = await supabase
+      .from('skin_orders')
+      .select('skin_total_amount, skin_promo_savings')
+      .gt('skin_promo_savings', 0);
+
+    const promoRevenue = promoOrders?.reduce((acc, o) => acc + Number(o.skin_total_amount), 0) || 0;
+    const bogoClaims = promoOrders?.length || 0;
+
+    // 3. Free Gifts (Price = 0 items)
+    // This is an estimate based on order data
+    const { data: freeItems } = await supabase
+      .from('skin_orders')
+      .select('skin_items')
+      .gt('skin_promo_savings', 0); // Orders with promo savings often have gifts
+    
+    let giftCount = 0;
+    freeItems?.forEach(order => {
+      const items = order.skin_items || [];
+      giftCount += items.filter((i: any) => i.is_free || i.price === 0).length;
+    });
+
+    setStats([
+      { label: 'Active Offers', value: String(activeCount || 0), icon: <Zap className="text-accent-gold" />, bg: 'bg-accent-gold/10' },
+      { label: 'Free Gifts Sent', value: String(giftCount), icon: <Gift className="text-pink-600" />, bg: 'bg-pink-50' },
+      { label: 'Promo Revenue', value: formatPrice(promoRevenue), icon: <TrendingUp className="text-green-600" />, bg: 'bg-green-50' },
+      { label: 'BOGO Claims', value: String(bogoClaims), icon: <Layers className="text-blue-600" />, bg: 'bg-blue-50' },
+    ]);
+  };
 
   return (
     <div className="space-y-8 pb-20">

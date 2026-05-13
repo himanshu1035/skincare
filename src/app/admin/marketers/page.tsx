@@ -56,7 +56,8 @@ export default function AdminMarketersPage() {
     defaultDiscount: 10,
     validityDays: 30,
     isOneTimeUse: false,
-    codeLength: 10
+    codeLength: 10,
+    level: 'Bronze'
   });
 
   const [globalFormData, setGlobalFormData] = useState({
@@ -108,7 +109,8 @@ export default function AdminMarketersPage() {
         defaultDiscount: editingMarketer.skin_default_discount || 10,
         validityDays: editingMarketer.skin_coupon_duration_days || 30,
         isOneTimeUse: editingMarketer.skin_is_one_time_use || false,
-        codeLength: editingMarketer.skin_code_length || 10
+        codeLength: editingMarketer.skin_code_length || 10,
+        level: editingMarketer.skin_level || 'Bronze'
       });
       setIsModalOpen(true);
     }
@@ -116,6 +118,17 @@ export default function AdminMarketersPage() {
 
   const fetchMarketers = async () => {
     setLoading(true);
+    
+    // Fetch rules first to calculate levels correctly
+    const { data: settingsData } = await supabase.from('skin_marketer_settings').select('skin_tiered_rules').eq('skin_id', 1).single();
+    const rules = settingsData?.skin_tiered_rules || [
+      { level: 'Bronze', sales: 0, commission: 5, discount: 5 },
+      { level: 'Silver', sales: 50, commission: 7, discount: 10 },
+      { level: 'Gold', sales: 200, commission: 10, discount: 10 },
+      { level: 'Platinum', sales: 500, commission: 12, discount: 15 },
+      { level: 'Diamond', sales: 1000, commission: 15, discount: 15 }
+    ];
+
     const { data } = await supabase
       .from('skin_marketers')
       .select(`
@@ -125,12 +138,27 @@ export default function AdminMarketersPage() {
       .order('skin_created_at', { ascending: false });
 
     if (data) {
-      const processed = data.map(m => ({
-        ...m,
-        totalEarnings: m.skin_marketer_commissions?.reduce((acc: number, c: any) => acc + Number(c.skin_commission_earned) + Number(c.skin_bonus_earned), 0) || 0,
-        totalRevenue: m.skin_marketer_commissions?.reduce((acc: number, c: any) => acc + Number(c.skin_order_amount), 0) || 0,
-        saleCount: m.skin_marketer_commissions?.length || 0
-      }));
+      const processed = data.map(m => {
+        const sales = m.skin_marketer_commissions?.length || 0;
+        
+        // Find the correct level based on sales threshold
+        let currentLevel = 'Bronze';
+        [...rules].sort((a, b) => b.sales - a.sales).some(r => {
+          if (sales >= r.sales) {
+            currentLevel = r.level;
+            return true;
+          }
+          return false;
+        });
+
+        return {
+          ...m,
+          skin_level: currentLevel, // Use calculated level for display
+          totalEarnings: m.skin_marketer_commissions?.reduce((acc: number, c: any) => acc + Number(c.skin_commission_earned) + Number(c.skin_bonus_earned), 0) || 0,
+          totalRevenue: m.skin_marketer_commissions?.reduce((acc: number, c: any) => acc + Number(c.skin_order_amount), 0) || 0,
+          saleCount: sales
+        };
+      });
       setMarketers(processed);
     }
     setLoading(false);
@@ -192,7 +220,8 @@ export default function AdminMarketersPage() {
             skin_default_discount: formData.defaultDiscount,
             skin_coupon_duration_days: formData.validityDays,
             skin_is_one_time_use: formData.isOneTimeUse,
-            skin_code_length: formData.codeLength
+            skin_code_length: formData.codeLength,
+            skin_level: formData.level
           })
           .eq('skin_id', editingMarketer.skin_id);
         if (error) throw error;
@@ -216,6 +245,7 @@ export default function AdminMarketersPage() {
             skin_coupon_duration_days: formData.validityDays,
             skin_is_one_time_use: formData.isOneTimeUse,
             skin_code_length: formData.codeLength,
+            skin_level: formData.level,
             skin_is_active: true
           });
         if (profileError) throw profileError;
@@ -259,10 +289,26 @@ export default function AdminMarketersPage() {
     setLoading(false);
   };
 
-  const filteredMarketers = marketers.filter(m => 
-    m.skin_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    m.skin_email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const [levelFilter, setLevelFilter] = useState('all');
+
+  const filteredMarketers = marketers.filter(m => {
+    const matchesSearch = 
+      m.skin_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      m.skin_email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesLevel = levelFilter === 'all' || m.skin_level === levelFilter;
+    return matchesSearch && matchesLevel;
+  });
+
+  const getLevelBadge = (level: string) => {
+    const badges: Record<string, string> = {
+      Bronze: 'bg-orange-50 text-orange-600 border-orange-100',
+      Silver: 'bg-gray-50 text-gray-500 border-gray-100',
+      Gold: 'bg-accent-gold/5 text-accent-gold border-accent-gold/10',
+      Platinum: 'bg-blue-50 text-blue-600 border-blue-100',
+      Diamond: 'bg-purple-50 text-purple-600 border-purple-100'
+    };
+    return badges[level] || badges.Bronze;
+  };
 
   return (
     <div className="space-y-10 pb-24">
@@ -273,16 +319,10 @@ export default function AdminMarketersPage() {
         </div>
         <div className="flex items-center gap-4">
           <button 
-            onClick={() => setIsGlobalModalOpen(true)}
-            className="h-14 px-8 rounded-full bg-secondary-ivory text-text-dark font-black text-xs tracking-widest uppercase flex items-center gap-3 hover:bg-text-dark hover:text-white transition-all shadow-sm"
-          >
-            <Globe size={18} /> Global Rules
-          </button>
-          <button 
             onClick={() => { setEditingMarketer(null); setIsModalOpen(true); }}
             className="h-14 px-10 rounded-full bg-text-dark text-white font-black text-xs tracking-widest uppercase flex items-center gap-3 hover:bg-accent-gold transition-all shadow-xl shadow-text-dark/10"
           >
-            <UserPlus size={18} /> Add New
+            <UserPlus size={18} /> Add New Partner
           </button>
         </div>
       </header>
@@ -299,7 +339,6 @@ export default function AdminMarketersPage() {
               <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${stat.color}`}>
                 {stat.icon}
               </div>
-              <span className="text-[8px] font-black uppercase tracking-widest text-text-muted border border-secondary-ivory px-2 py-1 rounded-full">30 Days</span>
             </div>
             <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{stat.label}</p>
             <p className="text-3xl font-black text-text-dark tracking-tighter">{stat.value}</p>
@@ -314,36 +353,57 @@ export default function AdminMarketersPage() {
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-text-muted" size={20} />
               <input 
                 type="text" 
-                placeholder="Search marketers..." 
+                placeholder="Search by name or email..." 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-14 bg-secondary-ivory/30 border-none rounded-2xl pl-14 pr-6 text-sm font-bold focus:ring-2 focus:ring-accent-gold outline-none"
+                className="w-full h-14 bg-secondary-ivory/30 border-none rounded-2xl pl-14 pr-6 text-xs font-bold uppercase tracking-widest focus:ring-2 focus:ring-accent-gold outline-none"
               />
+            </div>
+            <div className="flex items-center gap-4 w-full md:w-auto">
+               <Globe className="text-text-muted" size={20} />
+               <select 
+                 value={levelFilter}
+                 onChange={(e) => setLevelFilter(e.target.value)}
+                 className="h-14 bg-secondary-ivory/30 border-none rounded-2xl px-8 text-[10px] font-black uppercase tracking-widest outline-none shadow-sm cursor-pointer min-w-[180px]"
+               >
+                 <option value="all">ALL LEVELS</option>
+                 <option value="Bronze">BRONZE</option>
+                 <option value="Silver">SILVER</option>
+                 <option value="Gold">GOLD</option>
+                 <option value="Platinum">PLATINUM</option>
+                 <option value="Diamond">DIAMOND</option>
+               </select>
             </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-secondary-ivory bg-secondary-ivory/30">
-                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-text-muted">Profile</th>
-                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-text-muted">Earnings</th>
-                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-text-muted">Active Policy</th>
+                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-text-muted">Partner Profile</th>
+                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-text-muted">Performance Tier</th>
+                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-text-muted">Yield & Commissions</th>
+                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-text-muted">Incentive Policy</th>
                 <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-text-muted text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-secondary-ivory">
               {loading ? (
-                <tr><td colSpan={4} className="px-8 py-20 text-center"><Loader2 className="animate-spin text-accent-gold mx-auto" /></td></tr>
+                <tr><td colSpan={5} className="px-8 py-20 text-center"><Loader2 className="animate-spin text-accent-gold mx-auto" /></td></tr>
               ) : filteredMarketers.map((m) => (
                 <tr key={m.skin_id} className="hover:bg-secondary-ivory/10 transition-colors group">
                   <td className="px-8 py-6">
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-text-dark flex items-center justify-center text-white font-black text-xs uppercase">{m.skin_name[0]}</div>
+                      <div className="w-10 h-10 rounded-xl bg-text-dark flex items-center justify-center text-white font-black text-xs uppercase shadow-lg group-hover:rotate-6 transition-transform">{m.skin_name[0]}</div>
                       <div>
                         <p className="text-sm font-black text-text-dark uppercase">{m.skin_name}</p>
                         <p className="text-[9px] text-text-muted font-bold uppercase tracking-widest">{m.skin_email}</p>
                       </div>
                     </div>
+                  </td>
+                  <td className="px-8 py-6">
+                     <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${getLevelBadge(m.skin_level || 'Bronze')}`}>
+                        {m.skin_level || 'Bronze'}
+                     </span>
                   </td>
                   <td className="px-8 py-6">
                     <div className="space-y-1">
@@ -354,10 +414,10 @@ export default function AdminMarketersPage() {
                   <td className="px-8 py-6">
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[8px] font-black uppercase">C: {m.skin_commission_percent}%</span>
-                        <span className="px-2 py-0.5 bg-purple-50 text-purple-600 rounded text-[8px] font-black uppercase">D: {m.skin_default_discount}%</span>
+                        <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[8px] font-black uppercase tracking-tighter">C: {m.skin_commission_percent}%</span>
+                        <span className="px-2 py-0.5 bg-purple-50 text-purple-600 rounded text-[8px] font-black uppercase tracking-tighter">D: {m.skin_default_discount}%</span>
                       </div>
-                      <p className="text-[9px] font-black text-text-muted uppercase italic">{m.skin_coupon_duration_days}d · {m.skin_is_one_time_use ? 'Single' : 'Multi'} · {m.skin_code_length}ch</p>
+                      <p className="text-[9px] font-black text-text-muted uppercase italic">Infinite · {m.skin_is_one_time_use ? 'Single' : 'Multi'} · {m.skin_code_length}ch</p>
                     </div>
                   </td>
                   <td className="px-8 py-6 text-right">
@@ -471,24 +531,6 @@ export default function AdminMarketersPage() {
                    </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
-                   <div className="space-y-2">
-                      <label className="text-[10px] font-black text-text-muted uppercase tracking-widest ml-1">Activation (Days)</label>
-                      <input type="number" value={globalFormData.validityDays} onChange={(e) => setGlobalFormData({...globalFormData, validityDays: parseInt(e.target.value)})} className="w-full h-12 bg-secondary-ivory/30 border-none rounded-xl px-4 text-xs font-bold outline-none" />
-                   </div>
-                   <div className="space-y-2">
-                      <label className="text-[10px] font-black text-text-muted uppercase tracking-widest ml-1">Code Length</label>
-                      <input type="number" min={4} max={16} value={globalFormData.codeLength} onChange={(e) => setGlobalFormData({...globalFormData, codeLength: parseInt(e.target.value)})} className="w-full h-12 bg-secondary-ivory/30 border-none rounded-xl px-4 text-xs font-bold outline-none" />
-                   </div>
-                   <div className="space-y-2">
-                      <label className="text-[10px] font-black text-text-muted uppercase tracking-widest ml-1">Usage Limit</label>
-                      <select value={globalFormData.isOneTimeUse ? 'one-time' : 'unlimited'} onChange={(e) => setGlobalFormData({...globalFormData, isOneTimeUse: e.target.value === 'one-time'})} className="w-full h-12 bg-secondary-ivory/30 border-none rounded-xl px-4 text-xs font-bold outline-none">
-                         <option value="unlimited">Unlimited</option>
-                         <option value="one-time">Single Use</option>
-                      </select>
-                   </div>
-                </div>
-
                 <div className="flex flex-col gap-3 pt-4">
                    <button type="submit" className="h-14 bg-text-dark text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-accent-gold transition-all">Save Global Defaults</button>
                    <button 
@@ -514,31 +556,72 @@ export default function AdminMarketersPage() {
                <header className="flex items-center justify-between mb-8">
                   <div>
                     <h2 className="text-2xl font-black tracking-tighter text-text-dark uppercase italic">{editingMarketer ? 'Update Profile' : 'New Affiliate'}</h2>
-                    <p className="text-[10px] font-black text-text-muted uppercase tracking-widest mt-1">Configure profile and promotional rules.</p>
+                    <p className="text-[10px] font-black text-text-muted uppercase tracking-widest mt-1">Configure profile and performance-based rules.</p>
                   </div>
                   <button onClick={() => { setIsModalOpen(false); setEditingMarketer(null); }} className="w-10 h-10 rounded-full bg-secondary-ivory flex items-center justify-center"><X size={20}/></button>
                </header>
                <form className="space-y-6" onSubmit={handleSaveMarketer}>
                   <div className="grid grid-cols-2 gap-4">
-                    <input required placeholder="Full Name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="h-12 bg-secondary-ivory/30 border-none rounded-xl px-4 text-xs font-bold outline-none" />
-                    <input required placeholder="Phone Number" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="h-12 bg-secondary-ivory/30 border-none rounded-xl px-4 text-xs font-bold outline-none" />
+                    <div className="space-y-1">
+                      <label className="text-[8px] font-black uppercase text-text-muted ml-1">Full Name</label>
+                      <input required placeholder="Name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full h-12 bg-secondary-ivory/30 border-none rounded-xl px-4 text-xs font-bold outline-none" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[8px] font-black uppercase text-text-muted ml-1">Contact Number</label>
+                      <input required placeholder="Phone" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="w-full h-12 bg-secondary-ivory/30 border-none rounded-xl px-4 text-xs font-bold outline-none" />
+                    </div>
                   </div>
                   {!editingMarketer && (
                     <div className="grid grid-cols-2 gap-4">
-                      <input required placeholder="Email" type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="h-12 bg-secondary-ivory/30 border-none rounded-xl px-4 text-xs font-bold outline-none" />
-                      <input required placeholder="Password" type="password" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} className="h-12 bg-secondary-ivory/30 border-none rounded-xl px-4 text-xs font-bold outline-none" />
+                      <div className="space-y-1">
+                        <label className="text-[8px] font-black uppercase text-text-muted ml-1">Account Email</label>
+                        <input required placeholder="Email" type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="w-full h-12 bg-secondary-ivory/30 border-none rounded-xl px-4 text-xs font-bold outline-none" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[8px] font-black uppercase text-text-muted ml-1">Secure Password</label>
+                        <input required placeholder="Password" type="password" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} className="w-full h-12 bg-secondary-ivory/30 border-none rounded-xl px-4 text-xs font-bold outline-none" />
+                      </div>
                     </div>
                   )}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1"><label className="text-[8px] font-black uppercase text-text-muted ml-1">Commission % (of Discount)</label><input type="number" value={formData.commission} onChange={(e) => setFormData({...formData, commission: parseInt(e.target.value)})} className="w-full h-12 bg-secondary-ivory/30 border-none rounded-xl px-4 text-xs font-bold outline-none" /></div>
-                    <div className="space-y-1"><label className="text-[8px] font-black uppercase text-text-muted ml-1">Discount %</label><input type="number" value={formData.defaultDiscount} onChange={(e) => setFormData({...formData, defaultDiscount: parseInt(e.target.value)})} className="w-full h-12 bg-secondary-ivory/30 border-none rounded-xl px-4 text-xs font-bold outline-none" /></div>
+                  <div className="p-6 bg-secondary-ivory/30 rounded-[2rem] border border-secondary-ivory/50 space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-[10px] font-black uppercase tracking-widest text-text-dark flex items-center gap-2">
+                        <BarChart3 size={14} className="text-accent-gold" /> Performance Tier Assignment
+                      </h3>
+                      <select 
+                        value={formData.level || 'Bronze'} 
+                        onChange={(e) => {
+                          const level = e.target.value;
+                          const rule = globalSettings?.skin_tiered_rules?.find((r: any) => r.level === level) || { commission: 5, discount: 5 };
+                          setFormData({
+                            ...formData, 
+                            level,
+                            commission: rule.commission,
+                            defaultDiscount: rule.discount
+                          });
+                        }}
+                        className="h-10 bg-white border border-secondary-ivory rounded-xl px-4 text-[9px] font-black uppercase tracking-widest outline-none shadow-sm"
+                      >
+                        <option value="Bronze">BRONZE</option>
+                        <option value="Silver">SILVER</option>
+                        <option value="Gold">GOLD</option>
+                        <option value="Platinum">PLATINUM</option>
+                        <option value="Diamond">DIAMOND</option>
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[8px] font-black uppercase text-text-muted ml-1">Inherited Commission %</label>
+                        <input type="number" value={formData.commission} onChange={(e) => setFormData({...formData, commission: parseInt(e.target.value)})} className="w-full h-12 bg-white border border-secondary-ivory rounded-xl px-4 text-xs font-bold outline-none" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[8px] font-black uppercase text-text-muted ml-1">Inherited Discount %</label>
+                        <input type="number" value={formData.defaultDiscount} onChange={(e) => setFormData({...formData, defaultDiscount: parseInt(e.target.value)})} className="w-full h-12 bg-white border border-secondary-ivory rounded-xl px-4 text-xs font-bold outline-none" />
+                      </div>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="space-y-1"><label className="text-[8px] font-black uppercase text-text-muted ml-1">Duration (d)</label><input type="number" value={formData.validityDays} onChange={(e) => setFormData({...formData, validityDays: parseInt(e.target.value)})} className="w-full h-12 bg-secondary-ivory/30 border-none rounded-xl px-4 text-xs font-bold outline-none" /></div>
-                    <div className="space-y-1"><label className="text-[8px] font-black uppercase text-text-muted ml-1">Length</label><input type="number" value={formData.codeLength} onChange={(e) => setFormData({...formData, codeLength: parseInt(e.target.value)})} className="w-full h-12 bg-secondary-ivory/30 border-none rounded-xl px-4 text-xs font-bold outline-none" /></div>
-                    <div className="space-y-1"><label className="text-[8px] font-black uppercase text-text-muted ml-1">Usage</label><select value={formData.isOneTimeUse ? 'one-time' : 'unlimited'} onChange={(e) => setFormData({...formData, isOneTimeUse: e.target.value === 'one-time'})} className="w-full h-12 bg-secondary-ivory/30 border-none rounded-xl px-4 text-xs font-bold outline-none"><option value="unlimited">Unlimited</option><option value="one-time">Single</option></select></div>
-                  </div>
-                  <button type="submit" className="w-full h-14 bg-text-dark text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-accent-gold transition-all">{editingMarketer ? 'Update Policies' : 'Onboard Marketer'}</button>
+                  <button type="submit" className="w-full h-14 bg-text-dark text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-accent-gold transition-all shadow-xl shadow-text-dark/10">{editingMarketer ? 'Sync Partner Rules' : 'Onboard & Initialize Partner'}</button>
                </form>
             </motion.div>
           </div>

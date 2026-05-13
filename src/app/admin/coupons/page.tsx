@@ -64,24 +64,25 @@ export default function AdminCouponsPage() {
       .select('*')
       .order('skin_created_at', { ascending: false });
 
-    // 2. Fetch Marketer Coupons
-    const { data: marketerCoupons } = await supabase
-      .from('skin_marketer_coupons')
-      .select('*, skin_marketers(skin_name)')
-      .order('skin_created_at', { ascending: false });
+    // 2. Fetch Usage Counts from orders
+    const { data: orderUsage } = await supabase
+      .from('skin_orders')
+      .select('skin_coupon_code');
     
-    const combined = [
-      ...(adminCoupons || []).map(c => ({ ...c, source: 'admin' })),
-      ...(marketerCoupons || []).map(c => ({ 
-        ...c, 
-        source: 'marketer',
-        skin_type: 'percentage', // Marketer coupons are fixed to percentage for now
-        skin_value: c.skin_discount_percent,
-        marketer_name: c.skin_marketers?.skin_name
-      }))
-    ].sort((a, b) => new Date(b.skin_created_at).getTime() - new Date(a.skin_created_at).getTime());
+    const usageMap: Record<string, number> = {};
+    (orderUsage || []).forEach(o => {
+      if (o.skin_coupon_code) {
+        usageMap[o.skin_coupon_code] = (usageMap[o.skin_coupon_code] || 0) + 1;
+      }
+    });
 
-    setCoupons(combined);
+    const enriched = (adminCoupons || []).map(c => ({
+      ...c,
+      source: 'admin',
+      usageCount: usageMap[c.skin_code] || 0
+    }));
+
+    setCoupons(enriched);
     setLoading(false);
   };
 
@@ -184,7 +185,7 @@ export default function AdminCouponsPage() {
             <thead>
               <tr className="border-b border-secondary-ivory bg-secondary-ivory/30">
                 <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-text-muted">Code & Type</th>
-                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-text-muted">Source</th>
+                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-text-muted">Usage Status</th>
                 <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-text-muted">Discount</th>
                 <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-text-muted">Conditions</th>
                 <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-text-muted">Expiry</th>
@@ -210,9 +211,9 @@ export default function AdminCouponsPage() {
                       </div>
                     </td>
                     <td className="px-8 py-6">
-                      <div className={`flex flex-col gap-1 px-3 py-1.5 rounded-2xl w-fit ${coupon.source === 'admin' ? 'bg-accent-gold/5 text-accent-gold border border-accent-gold/10' : 'bg-purple-50 text-purple-600 border border-purple-100'}`}>
-                        <span className="text-[9px] font-black uppercase tracking-widest">{coupon.source}</span>
-                        {coupon.marketer_name && <span className="text-[8px] font-bold italic line-clamp-1">By: {coupon.marketer_name}</span>}
+                      <div className={`flex flex-col gap-1 px-3 py-1.5 rounded-2xl w-fit ${coupon.usageCount > 0 ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-gray-50 text-gray-400 border border-gray-100'}`}>
+                        <span className="text-[9px] font-black uppercase tracking-widest">{coupon.usageCount > 0 ? 'Used' : 'Never Used'}</span>
+                        <span className="text-[8px] font-bold italic">{coupon.usageCount} Conversions</span>
                       </div>
                     </td>
                     <td className="px-8 py-6">

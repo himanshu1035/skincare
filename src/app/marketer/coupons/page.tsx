@@ -50,7 +50,15 @@ export default function MarketerCouponsPage() {
     setLoading(true);
     const { data } = await supabase
       .from('skin_marketer_coupons')
-      .select('*, skin_marketer_commissions(count)')
+      .select(`
+        skin_id,
+        skin_code,
+        skin_discount_percent,
+        skin_expiry_date,
+        skin_is_active,
+        skin_created_at,
+        skin_marketer_commissions(count)
+      `)
       .eq('skin_marketer_id', marketerId)
       .order('skin_created_at', { ascending: false });
 
@@ -105,6 +113,8 @@ export default function MarketerCouponsPage() {
     );
   }
 
+  const hasUnusedCoupon = coupons.some(c => (c.skin_marketer_commissions?.[0]?.count || 0) === 0);
+
   return (
     <div className="space-y-10 pb-20">
       <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
@@ -112,56 +122,75 @@ export default function MarketerCouponsPage() {
           <h1 className="text-4xl font-black tracking-tighter text-text-dark uppercase italic">Marketing Campaigns</h1>
           <p className="text-text-muted mt-2 font-medium italic">Generate and manage your promotional attribution codes.</p>
         </div>
-        <button 
-          onClick={() => setShowGenerator(true)}
-          className="h-14 px-10 rounded-full bg-text-dark text-white font-black text-xs tracking-widest uppercase flex items-center gap-3 hover:bg-accent-gold transition-all shadow-xl shadow-text-dark/10 group"
-        >
-          <Zap size={18} className="group-hover:animate-pulse" /> Launch New Campaign
-        </button>
+        <div className="flex flex-col items-end gap-3">
+          <button 
+            disabled={hasUnusedCoupon}
+            onClick={() => setShowGenerator(true)}
+            className={`h-14 px-10 rounded-full font-black text-xs tracking-widest uppercase flex items-center gap-3 transition-all shadow-xl group ${
+              hasUnusedCoupon 
+                ? 'bg-secondary-ivory text-text-muted cursor-not-allowed border border-secondary-ivory' 
+                : 'bg-text-dark text-white hover:bg-accent-gold shadow-text-dark/10'
+            }`}
+          >
+            <Zap size={18} className={hasUnusedCoupon ? "" : "group-hover:animate-pulse"} /> 
+            {hasUnusedCoupon ? "Code Already Active" : "Launch New Campaign"}
+          </button>
+          {hasUnusedCoupon && (
+            <p className="text-[9px] font-black text-accent-gold uppercase tracking-widest italic animate-pulse">
+              Use your existing code before generating a new one.
+            </p>
+          )}
+        </div>
       </header>
 
       <div className="grid grid-cols-1 gap-6">
-        {coupons.length > 0 ? coupons.map((c) => (
-          <motion.div 
-            key={c.skin_id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white p-8 rounded-[3rem] border border-secondary-ivory shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row items-center justify-between gap-8 group"
-          >
-            <div className="flex items-center gap-8 w-full md:w-auto">
-              <div className="w-20 h-20 rounded-[2rem] bg-secondary-ivory/50 flex flex-col items-center justify-center border border-secondary-ivory group-hover:bg-accent-gold group-hover:text-white transition-colors duration-500">
-                <p className="text-2xl font-black leading-none">{c.skin_discount_percent}%</p>
-                <p className="text-[8px] font-black uppercase tracking-widest mt-1">OFF</p>
-              </div>
-              <div>
-                <div className="flex items-center gap-4">
-                  <h3 className="text-2xl font-black text-text-dark tracking-[0.2em] uppercase">{c.skin_code}</h3>
-                  <button onClick={() => copyToClipboard(c.skin_code)} className="p-2 hover:bg-secondary-ivory rounded-xl text-text-muted hover:text-accent-gold transition-all">
-                    <Copy size={16} />
-                  </button>
-                </div>
-                <div className="flex flex-wrap items-center gap-4 mt-2">
-                   <div className="flex items-center gap-1.5 text-[10px] font-bold text-text-muted uppercase tracking-widest italic">
-                     <Calendar size={12} /> Expiry: {new Date(c.skin_expiry_date).toLocaleDateString()}
-                   </div>
-                   <div className="flex items-center gap-1.5 text-[10px] font-bold text-text-muted uppercase tracking-widest italic">
-                     <Zap size={12} /> Usage: {c.skin_marketer_commissions?.[0]?.count || 0} Orders
-                   </div>
-                   <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${c.skin_is_active ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'}`}>
-                     {c.skin_is_active ? 'Active' : 'Expired'}
-                   </span>
-                </div>
-              </div>
-            </div>
-
-            <Link 
-              href={`/marketer/orders?coupon=${c.skin_code}`}
-              className="h-12 px-8 rounded-2xl bg-secondary-ivory/50 text-text-dark font-black text-[10px] uppercase tracking-widest flex items-center gap-3 hover:bg-text-dark hover:text-white transition-all group/btn"
+        {coupons.length > 0 ? coupons.map((c) => {
+          const usageCount = c.skin_marketer_commissions?.[0]?.count || 0;
+          const isUsed = usageCount > 0;
+          
+          return (
+            <motion.div 
+              key={c.skin_id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white p-8 rounded-[3rem] border border-secondary-ivory shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row items-center justify-between gap-8 group"
             >
-              View Conversions <ChevronRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
-            </Link>
-          </motion.div>
-        )) : (
+              <div className="flex items-center gap-8 w-full md:w-auto">
+                <div className={`w-20 h-20 rounded-[2rem] flex flex-col items-center justify-center border transition-colors duration-500 ${
+                  isUsed ? 'bg-secondary-ivory/50 border-secondary-ivory text-text-muted' : 'bg-accent-gold text-white border-accent-gold'
+                }`}>
+                  <p className="text-2xl font-black leading-none">{c.skin_discount_percent}%</p>
+                  <p className="text-[8px] font-black uppercase tracking-widest mt-1">OFF</p>
+                </div>
+                <div>
+                  <div className="flex items-center gap-4">
+                    <h3 className={`text-2xl font-black tracking-[0.2em] uppercase ${isUsed ? 'text-text-muted line-through' : 'text-text-dark'}`}>{c.skin_code}</h3>
+                    {!isUsed && (
+                      <button onClick={() => copyToClipboard(c.skin_code)} className="p-2 hover:bg-secondary-ivory rounded-xl text-text-muted hover:text-accent-gold transition-all">
+                        <Copy size={16} />
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-4 mt-2">
+                     <div className="flex items-center gap-1.5 text-[10px] font-bold text-text-muted uppercase tracking-widest italic">
+                       <Zap size={12} /> Redemptions: {usageCount}
+                     </div>
+                     <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${!isUsed ? 'bg-green-50 text-green-600' : 'bg-secondary-ivory text-text-muted'}`}>
+                       {!isUsed ? 'Available' : 'Used'}
+                     </span>
+                  </div>
+                </div>
+              </div>
+
+              <Link 
+                href={`/marketer/orders?coupon=${c.skin_code}`}
+                className="h-12 px-8 rounded-2xl bg-secondary-ivory/50 text-text-dark font-black text-[10px] uppercase tracking-widest flex items-center gap-3 hover:bg-text-dark hover:text-white transition-all group/btn"
+              >
+                View Conversions <ChevronRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
+              </Link>
+            </motion.div>
+          );
+        }) : (
           <div className="py-32 text-center bg-white rounded-[3rem] border border-secondary-ivory border-dashed">
             <Ticket className="mx-auto text-secondary-ivory mb-6" size={64} />
             <h3 className="text-xl font-black text-text-dark uppercase italic">No Campaigns Active</h3>
@@ -185,12 +214,17 @@ export default function MarketerCouponsPage() {
                <div className="space-y-8">
                   <div className="bg-secondary-ivory/50 p-8 rounded-[2rem] border border-secondary-ivory/50">
                      <p className="text-[10px] font-black text-text-muted uppercase tracking-widest mb-6">Admin Applied Policies:</p>
-                     <div className="grid grid-cols-2 gap-6">
+                     <div className="grid grid-cols-1 gap-6">
                         <div className="space-y-1"><p className="text-2xl font-black text-text-dark">{profile?.skin_default_discount || 10}%</p><p className="text-[9px] font-black text-text-muted uppercase tracking-widest">Fixed Discount</p></div>
-                        <div className="space-y-1"><p className="text-2xl font-black text-text-dark">{profile?.skin_coupon_duration_days || 30}</p><p className="text-[9px] font-black text-text-muted uppercase tracking-widest">Validity Days</p></div>
                      </div>
                   </div>
-                  <div className="bg-accent-gold/5 p-6 rounded-2xl border border-accent-gold/20 flex items-start gap-4"><ShieldCheck className="text-accent-gold shrink-0" size={20} /><p className="text-[10px] font-bold text-accent-gold uppercase leading-relaxed">Your code will be generated instantly using pre-defined store rules.</p></div>
+                  <div className="bg-accent-gold/5 p-6 rounded-2xl border border-accent-gold/20 flex items-start gap-4">
+                    <ShieldCheck className="text-accent-gold shrink-0" size={20} />
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-bold text-accent-gold uppercase leading-relaxed">This code will have **Infinite Validity** but can only be used **Once**.</p>
+                      <p className="text-[9px] text-accent-gold/70 italic leading-relaxed">Once this code is used, you can generate a new one.</p>
+                    </div>
+                  </div>
                   <div className="flex flex-col gap-3">
                     <button onClick={handleCreateCoupon} disabled={isGenerating} className="w-full h-16 bg-text-dark text-white rounded-2xl font-black text-xs tracking-widest uppercase hover:bg-accent-gold transition-all shadow-xl shadow-text-dark/10 flex items-center justify-center gap-3">
                        {isGenerating ? <Loader2 className="animate-spin" size={20} /> : "Generate & Publish Code"}

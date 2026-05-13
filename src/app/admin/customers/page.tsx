@@ -7,11 +7,15 @@ import { CustomerTable } from './CustomerTable';
 export default async function AdminCustomersPage() {
   const supabase = createClient();
   
-  // 1. Fetch Customers
+  // 1. Fetch Customers and Marketers separately to prevent join errors
   const { data: customers, error: customerError } = await supabase
     .from('skin_user_profiles')
     .select('*')
     .order('skin_created_at', { ascending: false });
+
+  const { data: allMarketers } = await supabase
+    .from('skin_marketers')
+    .select('skin_id');
 
   if (customerError) {
     console.error("Supabase Customer Fetch Error:", customerError);
@@ -42,7 +46,8 @@ export default async function AdminCustomersPage() {
       ...customer,
       totalSpent,
       lastOrderDate: lastOrder,
-      orderCount: orders.length
+      orderCount: orders.length,
+      isMarketer: (allMarketers || []).some(m => m.skin_id === customer.skin_id)
     };
   });
 
@@ -57,18 +62,6 @@ export default async function AdminCustomersPage() {
           EXPORT DATA
         </Button>
       </header>
-
-      {/* Search Bar */}
-      <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-secondary-ivory">
-        <div className="relative flex-1 w-full">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
-          <input 
-            type="text" 
-            placeholder="Search users by name, email or phone..." 
-            className="w-full bg-secondary-ivory/50 border-none rounded-xl pl-12 pr-4 py-4 text-sm outline-none focus:ring-2 focus:ring-accent-gold font-bold"
-          />
-        </div>
-      </div>
 
       <CustomerTable customers={customersWithStats || []} />
     </div>

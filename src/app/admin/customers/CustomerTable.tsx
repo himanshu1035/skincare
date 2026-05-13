@@ -12,7 +12,8 @@ import {
   ExternalLink,
   Shield,
   Edit2,
-  MessageSquare
+  MessageSquare,
+  Zap
 } from 'lucide-react';
 import Link from 'next/link';
 import { CustomerEditModal } from './CustomerEditModal';
@@ -24,9 +25,29 @@ interface CustomerTableProps {
 
 export const CustomerTable = ({ customers }: CustomerTableProps) => {
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredCustomers = (customers || []).filter(customer => 
+    (customer.skin_email || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (`${customer.skin_first_name} ${customer.skin_last_name}`).toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (customer.skin_phone || '').includes(searchQuery)
+  );
 
   return (
-    <>
+    <div className="space-y-8">
+      {/* Search Bar */}
+      <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-secondary-ivory">
+        <div className="relative flex-1 w-full">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
+          <input 
+            type="text" 
+            placeholder="Search users by name, email or phone..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-secondary-ivory/50 border-none rounded-xl pl-12 pr-4 py-4 text-sm outline-none focus:ring-2 focus:ring-accent-gold font-bold"
+          />
+        </div>
+      </div>
       <div className="bg-white rounded-[3rem] shadow-sm border border-secondary-ivory overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
@@ -41,7 +62,7 @@ export const CustomerTable = ({ customers }: CustomerTableProps) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-secondary-ivory">
-              {customers?.map((customer) => (
+              {filteredCustomers?.map((customer) => (
                 <tr key={customer.skin_id} className="hover:bg-secondary-ivory/10 transition-colors group">
                   <td className="px-8 py-6">
                     <div className="flex items-center gap-4">
@@ -79,11 +100,21 @@ export const CustomerTable = ({ customers }: CustomerTableProps) => {
                     )}
                   </td>
                   <td className="px-8 py-6">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border flex items-center gap-1.5 w-fit ${
-                        customer.skin_role === 'admin' ? 'bg-accent-gold/10 text-accent-gold border-accent-gold/20' : 'bg-green-50 text-green-600 border-green-100'
-                    }`}>
-                      <Shield size={10} /> {customer.skin_role || 'Customer'}
-                    </span>
+                    <div className="flex flex-col gap-2">
+                       <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border flex items-center gap-1.5 w-fit ${
+                           customer.skin_role === 'admin' ? 'bg-accent-gold/10 text-accent-gold border-accent-gold/20' : 
+                           customer.isMarketer ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                           'bg-green-50 text-green-600 border-green-100'
+                       }`}>
+                         <Shield size={10} /> {customer.skin_role === 'admin' ? 'Admin' : customer.isMarketer ? 'Marketer' : 'Customer'}
+                       </span>
+                       
+                       {customer.isMarketer && (
+                         <Link href="/admin/marketers" className="flex items-center gap-1.5 text-[9px] font-black text-accent-gold uppercase tracking-widest hover:underline group-hover:translate-x-1 transition-transform">
+                            <Zap size={10} /> Manage Affiliate
+                         </Link>
+                       )}
+                    </div>
                   </td>
                   <td className="px-8 py-6">
                     <p className="flex items-center gap-2 text-[10px] font-black text-text-muted uppercase tracking-widest">
@@ -119,6 +150,6 @@ export const CustomerTable = ({ customers }: CustomerTableProps) => {
           onClose={() => setSelectedCustomer(null)} 
         />
       )}
-    </>
+    </div>
   );
 };

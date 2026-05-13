@@ -18,7 +18,8 @@ import {
   Ticket,
   Zap,
   Image as ImageIcon,
-  Sparkles
+  Sparkles,
+  Wallet
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion } from 'framer-motion';
@@ -26,6 +27,40 @@ import { motion } from 'framer-motion';
 export const AdminSidebar = React.memo(() => {
   const pathname = usePathname();
   const router = useRouter();
+
+  const [notifications, setNotifications] = React.useState<any[]>([]);
+
+  React.useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000); // Polling for admin
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchNotifications = async () => {
+    const { createClient } = await import('@/lib/supabase');
+    const supabase = createClient();
+    const { data } = await supabase
+      .from('skin_marketer_notifications')
+      .select('*')
+      .eq('skin_user_id', '00000000-0000-0000-0000-000000000000') // Placeholder for admin
+      .eq('skin_is_read', false);
+    
+    // In a real app, admin notifications might have a different user_id or system flag.
+    // For now, let's also check for pending withdrawals and open tickets directly.
+    const [{ count: withdrawals }, { count: tickets }] = await Promise.all([
+      supabase.from('skin_marketer_withdrawals').select('*', { count: 'exact', head: true }).eq('skin_status', 'pending'),
+      supabase.from('skin_marketer_tickets').select('*', { count: 'exact', head: true }).eq('skin_status', 'open')
+    ]);
+
+    setNotifications([
+      ...(withdrawals ? new Array(withdrawals).fill({ type: 'withdrawal' }) : []),
+      ...(tickets ? new Array(tickets).fill({ type: 'ticket' }) : [])
+    ]);
+  };
+
+  const getCount = (type: string) => {
+    return notifications.filter(n => n.type === type).length;
+  };
 
   const groups = useMemo(() => [
     {
@@ -37,13 +72,21 @@ export const AdminSidebar = React.memo(() => {
       ]
     },
     {
-      title: "Marketing",
+      title: "Marketing & Growth",
       items: [
-        { name: 'Campaigns', href: '/admin/campaigns', icon: <Sparkles size={16} /> },
-        { name: 'Promotions', href: '/admin/promotions', icon: <Zap size={16} /> },
-        { name: 'Coupons', href: '/admin/coupons', icon: <Ticket size={16} /> },
-        { name: 'Affiliates', href: '/admin/marketers', icon: <Users size={16} /> },
         { name: 'Banners', href: '/admin/banners', icon: <ImageIcon size={16} /> },
+        { name: 'Promotions', href: '/admin/promotions', icon: <Zap size={16} /> },
+        { name: 'Campaign Pages', href: '/admin/campaigns', icon: <Sparkles size={16} /> },
+        { name: 'Store Coupons', href: '/admin/coupons', icon: <Ticket size={16} /> },
+      ]
+    },
+    {
+      title: "Affiliate Network",
+      items: [
+        { name: 'Partner List', href: '/admin/marketers', icon: <Users size={16} /> },
+        { name: 'Payout Requests', href: '/admin/withdrawals', icon: <Wallet size={16} />, badge: getCount('withdrawal') },
+        { name: 'Partner Inquiries', href: '/admin/partner-support', icon: <MessageSquare size={16} />, badge: getCount('ticket') },
+        { name: 'Network Rules', href: '/admin/marketer-settings', icon: <Settings size={16} /> },
       ]
     },
     {
@@ -68,7 +111,7 @@ export const AdminSidebar = React.memo(() => {
         { name: 'System Health', href: '/admin/diagnostics', icon: <Sparkles size={16} /> },
       ]
     }
-  ], []);
+  ], [notifications]);
 
   const handleLogout = () => {
     sessionStorage.removeItem('admin_auth');
@@ -113,7 +156,12 @@ export const AdminSidebar = React.memo(() => {
                       </span>
                       <span>{item.name}</span>
                     </div>
-                    {isActive && (
+                    {item.badge !== undefined && item.badge > 0 && (
+                      <span className="min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center px-1 shadow-lg shadow-red-500/20">
+                         {item.badge}
+                      </span>
+                    )}
+                    {isActive && !item.badge && (
                       <motion.div layoutId="active-indicator" className="w-1.5 h-1.5 bg-accent-gold rounded-full" />
                     )}
                   </Link>

@@ -60,19 +60,19 @@ export default function MarketerLoginPage() {
     <main className="min-h-screen bg-secondary-ivory/20 selection:bg-accent-gold/30">
       <Navbar />
       
-      <div className="pt-48 pb-32 container max-w-7xl mx-auto px-4 flex flex-col lg:flex-row items-center gap-20">
-        <div className="flex-1 space-y-10">
+      <div className="pt-32 lg:pt-48 pb-32 container max-w-7xl mx-auto px-6 flex flex-col lg:flex-row items-center gap-16 lg:gap-20">
+        <div className="flex-1 space-y-8 lg:space-y-10 text-center lg:text-left">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
              <span className="text-[10px] font-black text-accent-gold uppercase tracking-[0.5em] mb-4 block">Official Affiliate Portal</span>
-             <h1 className="text-7xl font-black tracking-tighter text-text-dark leading-[0.9] uppercase italic">
+             <h1 className="text-4xl md:text-5xl lg:text-7xl font-black tracking-tighter text-text-dark leading-[0.95] lg:leading-[0.9] uppercase italic">
                Unlock Your <br /> <span className="text-accent-gold">Revenue Potential</span>
              </h1>
-             <p className="text-text-muted mt-8 text-xl font-medium max-w-xl leading-relaxed italic">
+             <p className="text-text-muted mt-6 lg:mt-8 text-lg lg:text-xl font-medium max-w-xl mx-auto lg:mx-0 leading-relaxed italic">
                The enterprise-grade workspace for COSRX Brand Marketers. Generate unique offers, track conversions, and monitor your earnings in real-time.
              </p>
           </motion.div>
 
-          <div className="grid grid-cols-2 gap-8 pt-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 lg:pt-8">
              <div className="space-y-2">
                 <ShieldCheck className="text-accent-gold" size={32} />
                 <p className="text-[10px] font-black text-text-dark uppercase tracking-widest">Enterprise Security</p>
