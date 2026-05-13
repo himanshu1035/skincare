@@ -26,7 +26,7 @@ function PaymentPageContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get('orderId');
   const router = useRouter();
-  const { clearCart } = useCartStore();
+  const { clearCart, items } = useCartStore();
   
   const [order, setOrder] = useState<any>(null);
   const [settings, setSettings] = useState<any>(null);
