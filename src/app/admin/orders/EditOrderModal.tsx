@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, Phone, MapPin, Save, Loader2, CreditCard } from 'lucide-react';
+import { X, User, Phone, MapPin, Save, Loader2, CreditCard, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { createClient } from '@/lib/supabase';
 
