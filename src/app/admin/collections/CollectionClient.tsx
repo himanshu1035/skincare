@@ -65,7 +65,7 @@ export const CollectionClient = ({ collections: initialCollections }: Collection
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {initialCollections?.map((col) => {
           const isFeatured = col.skin_show_on_homepage;
-          const isPinned = col.skin_show_in_navbar;
+          const isPinned = col.skin_is_pinned;
           const isDynamic = col.skin_is_dynamic;
           return (
             <div key={col.skin_id} className={cn(
@@ -125,6 +125,7 @@ export const CollectionClient = ({ collections: initialCollections }: Collection
         <CollectionModal 
           collection={selectedCollection} 
           onClose={() => setIsModalOpen(false)} 
+          onSuccess={() => router.refresh()}
         />
       )}
     </div>

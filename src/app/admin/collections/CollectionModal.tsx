@@ -13,9 +13,10 @@ import { cn } from '@/lib/utils';
 interface CollectionModalProps {
   collection?: any;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
-export const CollectionModal = ({ collection, onClose }: CollectionModalProps) => {
+export const CollectionModal = ({ collection, onClose, onSuccess }: CollectionModalProps) => {
   const [loading, setLoading] = useState(false);
   const supabase = createClient();
   const router = useRouter();
@@ -61,6 +62,7 @@ export const CollectionModal = ({ collection, onClose }: CollectionModalProps) =
     }
 
     if (!error) {
+      if (onSuccess) onSuccess();
       router.refresh();
       onClose();
     } else {

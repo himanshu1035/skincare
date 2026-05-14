@@ -63,37 +63,22 @@ export default function UserOrdersPage() {
     try {
       const supabaseInstance = createClient();
       
-      // Attempt 1: Fetch by User ID (standard)
+      // Attempt 1: Fetch by User ID
       let { data, error } = await supabaseInstance
         .from('skin_orders')
         .select('*')
-        .eq('skin_user_id', userId)
+        .or(`skin_user_id.eq.${userId}${email ? `,skin_customer_email.eq.${email}` : ''}`)
         .order('skin_created_at', { ascending: false });
-      
-      // Attempt 2: Fallback to Email if no orders found by ID
-      // This solves issues where the user's ID might have changed but their email is the same
-      if (!error && (!data || data.length === 0) && email) {
-        console.log("No orders found by ID, attempting fallback to email:", email);
-        const { data: fallbackData, error: fallbackError } = await supabaseInstance
-          .from('skin_orders')
-          .select('*')
-          .eq('skin_customer_email', email)
-          .order('skin_created_at', { ascending: false });
-        
-        if (!fallbackError && fallbackData && fallbackData.length > 0) {
-          console.log(`Found ${fallbackData.length} orders via email fallback.`);
-          data = fallbackData;
-        }
-      }
       
       if (error) {
         console.error('Error fetching orders:', error.message);
         setOrders([]);
-      } else if (data) {
-        setOrders(data);
+      } else {
+        setOrders(data || []);
       }
     } catch (err) {
       console.error('Unexpected error fetching orders:', err);
+      setOrders([]);
     } finally {
       setLoading(false);
     }
@@ -126,7 +111,7 @@ export default function UserOrdersPage() {
                 const status = (STATUS_MAP as any)[order.skin_status] || STATUS_MAP.pending;
                 const isExpanded = expandedOrder === order.skin_id;
                 const currentStep = status.step;
-                const totalAmount = Number(order.skin_total_amount);
+                const totalAmount = Number(order.skin_total_amount || order.skin_total || 0);
                 const handlingPaid = (order.skin_payment_status === 'verified' && order.skin_payment_method === 'COD') 
                     ? (Number(order.skin_shipping_charge) + Number(order.skin_cod_charge)) 
                     : 0;

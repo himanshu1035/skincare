@@ -58,16 +58,22 @@ export default async function Home() {
     
     const name = col.skin_name.toLowerCase();
     
-    // Level 1: Premium Local Generated Assets (Verified High-Res)
+    // Level 1: Collection-Specific Keywords
+    if (name.includes('best')) return 'https://images.unsplash.com/photo-1596462502278-27bfad450526?q=80&w=800&auto=format&fit=crop'; // Premium Serum
+    if (name.includes('new') || name.includes('arrival')) return 'https://images.unsplash.com/photo-1612817288484-6f916006741a?q=80&w=800&auto=format&fit=crop'; // Modern minimalist
     if (name.includes('snail')) return '/snail.png';
     if (name.includes('sun')) return '/sun.png';
     if (name.includes('vitamin c') || name.includes('glow')) return '/vitc.png';
     if (name.includes('propolis') || name.includes('toner')) return '/propolis.png';
-    
-    // Level 2: Fallback to reliable external sources
     if (name.includes('cleanser')) return 'https://images.unsplash.com/photo-1556228720-195a672e8a03?q=80&w=800&auto=format&fit=crop';
     
-    return '/snail.png'; // Global default to ensure no empty boxes
+    // Global Rotating Fallbacks based on ID length to ensure diversity even for unknown names
+    const fallbacks = [
+      'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?q=80&w=800&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?q=80&w=800&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?q=80&w=800&auto=format&fit=crop'
+    ];
+    return fallbacks[col.skin_id.length % fallbacks.length];
   };
 
   return (

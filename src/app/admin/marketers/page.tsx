@@ -284,9 +284,9 @@ export default function AdminMarketersPage() {
     setIsDetailsOpen(true);
     setLoading(true);
     const [couponsRes, salesRes] = await Promise.all([
-      supabase.from('skin_marketer_coupons').select('*').eq('skin_marketer_id', marketer.skin_id),
+      supabase.from('skin_marketer_coupons').select('*, skin_marketer_commissions(count)').eq('skin_marketer_id', marketer.skin_id),
       supabase.from('skin_marketer_commissions')
-        .select('*, skin_orders(*, skin_user_profiles(skin_first_name, skin_last_name))')
+        .select('*, skin_orders(*)')
         .eq('skin_marketer_id', marketer.skin_id)
         .order('skin_created_at', { ascending: false })
     ]);
@@ -360,10 +360,16 @@ export default function AdminMarketersPage() {
         <div className="flex items-center gap-4">
           <button 
             onClick={() => { setEditingMarketer(null); setIsModalOpen(true); }}
-            className="h-14 px-10 rounded-full bg-text-dark text-white font-black text-xs tracking-widest uppercase flex items-center gap-3 hover:bg-accent-gold transition-all shadow-xl shadow-text-dark/10"
+            className="h-14 px-8 rounded-full bg-secondary-ivory text-text-dark font-black text-xs tracking-widest uppercase flex items-center gap-3 hover:bg-white hover:shadow-lg transition-all"
           >
-            <UserPlus size={18} /> Add New Partner
+            <UserPlus size={18} /> Add Partner
           </button>
+          <Link 
+            href="/admin/marketer-coupons"
+            className="h-14 px-8 rounded-full bg-text-dark text-white font-black text-xs tracking-widest uppercase flex items-center gap-3 hover:bg-accent-gold transition-all shadow-xl"
+          >
+            <Ticket size={18} /> Coupon Audit
+          </Link>
         </div>
       </header>
 
@@ -505,10 +511,12 @@ export default function AdminMarketersPage() {
                          <div key={c.skin_id} className="p-6 bg-secondary-ivory/30 rounded-[2rem] border border-secondary-ivory flex items-center justify-between group">
                             <div>
                                <p className="text-sm font-black text-text-dark tracking-widest uppercase">{c.skin_code}</p>
-                               <p className="text-[9px] text-text-muted font-bold uppercase mt-1 italic">D: {c.skin_discount_percent}% · Exp: {new Date(c.skin_expiry_date).toLocaleDateString()}</p>
+                               <p className="text-[9px] text-text-muted font-bold uppercase mt-1 italic">
+                                  D: {c.skin_discount_percent}% · Used: {c.skin_marketer_commissions?.[0]?.count || 0} times
+                               </p>
                             </div>
                             <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase ${c.skin_is_active ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'}`}>
-                               {c.skin_is_active ? 'Live' : 'Expired'}
+                               {c.skin_is_active ? 'Live' : 'Paused'}
                             </span>
                          </div>
                        ))}
@@ -530,7 +538,7 @@ export default function AdminMarketersPage() {
                                 </div>
                                 <div>
                                    <p className="text-[11px] font-black text-text-dark uppercase">
-                                      {s.skin_orders?.skin_user_profiles?.skin_first_name} {s.skin_orders?.skin_user_profiles?.skin_last_name}
+                                      Order #{s.skin_orders?.skin_id?.slice(0, 8)}
                                    </p>
                                    <p className="text-[9px] text-text-muted font-bold uppercase tracking-widest">
                                       {new Date(s.skin_created_at).toLocaleDateString()} · Code: <span className="text-accent-gold">{s.skin_orders?.skin_coupon_code || 'N/A'}</span>

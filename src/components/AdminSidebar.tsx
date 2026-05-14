@@ -20,7 +20,9 @@ import {
   Image as ImageIcon,
   Sparkles,
   Wallet,
-  BrainCircuit
+  BrainCircuit,
+  TrendingUp,
+  Package
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion } from 'framer-motion';
@@ -92,9 +94,8 @@ export const AdminSidebar = React.memo(() => {
     {
       title: "Catalog",
       items: [
-        { name: 'Products', href: '/admin/products', icon: <Tag size={16} /> },
-        { name: 'Collections', href: '/admin/collections', icon: <Layers size={16} /> },
-        { name: 'Navigation Pins', href: '/admin/navigation', icon: <Compass size={16} /> },
+        { name: 'Collection List', href: '/admin/collections', icon: <Layers size={16} /> },
+        { name: 'Product Inventory', href: '/admin/products', icon: <Tag size={16} /> },
       ]
     },
     {

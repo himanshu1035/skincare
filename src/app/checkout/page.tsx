@@ -206,14 +206,18 @@ export default function CheckoutPage() {
     for (const coupon of marketerCoupons) {
       const commissionAmount = (grandTotal * (coupon.skin_commission_percent || 0)) / 100;
       
-      await supabase.from('skin_marketer_commissions').insert({
+      const { error: commError } = await supabase.from('skin_marketer_commissions').insert({
         skin_marketer_id: coupon.skin_marketer_id,
-        skin_order_id: order.skin_id,
+        skin_order_id: orderPayload.skin_id, // Use generated ID directly
         skin_coupon_id: coupon.skin_id,
         skin_order_amount: grandTotal,
         skin_commission_earned: commissionAmount,
         skin_status: 'pending'
       });
+
+      if (commError) {
+        console.error("Commission Recording Error:", commError);
+      }
     }
 
     router.push(`/checkout/payment?orderId=${order.skin_id}`);
