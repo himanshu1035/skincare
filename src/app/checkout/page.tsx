@@ -185,13 +185,14 @@ export default function CheckoutPage() {
     }
 
     // 4. Record Marketer Commission if applicable
-    if (appliedCoupon?.skin_marketer_id) {
-      const commissionAmount = (grandTotal * (appliedCoupon.skin_commission_percent || 0)) / 100;
+    const marketerCoupons = appliedCoupons.filter(c => c.skin_marketer_id);
+    for (const coupon of marketerCoupons) {
+      const commissionAmount = (grandTotal * (coupon.skin_commission_percent || 0)) / 100;
       
       await supabase.from('skin_marketer_commissions').insert({
-        skin_marketer_id: appliedCoupon.skin_marketer_id,
+        skin_marketer_id: coupon.skin_marketer_id,
         skin_order_id: order.skin_id,
-        skin_coupon_id: appliedCoupon.skin_id,
+        skin_coupon_id: coupon.skin_id,
         skin_order_amount: grandTotal,
         skin_commission_earned: commissionAmount,
         skin_status: 'pending'
