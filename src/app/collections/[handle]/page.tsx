@@ -1,11 +1,12 @@
 import React from 'react';
+import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { ProductCard } from '@/components/ProductCard';
 import { createClient } from '@/lib/supabase';
 import { CampaignTimer } from '@/components/CampaignTimer';
 import { getEligibleProductsForPromotion, fetchActivePromotions, getPromotionMetadata } from '@/lib/promotionEngine';
-import { Sparkles, Calendar, Zap, Gift } from 'lucide-react';
+import { Sparkles, Calendar, Zap, Gift, Package } from 'lucide-react';
 
 import { notFound } from 'next/navigation';
 
