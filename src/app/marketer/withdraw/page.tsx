@@ -21,8 +21,10 @@ import { formatPrice } from '@/lib/utils';
 export default function MarketerWithdraw() {
   const [loading, setLoading] = useState(true);
   const [balance, setBalance] = useState(0);
+  const [totalPaid, setTotalPaid] = useState(0);
+  const [totalPending, setTotalPending] = useState(0);
   const [upis, setUpis] = useState<any[]>([]);
-  const [withdrawals, setWithdrawals] = useState<any[]>([]);
+  const [ledger, setLedger] = useState<any[]>([]);
   const [selectedUpi, setSelectedUpi] = useState('');
   const [amount, setAmount] = useState('');
   const [minWithdrawal, setMinWithdrawal] = useState(500);
@@ -43,19 +45,58 @@ export default function MarketerWithdraw() {
     setLoading(true);
     
     const [commissionsRes, upisRes, withdrawalsRes, settingsRes] = await Promise.all([
-      supabase.from('skin_marketer_commissions').select('skin_commission_earned, skin_bonus_earned, skin_status').eq('skin_marketer_id', session.user.id),
+      supabase.from('skin_marketer_commissions').select('skin_id, skin_commission_earned, skin_bonus_earned, skin_status, skin_created_at').eq('skin_marketer_id', session.user.id),
       supabase.from('skin_marketer_upi').select('*').eq('skin_marketer_id', session.user.id),
       supabase.from('skin_marketer_withdrawals').select('*').eq('skin_marketer_id', session.user.id).order('skin_created_at', { ascending: false }),
       supabase.from('skin_marketer_settings').select('skin_min_withdrawal').eq('skin_id', 1).single()
     ]);
 
-    if (commissionsRes.data) {
-      // Balance is only from approved/unpaid commissions? 
-      // Actually let's assume all approved are part of balance until paid
-      // This logic should be hardened later
-      const earned = commissionsRes.data.filter(c => c.skin_status === 'approved').reduce((acc, c) => acc + Number(c.skin_commission_earned) + Number(c.skin_bonus_earned), 0);
-      const paid = withdrawalsRes.data?.filter(w => w.skin_status === 'approved').reduce((acc, w) => acc + Number(w.skin_amount), 0) || 0;
-      setBalance(earned - paid);
+    if (commissionsRes.data && withdrawalsRes.data) {
+      // 1. Calculate Approved Earnings (Lifetime)
+      const lifetimeEarned = commissionsRes.data
+        .filter(c => c.skin_status === 'approved')
+        .reduce((acc, c) => acc + Number(c.skin_commission_earned) + Number(c.skin_bonus_earned), 0);
+
+      // 2. Calculate Payouts
+      const paid = withdrawalsRes.data
+        .filter(w => w.skin_status === 'approved')
+        .reduce((acc, w) => acc + Number(w.skin_amount), 0);
+      
+      const pending = withdrawalsRes.data
+        .filter(w => w.skin_status === 'pending')
+        .reduce((acc, w) => acc + Number(w.skin_amount), 0);
+
+      setTotalPaid(paid);
+      setTotalPending(pending);
+      
+      // 3. Wallet Balance = Lifetime Earned - (Paid + Pending)
+      // This ensures pending money is "locked" and cannot be double-withdrawn
+      setBalance(lifetimeEarned - paid - pending);
+
+      // 4. Merge Ledger (Commissions and Withdrawals)
+      const commissionItems = commissionsRes.data.map(c => ({
+        id: c.skin_id,
+        type: 'earning',
+        amount: Number(c.skin_commission_earned) + Number(c.skin_bonus_earned),
+        status: c.skin_status,
+        date: c.skin_created_at,
+        label: 'Sales Commission'
+      }));
+
+      const withdrawalItems = withdrawalsRes.data.map(w => ({
+        id: w.skin_id,
+        type: 'payout',
+        amount: Number(w.skin_amount),
+        status: w.skin_status,
+        date: w.skin_created_at,
+        label: 'Wallet Withdrawal'
+      }));
+
+      const mergedLedger = [...commissionItems, ...withdrawalItems].sort((a, b) => 
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
+      
+      setLedger(mergedLedger);
     }
 
     if (upisRes.data) {
@@ -65,7 +106,6 @@ export default function MarketerWithdraw() {
       else if (upisRes.data.length > 0) setSelectedUpi(upisRes.data[0].skin_upi_id);
     }
 
-    if (withdrawalsRes.data) setWithdrawals(withdrawalsRes.data);
     if (settingsRes.data) setMinWithdrawal(Number(settingsRes.data.skin_min_withdrawal));
 
     setLoading(false);
@@ -137,17 +177,32 @@ export default function MarketerWithdraw() {
            <div className="bg-text-dark rounded-[3.5rem] p-12 text-white shadow-2xl relative overflow-hidden group">
               <Wallet className="absolute -right-8 -bottom-8 w-48 h-48 text-white/5 group-hover:scale-110 transition-transform duration-700" />
               <div className="relative z-10">
-                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 mb-2">Available for Settlement</p>
+                 <div className="flex items-center justify-between mb-2">
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">Available Wallet Balance</p>
+                    {totalPending > 0 && (
+                       <div className="px-3 py-1 bg-accent-gold/20 rounded-lg border border-accent-gold/30">
+                          <p className="text-[8px] font-black text-accent-gold uppercase tracking-widest flex items-center gap-2">
+                             <Clock size={10} /> {formatPrice(totalPending)} Pending
+                          </p>
+                       </div>
+                    )}
+                 </div>
                  <h2 className="text-6xl font-black tracking-tighter mb-10">{formatPrice(balance)}</h2>
                  
                  <div className="flex items-center gap-6">
                     <div className="px-6 py-3 bg-white/10 rounded-2xl flex items-center gap-3">
                        <ShieldCheck className="text-accent-gold" size={18} />
-                       <span className="text-[9px] font-black uppercase tracking-widest text-white/80">Verified Balance</span>
+                       <div>
+                          <p className="text-[8px] font-black uppercase tracking-widest text-white/40">Total Payouts</p>
+                          <span className="text-xs font-black uppercase tracking-widest text-white/80">{formatPrice(totalPaid)}</span>
+                       </div>
                     </div>
                     <div className="px-6 py-3 bg-white/10 rounded-2xl flex items-center gap-3">
-                       <Clock className="text-blue-400" size={18} />
-                       <span className="text-[9px] font-black uppercase tracking-widest text-white/80">48h Processing</span>
+                       <History className="text-blue-400" size={18} />
+                       <div>
+                          <p className="text-[8px] font-black uppercase tracking-widest text-white/40">Settlement Cycle</p>
+                          <span className="text-xs font-black uppercase tracking-widest text-white/80">48h Verification</span>
+                       </div>
                     </div>
                  </div>
               </div>
@@ -236,27 +291,37 @@ export default function MarketerWithdraw() {
               <header className="p-8 border-b border-secondary-ivory bg-secondary-ivory/10 flex items-center justify-between">
                  <div className="flex items-center gap-3">
                     <History size={20} className="text-text-muted" />
-                    <h2 className="text-sm font-black text-text-dark uppercase italic">Recent Ledger</h2>
+                    <h2 className="text-sm font-black text-text-dark uppercase italic">Financial Ledger</h2>
                  </div>
               </header>
               <div className="flex-1 divide-y divide-secondary-ivory max-h-[600px] overflow-y-auto">
-                 {withdrawals.length > 0 ? withdrawals.map((w) => (
-                    <div key={w.skin_id} className="p-8 flex items-center justify-between hover:bg-secondary-ivory/10 transition-colors">
-                       <div>
-                          <p className="text-sm font-black text-text-dark">{formatPrice(w.skin_amount)}</p>
-                          <p className="text-[9px] text-text-muted font-bold uppercase tracking-widest mt-0.5">{new Date(w.skin_created_at).toLocaleDateString()}</p>
+                 {ledger.length > 0 ? ledger.map((item, idx) => (
+                    <div key={idx} className="p-8 flex items-center justify-between hover:bg-secondary-ivory/10 transition-colors">
+                       <div className="flex items-center gap-4">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.type === 'earning' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'}`}>
+                             {item.type === 'earning' ? <ArrowDownRight size={18} /> : <ArrowUpRight size={18} />}
+                          </div>
+                          <div>
+                             <p className="text-sm font-black text-text-dark uppercase tracking-tight">{item.label}</p>
+                             <p className="text-[9px] text-text-muted font-bold uppercase tracking-widest mt-0.5">{new Date(item.date).toLocaleDateString()}</p>
+                          </div>
                        </div>
-                       <div className={`px-4 py-2 rounded-full text-[8px] font-black uppercase tracking-widest ${
-                          w.skin_status === 'approved' ? 'bg-green-50 text-green-600' :
-                          w.skin_status === 'declined' ? 'bg-red-50 text-red-500' :
-                          'bg-blue-50 text-blue-600'
-                       }`}>
-                          {w.skin_status}
+                       <div className="text-right">
+                          <p className={`text-sm font-black ${item.type === 'earning' ? 'text-green-600' : 'text-red-500'}`}>
+                             {item.type === 'earning' ? '+' : '-'}{formatPrice(item.amount)}
+                          </p>
+                          <div className={`mt-1 text-[8px] font-black uppercase tracking-widest ${
+                             item.status === 'approved' ? 'text-green-600' :
+                             item.status === 'declined' ? 'text-red-500' :
+                             'text-blue-600'
+                          }`}>
+                             {item.status}
+                          </div>
                        </div>
                     </div>
                  )) : (
                     <div className="py-20 text-center">
-                       <p className="text-[10px] font-black text-text-muted uppercase tracking-widest italic">No prior settlements.</p>
+                       <p className="text-[10px] font-black text-text-muted uppercase tracking-widest italic">No prior transactions.</p>
                     </div>
                  )}
               </div>
