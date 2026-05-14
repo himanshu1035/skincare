@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 
 export default function MarketerEarningsPage() {
   const [commissions, setCommissions] = useState<any[]>([]);
