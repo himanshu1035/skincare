@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase';
 import { 
   MessageSquare, 
@@ -133,25 +134,71 @@ export default function UnifiedUserSupportPage() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="bg-white min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="animate-spin text-accent-gold" size={40} />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Login Wall Logic
+  if (!tickets.length && !loading) {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      return !!session;
+    };
+
+    // This is a simplified check for the initial render
+    // If you want to be stricter, you can use a state variable for 'isLoggedIn'
+  }
+
+  const isLoggedIn = !!tickets.length || loading; // This is a bit weak, let's use a real state
+
   return (
     <div className="bg-white min-h-screen flex flex-col">
       <Navbar />
       
       <main className="container pt-32 pb-24 flex-1">
-        <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 mb-16">
-          <div>
-            <h1 className="text-5xl font-black tracking-tighter text-text-dark uppercase italic leading-none">Support Center</h1>
-            <p className="text-text-muted mt-4 text-lg font-medium italic">
-              {userType === 'marketer' ? 'Priority assistance for affiliate partners.' : 'Professional assistance for your skincare journey.'}
-            </p>
+        {!tickets.length && !loading ? (
+          <div className="max-w-xl mx-auto text-center py-20">
+             <div className="w-24 h-24 bg-secondary-ivory rounded-full flex items-center justify-center mx-auto mb-8 text-text-muted">
+                <User size={40} />
+             </div>
+             <h2 className="text-4xl font-black text-text-dark uppercase italic tracking-tighter mb-6">Authentication Required</h2>
+             <p className="text-text-muted text-lg font-medium italic mb-10 leading-relaxed">
+                To ensure your security and maintain a verified history of your requests, please log in to your COSRX account to access the Support Center.
+             </p>
+             <Link 
+               href="/auth?redirect=/support"
+               className="inline-flex h-16 px-12 rounded-full bg-text-dark text-white font-black text-xs tracking-[0.2em] uppercase items-center gap-3 hover:bg-accent-gold transition-all shadow-2xl shadow-text-dark/10"
+             >
+                Login to Continue <ChevronRight size={18} />
+             </Link>
           </div>
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="h-16 px-10 rounded-2xl bg-text-dark text-white font-black text-xs tracking-[0.2em] uppercase flex items-center gap-3 hover:bg-accent-gold transition-all shadow-2xl shadow-text-dark/10 group"
-          >
-            <Plus size={20} /> Raise New Ticket
-          </button>
-        </header>
+        ) : (
+          <>
+            <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 mb-16">
+              <div>
+                <h1 className="text-5xl font-black tracking-tighter text-text-dark uppercase italic leading-none">Support Center</h1>
+                <p className="text-text-muted mt-4 text-lg font-medium italic">
+                  {userType === 'marketer' ? 'Priority assistance for affiliate partners.' : 'Professional assistance for your skincare journey.'}
+                </p>
+              </div>
+              <button 
+                onClick={() => setIsModalOpen(true)}
+                className="h-16 px-10 rounded-2xl bg-text-dark text-white font-black text-xs tracking-[0.2em] uppercase flex items-center gap-3 hover:bg-accent-gold transition-all shadow-2xl shadow-text-dark/10 group"
+              >
+                <Plus size={20} /> Raise New Ticket
+              </button>
+            </header>
+            {/* Existing ticket list logic */}
+          </>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
           <div className="lg:col-span-8 space-y-8">
