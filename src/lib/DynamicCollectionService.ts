@@ -40,7 +40,7 @@ export const DynamicCollectionService = {
       skin_promotion_id: promotionId,
       skin_is_dynamic: true,
       skin_is_active: promo.skin_is_active,
-      skin_show_in_navbar: true, // Default to true for promotions
+      skin_is_pinned: true, // Default to true for promotions
       skin_show_on_homepage: true,
       // We can add more defaults here
     };

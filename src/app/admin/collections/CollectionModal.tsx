@@ -26,7 +26,7 @@ export const CollectionModal = ({ collection, onClose }: CollectionModalProps) =
     skin_description: collection?.skin_description || '',
     skin_image_url: collection?.skin_image_url || '',
     skin_is_dynamic: collection?.skin_is_dynamic || false,
-    skin_show_in_navbar: collection?.skin_show_in_navbar ?? true,
+    skin_is_pinned: collection?.skin_is_pinned ?? false,
     skin_show_on_homepage: collection?.skin_show_on_homepage ?? true,
   });
 
@@ -137,13 +137,13 @@ export const CollectionModal = ({ collection, onClose }: CollectionModalProps) =
 
             <div className="grid grid-cols-2 gap-4">
                <div 
-                 onClick={() => setFormData({...formData, skin_show_in_navbar: !formData.skin_show_in_navbar})}
+                 onClick={() => setFormData({...formData, skin_is_pinned: !formData.skin_is_pinned})}
                  className={cn(
                    "p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center gap-3",
-                   formData.skin_show_in_navbar ? "border-accent-gold bg-accent-gold/5" : "border-secondary-ivory bg-white"
+                   formData.skin_is_pinned ? "border-accent-gold bg-accent-gold/5" : "border-secondary-ivory bg-white"
                  )}
                >
-                 <Globe size={16} className={formData.skin_show_in_navbar ? "text-accent-gold" : "text-text-muted"} />
+                 <Globe size={16} className={formData.skin_is_pinned ? "text-accent-gold" : "text-text-muted"} />
                  <span className="text-[9px] font-black uppercase tracking-widest">In Navbar</span>
                </div>
                <div 

@@ -84,6 +84,7 @@ export const AdminSidebar = React.memo(() => {
       title: "Affiliate Network",
       items: [
         { name: 'Partner List', href: '/admin/marketers', icon: <Users size={16} /> },
+        { name: 'Conversion Logs', href: '/admin/marketer-coupons/usage', icon: <TrendingUp size={16} /> },
         { name: 'Payout Requests', href: '/admin/withdrawals', icon: <Wallet size={16} />, badge: getCount('withdrawal') },
         { name: 'Network Rules', href: '/admin/marketer-settings', icon: <Settings size={16} /> },
       ]

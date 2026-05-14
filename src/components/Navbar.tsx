@@ -52,7 +52,7 @@ export const Navbar = React.memo(() => {
       const { data: pinned } = await supabase
         .from('skin_collections')
         .select('skin_name, skin_slug')
-        .eq('skin_show_in_navbar', true)
+        .eq('skin_is_pinned', true)
         .order('skin_name');
       if (pinned) setPinnedCollections(pinned);
     };
