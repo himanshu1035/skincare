@@ -60,16 +60,37 @@ export default function UnifiedSupportPage() {
 
   const fetchAllTickets = async () => {
     setLoading(true);
-    let query = supabase
-      .from('skin_support_tickets')
-      .select('*, skin_user_profiles(*)');
+    
+    // Fetch from both tables to ensure no data loss during transition
+    const [userRes, marketerRes] = await Promise.all([
+      supabase.from('skin_support_tickets').select('*, skin_user_profiles(*)'),
+      supabase.from('skin_marketer_tickets').select('*, skin_marketers(*)')
+    ]);
 
-    if (statusFilter !== 'all') {
-      query = query.eq('skin_status', statusFilter);
+    let combinedTickets: any[] = [];
+
+    if (userRes.data) {
+      combinedTickets = [...combinedTickets, ...userRes.data.map(t => ({ 
+        ...t, 
+        skin_origin: 'customer',
+        skin_sender_name: `${t.skin_user_profiles?.skin_first_name} ${t.skin_user_profiles?.skin_last_name}`,
+        skin_sender_email: t.skin_user_profiles?.skin_email
+      }))];
     }
 
-    const { data } = await query.order('skin_last_message_at', { ascending: false });
-    if (data) setTickets(data);
+    if (marketerRes.data) {
+      combinedTickets = [...combinedTickets, ...marketerRes.data.map(t => ({ 
+        ...t, 
+        skin_origin: 'marketer',
+        skin_sender_name: t.skin_marketers?.skin_name,
+        skin_sender_email: t.skin_marketers?.skin_email
+      }))];
+    }
+
+    setTickets(combinedTickets.sort((a, b) => 
+      new Date(b.skin_last_message_at || b.skin_created_at).getTime() - 
+      new Date(a.skin_last_message_at || a.skin_created_at).getTime()
+    ));
     setLoading(false);
   };
 
@@ -220,20 +241,27 @@ export default function UnifiedSupportPage() {
                     }`}
                   >
                      <div className="flex justify-between items-start mb-3">
-                        <span className={`px-2 py-0.5 rounded-md text-[7px] font-black uppercase tracking-widest ${
-                          selectedTicket?.skin_id === ticket.skin_id 
-                            ? 'bg-white/10 text-accent-gold' 
-                            : 'bg-secondary-ivory text-text-muted'
-                        }`}>
-                           {ticket.skin_status}
-                        </span>
+                        <div className="flex items-center gap-2">
+                           <span className={`px-2 py-0.5 rounded-md text-[7px] font-black uppercase tracking-widest ${
+                             selectedTicket?.skin_id === ticket.skin_id 
+                               ? 'bg-white/10 text-accent-gold' 
+                               : 'bg-secondary-ivory text-text-muted'
+                           }`}>
+                              {ticket.skin_status}
+                           </span>
+                           <span className={`px-2 py-0.5 rounded-md text-[7px] font-black uppercase tracking-widest ${
+                             ticket.skin_origin === 'marketer' ? 'bg-accent-gold text-text-dark' : 'bg-blue-500 text-white'
+                           }`}>
+                              {ticket.skin_origin === 'marketer' ? 'Partner' : 'User'}
+                           </span>
+                        </div>
                         <p className={`text-[8px] font-bold uppercase ${selectedTicket?.skin_id === ticket.skin_id ? 'text-white/40' : 'text-text-muted'}`}>
-                           {new Date(ticket.skin_last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                           {new Date(ticket.skin_last_message_at || ticket.skin_created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </p>
                      </div>
                      <h3 className="text-[11px] font-black uppercase tracking-tight line-clamp-1 mb-1">{ticket.skin_subject}</h3>
                      <p className={`text-[9px] font-medium italic ${selectedTicket?.skin_id === ticket.skin_id ? 'text-white/60' : 'text-text-muted'}`}>
-                        {ticket.skin_user_profiles?.skin_email || 'Anonymous Partner'}
+                        {ticket.skin_sender_email || 'Anonymous'}
                      </p>
                   </button>
                ))}
@@ -252,7 +280,7 @@ export default function UnifiedSupportPage() {
                         <div>
                            <h2 className="text-lg font-black text-text-dark uppercase italic tracking-tight leading-none">{selectedTicket.skin_subject}</h2>
                            <p className="text-[10px] text-text-muted font-bold uppercase tracking-widest mt-1">
-                              ID: {selectedTicket.skin_id.slice(0, 8)} · Type: {selectedTicket.skin_type || 'Customer'}
+                              ID: {selectedTicket.skin_id.slice(0, 8)} · Role: <span className={selectedTicket.skin_origin === 'marketer' ? 'text-accent-gold' : 'text-blue-500'}>{selectedTicket.skin_origin === 'marketer' ? 'Affiliate Partner' : 'Customer'}</span>
                            </p>
                         </div>
                      </div>
