@@ -14,7 +14,9 @@ import {
   ChevronRight,
   ShieldCheck,
   Package,
-  Activity
+  Activity,
+  CheckCircle2,
+  Clock
 } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
 import { motion } from 'framer-motion';
