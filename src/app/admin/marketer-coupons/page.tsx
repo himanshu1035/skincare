@@ -15,7 +15,8 @@ import {
   ChevronRight,
   Zap,
   ExternalLink,
-  UserCheck
+  UserCheck,
+  Trash2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { formatPrice } from '@/lib/utils';
@@ -54,6 +55,21 @@ export default function AdminMarketerCouponsPage() {
     
     if (!error) {
       setCoupons(coupons.map(c => c.skin_id === id ? { ...c, skin_is_active: !currentStatus } : c));
+    }
+  };
+
+  const deleteMarketerCoupon = async (id: string) => {
+    if (!window.confirm('CRITICAL: Delete this affiliate code permanently?')) return;
+    
+    const { error } = await supabase
+      .from('skin_marketer_coupons')
+      .delete()
+      .eq('skin_id', id);
+
+    if (!error) {
+      setCoupons(prev => prev.filter(c => c.skin_id !== id));
+    } else {
+      alert('Error deleting coupon: ' + error.message);
     }
   };
 
@@ -215,6 +231,15 @@ export default function AdminMarketerCouponsPage() {
                           >
                             <Users size={20} />
                           </Link>
+                          {usageCount === 0 && (
+                            <button 
+                              onClick={() => deleteMarketerCoupon(coupon.skin_id)}
+                              className="p-3 bg-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm"
+                              title="Delete Unused Code"
+                            >
+                              <Trash2 size={20} />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

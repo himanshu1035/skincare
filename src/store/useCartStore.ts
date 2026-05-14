@@ -120,8 +120,11 @@ export const useCartStore = create<CartStore>()(
             const subtotal = get().getTotal();
             let newTotalDiscount = 0;
             newCoupons.forEach(c => {
-               if (c.skin_type === 'percent') newTotalDiscount += (subtotal * c.skin_value) / 100;
-               else newTotalDiscount += c.skin_value;
+               if (c.skin_type === 'percent' || c.skin_type === 'percentage' || c.skin_discount_percent) {
+                  const val = c.skin_discount_percent || c.skin_value;
+                  newTotalDiscount += (subtotal * val) / 100;
+               }
+               else newTotalDiscount += c.skin_value || c.skin_discount_amount || 0;
             });
 
             return {

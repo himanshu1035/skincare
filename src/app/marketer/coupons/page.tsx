@@ -12,7 +12,8 @@ import {
   ShieldCheck,
   Search,
   ExternalLink,
-  ChevronRight
+  ChevronRight,
+  Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
@@ -99,6 +100,21 @@ export default function MarketerCouponsPage() {
     setIsGenerating(false);
   };
 
+  const handleDeleteCoupon = async (id: string) => {
+    if (!window.confirm('Delete this unused coupon code?')) return;
+    
+    const { error } = await supabase
+      .from('skin_marketer_coupons')
+      .delete()
+      .eq('skin_id', id);
+
+    if (!error) {
+      setCoupons(prev => prev.filter(c => c.skin_id !== id));
+    } else {
+      alert('Failed to delete coupon: ' + error.message);
+    }
+  };
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     alert('Code copied to clipboard!');
@@ -182,12 +198,23 @@ export default function MarketerCouponsPage() {
                 </div>
               </div>
 
-              <Link 
-                href={`/marketer/orders?coupon=${c.skin_code}`}
-                className="h-12 px-8 rounded-2xl bg-secondary-ivory/50 text-text-dark font-black text-[10px] uppercase tracking-widest flex items-center gap-3 hover:bg-text-dark hover:text-white transition-all group/btn"
-              >
-                View Conversions <ChevronRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
-              </Link>
+               <div className="flex items-center gap-3">
+                 <Link 
+                   href={`/marketer/orders?coupon=${c.skin_code}`}
+                   className="h-12 px-8 rounded-2xl bg-secondary-ivory/50 text-text-dark font-black text-[10px] uppercase tracking-widest flex items-center gap-3 hover:bg-text-dark hover:text-white transition-all group/btn"
+                 >
+                   View Conversions <ChevronRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
+                 </Link>
+                 {!isUsed && (
+                   <button 
+                     onClick={() => handleDeleteCoupon(c.skin_id)}
+                     className="p-3 bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all"
+                     title="Delete Unused Code"
+                   >
+                     <Trash2 size={18} />
+                   </button>
+                 )}
+               </div>
             </motion.div>
           );
         }) : (

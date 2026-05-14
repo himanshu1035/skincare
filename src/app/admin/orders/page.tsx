@@ -312,9 +312,25 @@ export default function AdminOrdersPage() {
                     </section>
                     <section>
                       <h3 className="text-[10px] font-black text-accent-gold uppercase tracking-[0.3em] mb-4">Destination</h3>
-                      <p className="text-xs text-text-muted leading-relaxed font-bold">
+                      <p className="text-xs text-text-muted leading-relaxed font-bold mb-6">
                         {selectedOrder.skin_customer_address}
                       </p>
+                      
+                      {selectedOrder.skin_coupon_code && (
+                        <div>
+                          <h3 className="text-[10px] font-black text-accent-gold uppercase tracking-[0.3em] mb-2">Applied Coupons</h3>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedOrder.skin_coupon_code.split(',').map((code: string) => (
+                              <span key={code} className="px-3 py-1 bg-accent-gold/10 text-accent-gold text-[10px] font-black rounded-lg border border-accent-gold/20 uppercase tracking-widest">
+                                {code.trim()}
+                              </span>
+                            ))}
+                          </div>
+                          <p className="text-[9px] text-text-muted font-bold mt-2 uppercase tracking-tight">
+                            Total Discount: {formatPrice(selectedOrder.skin_discount_amount)}
+                          </p>
+                        </div>
+                      )}
                     </section>
                   </div>
                 </div>

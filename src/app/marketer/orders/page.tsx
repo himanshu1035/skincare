@@ -73,7 +73,7 @@ function OrdersContent() {
     if (data) {
       let filteredData = data;
       if (couponFilter) {
-        filteredData = data.filter(c => c.skin_orders?.skin_coupon_code === couponFilter);
+        filteredData = data.filter(c => (c.skin_orders?.skin_coupon_code || '').toLowerCase().includes(couponFilter.toLowerCase()));
       }
       setCommissions(filteredData);
     }

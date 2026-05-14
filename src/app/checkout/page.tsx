@@ -48,11 +48,18 @@ export default function CheckoutPage() {
   // Auto-remove prepaid only coupons if switching to COD
   useEffect(() => {
     if (paymentMethod === 'COD') {
-      appliedCoupons.forEach(coupon => {
-        if (coupon.skin_is_prepaid_only) {
-          removeCoupon(coupon.skin_code);
-        }
-      });
+       appliedCoupons.forEach(c => {
+          if (c.skin_type === 'percent' || c.skin_type === 'percentage' || c.skin_discount_percent) {
+             const val = c.skin_discount_percent || c.skin_value;
+             // Logic placeholder: newTotalDiscount += (subtotal * val) / 100;
+          }
+          else {
+             // Logic placeholder: newTotalDiscount += c.skin_value || c.skin_discount_amount || 0;
+          }
+          if (c.skin_is_prepaid_only) {
+            removeCoupon(c.skin_code);
+          }
+       });
     }
   }, [paymentMethod, appliedCoupons, removeCoupon]);
 
@@ -164,7 +171,7 @@ export default function CheckoutPage() {
       skin_total_amount: grandTotal,
       skin_items: [...items, ...promoItems],
       skin_user_id: currentUserId,
-      skin_status: 'cancelled',
+      skin_status: paymentMethod === 'COD' ? 'under_review' : 'cancelled',
       skin_shipping_charge: shipping,
       skin_cod_charge: codFee,
       skin_coupon_code: appliedCoupons.map(c => c.skin_code).join(', ') || null,
