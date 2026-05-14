@@ -65,6 +65,7 @@ export default function AdminMarketerSettingsPage() {
       .from('skin_marketer_settings')
       .update({
         skin_is_one_time_use: settings.skin_is_one_time_use,
+        skin_is_stackable_allowed: settings.skin_is_stackable_allowed,
         skin_code_length: settings.skin_code_length,
         skin_coupon_duration_days: settings.skin_coupon_duration_days || 30,
         skin_default_commission: settings.skin_default_commission || 5,
@@ -235,6 +236,21 @@ export default function AdminMarketerSettingsPage() {
                       className="w-full h-14 bg-secondary-ivory/50 border-none rounded-2xl pl-16 pr-8 text-sm font-bold text-text-dark outline-none focus:ring-2 focus:ring-accent-gold transition-all"
                     />
                  </div>
+              </div>
+              <div className="space-y-4 md:col-span-3">
+                 <label className="text-[10px] font-black text-text-muted uppercase tracking-widest ml-4">Global Stacking Rule</label>
+                 <button 
+                   onClick={() => setSettings({...settings, skin_is_stackable_allowed: !settings?.skin_is_stackable_allowed})}
+                   className={`w-full h-14 rounded-2xl px-6 flex items-center justify-between transition-all ${
+                     settings?.skin_is_stackable_allowed ? 'bg-text-dark text-white' : 'bg-secondary-ivory/50 text-text-dark'
+                   }`}
+                 >
+                    <div className="flex flex-col items-start">
+                       <span className="text-[10px] font-black uppercase tracking-widest">Allow Multiple Affiliate Coupons</span>
+                       <span className={`text-[8px] font-bold italic ${settings?.skin_is_stackable_allowed ? 'text-white/60' : 'text-text-muted'}`}>If disabled, only one marketer coupon can be used per order.</span>
+                    </div>
+                    {settings?.skin_is_stackable_allowed ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
+                 </button>
               </div>
            </div>
         </section>

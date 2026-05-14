@@ -93,6 +93,7 @@ export const AdminSidebar = React.memo(() => {
       items: [
         { name: 'Products', href: '/admin/products', icon: <Tag size={16} /> },
         { name: 'Collections', href: '/admin/collections', icon: <Layers size={16} /> },
+        { name: 'Navigation Pins', href: '/admin/navigation', icon: <Compass size={16} /> },
       ]
     },
     {

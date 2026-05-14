@@ -75,7 +75,7 @@ export const CollectionModal = ({ collection, onClose }: CollectionModalProps) =
       <motion.div 
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="relative bg-white w-full max-w-xl rounded-[3rem] shadow-2xl overflow-hidden border border-secondary-ivory"
+        className="relative bg-white w-full max-w-xl rounded-[3rem] shadow-2xl overflow-y-auto max-h-[90vh] custom-scrollbar border border-secondary-ivory"
       >
         <div className="p-8 md:p-12">
           <header className="flex items-center justify-between mb-8">

@@ -57,14 +57,24 @@ export default function CheckoutPage() {
   }, [paymentMethod, appliedCoupons, removeCoupon]);
 
   const fetchSettings = async () => {
-    const { data } = await supabase.from('skin_settings').select('*');
-    if (data) {
-      const settingsObj = data.reduce((acc: any, item: any) => {
+    const [settingsRes, marketerSettingsRes] = await Promise.all([
+      supabase.from('skin_settings').select('*'),
+      supabase.from('skin_marketer_settings').select('skin_is_stackable_allowed').eq('skin_id', 1).single()
+    ]);
+
+    let settingsObj: any = {};
+    if (settingsRes.data) {
+      settingsObj = settingsRes.data.reduce((acc: any, item: any) => {
         acc[item.skin_key] = item.skin_value;
         return acc;
       }, {});
-      setSettings(settingsObj);
     }
+
+    if (marketerSettingsRes.data) {
+      settingsObj.marketer_coupon_stacking = marketerSettingsRes.data.skin_is_stackable_allowed ? 'yes' : 'no';
+    }
+
+    setSettings(settingsObj);
     setLoading(false);
   };
 
