@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { supabase } from '@/lib/supabase';
+import { supabase, createClient } from '@/lib/supabase';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Package, Truck, CheckCircle2, Clock, MapPin, IndianRupee, ArrowRight, Loader2, ChevronDown, ChevronUp, ShoppingBag, CreditCard, ShieldCheck, XCircle } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
@@ -39,8 +39,9 @@ export default function UserOrdersPage() {
 
   useEffect(() => {
     const checkUser = async () => {
-      // Use the singleton supabase instance
-      const { data: { session } } = await supabase.auth.getSession();
+      // Use createClient to ensure fresh session state
+      const supabaseInstance = createClient();
+      const { data: { session } } = await supabaseInstance.auth.getSession();
       
       // If no session but Zustand thinks we are logged in, the session might be expired
       if (!session) {
@@ -51,19 +52,39 @@ export default function UserOrdersPage() {
 
       setIsCheckingAuth(false);
       const userId = session.user.id;
-      fetchUserOrders(userId);
+      const userEmail = session.user.email;
+      fetchUserOrders(userId, userEmail);
     };
     checkUser();
   }, [router]);
 
-  const fetchUserOrders = async (userId: string) => {
+  const fetchUserOrders = async (userId: string, email?: string) => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      const supabaseInstance = createClient();
+      
+      // Attempt 1: Fetch by User ID (standard)
+      let { data, error } = await supabaseInstance
         .from('skin_orders')
         .select('*')
         .eq('skin_user_id', userId)
         .order('skin_created_at', { ascending: false });
+      
+      // Attempt 2: Fallback to Email if no orders found by ID
+      // This solves issues where the user's ID might have changed but their email is the same
+      if (!error && (!data || data.length === 0) && email) {
+        console.log("No orders found by ID, attempting fallback to email:", email);
+        const { data: fallbackData, error: fallbackError } = await supabaseInstance
+          .from('skin_orders')
+          .select('*')
+          .eq('skin_customer_email', email)
+          .order('skin_created_at', { ascending: false });
+        
+        if (!fallbackError && fallbackData && fallbackData.length > 0) {
+          console.log(`Found ${fallbackData.length} orders via email fallback.`);
+          data = fallbackData;
+        }
+      }
       
       if (error) {
         console.error('Error fetching orders:', error.message);
