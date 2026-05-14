@@ -59,9 +59,12 @@ export default function AdminWithdrawalsPage() {
       .update({ skin_status: status, skin_updated_at: new Date().toISOString() })
       .eq('skin_id', id);
 
-    if (!error) {
+    if (error) {
+      console.error('Settlement Error:', error);
+      alert('Failed to update settlement: ' + error.message);
+    } else {
       // 2. Create notification for marketer
-      await supabase.from('skin_marketer_notifications').insert({
+      const { error: notifyError } = await supabase.from('skin_marketer_notifications').insert({
         skin_user_id: marketerId,
         skin_title: `Withdrawal ${status.toUpperCase()}`,
         skin_message: status === 'approved' 
@@ -70,6 +73,8 @@ export default function AdminWithdrawalsPage() {
         skin_type: 'withdrawal',
         skin_link: '/marketer/withdraw'
       });
+
+      if (notifyError) console.warn('Notification Error:', notifyError);
 
       fetchRequests();
       setSelectedRequest(null);

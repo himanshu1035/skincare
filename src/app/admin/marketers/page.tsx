@@ -153,10 +153,11 @@ export default function AdminMarketersPage() {
 
         return {
           ...m,
-          skin_level: currentLevel, // Use calculated level for display
+          skin_level: currentLevel,
           totalEarnings: m.skin_marketer_commissions?.reduce((acc: number, c: any) => acc + Number(c.skin_commission_earned) + Number(c.skin_bonus_earned), 0) || 0,
           totalRevenue: m.skin_marketer_commissions?.reduce((acc: number, c: any) => acc + Number(c.skin_order_amount), 0) || 0,
-          saleCount: sales
+          saleCount: sales,
+          conversionRate: m.skin_marketer_commissions?.length > 0 && m.totalRevenue > 0 ? ((sales / (m.totalRevenue / 1000)) * 100).toFixed(1) : '0.0'
         };
       });
       setMarketers(processed);
@@ -282,7 +283,10 @@ export default function AdminMarketersPage() {
     setLoading(true);
     const [couponsRes, salesRes] = await Promise.all([
       supabase.from('skin_marketer_coupons').select('*').eq('skin_marketer_id', marketer.skin_id),
-      supabase.from('skin_marketer_commissions').select('*, skin_orders(*)').eq('skin_marketer_id', marketer.skin_id)
+      supabase.from('skin_marketer_commissions')
+        .select('*, skin_orders(*, skin_user_profiles(skin_first_name, skin_last_name))')
+        .eq('skin_marketer_id', marketer.skin_id)
+        .order('skin_created_at', { ascending: false })
     ]);
     if (couponsRes.data) setMarketerCoupons(couponsRes.data);
     if (salesRes.data) setMarketerSales(salesRes.data);
@@ -408,7 +412,10 @@ export default function AdminMarketersPage() {
                   <td className="px-8 py-6">
                     <div className="space-y-1">
                       <p className="text-sm font-black text-text-dark">{formatPrice(m.totalEarnings)}</p>
-                      <p className="text-[9px] font-black text-green-600 uppercase tracking-widest flex items-center gap-1"><Target size={10}/> {m.saleCount} Conversions</p>
+                      <div className="flex items-center gap-2">
+                         <p className="text-[9px] font-black text-green-600 uppercase tracking-widest flex items-center gap-1"><Target size={10}/> {m.saleCount} Sales</p>
+                         <p className="text-[9px] font-black text-accent-gold uppercase tracking-widest flex items-center gap-1"><TrendingUp size={10}/> {m.conversionRate}% Index</p>
+                      </div>
                     </div>
                   </td>
                   <td className="px-8 py-6">
@@ -480,19 +487,25 @@ export default function AdminMarketersPage() {
                     </h3>
                     <div className="space-y-4">
                        {marketerSales.map(s => (
-                         <div key={s.skin_id} className="p-6 bg-white rounded-[2rem] border border-secondary-ivory shadow-sm flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                               <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-500"><Users size={14}/></div>
-                               <div>
-                                  <p className="text-[11px] font-black text-text-dark uppercase">Sale #{(s.skin_order_id || '').slice(0,8)}</p>
-                                  <p className="text-[9px] text-text-muted font-bold uppercase">{new Date(s.skin_created_at).toLocaleDateString()}</p>
-                               </div>
-                            </div>
-                            <div className="text-right">
-                               <p className="text-[11px] font-black text-text-dark">{formatPrice(s.skin_order_amount)}</p>
-                               <p className="text-[9px] font-black text-accent-gold uppercase mt-1">Earned: +{formatPrice(Number(s.skin_commission_earned) + Number(s.skin_bonus_earned))}</p>
-                            </div>
-                         </div>
+                          <div key={s.skin_id} className="p-6 bg-white rounded-[2rem] border border-secondary-ivory shadow-sm flex items-center justify-between">
+                             <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 font-black text-[10px]">
+                                   {s.skin_orders?.skin_user_profiles?.skin_first_name?.[0]}
+                                </div>
+                                <div>
+                                   <p className="text-[11px] font-black text-text-dark uppercase">
+                                      {s.skin_orders?.skin_user_profiles?.skin_first_name} {s.skin_orders?.skin_user_profiles?.skin_last_name}
+                                   </p>
+                                   <p className="text-[9px] text-text-muted font-bold uppercase tracking-widest">
+                                      {new Date(s.skin_created_at).toLocaleDateString()} · Code: <span className="text-accent-gold">{s.skin_orders?.skin_coupon_code || 'N/A'}</span>
+                                   </p>
+                                </div>
+                             </div>
+                             <div className="text-right">
+                                <p className="text-[11px] font-black text-text-dark">{formatPrice(s.skin_order_amount)}</p>
+                                <p className="text-[9px] font-black text-green-600 uppercase mt-1">+{formatPrice(Number(s.skin_commission_earned) + Number(s.skin_bonus_earned))}</p>
+                             </div>
+                          </div>
                        ))}
                        {marketerSales.length === 0 && <p className="text-[10px] text-text-muted italic uppercase">No attributed sales recorded.</p>}
                     </div>

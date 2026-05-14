@@ -61,3 +61,10 @@ FOR UPDATE
 TO authenticated 
 USING (auth.uid() = skin_user_id)
 WITH CHECK (auth.uid() = skin_user_id);
+
+DROP POLICY IF EXISTS "Admins can create notifications" ON skin_marketer_notifications;
+CREATE POLICY "Admins can create notifications" 
+ON skin_marketer_notifications 
+FOR INSERT 
+TO authenticated 
+WITH CHECK (true);
