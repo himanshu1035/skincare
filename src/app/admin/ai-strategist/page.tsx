@@ -51,7 +51,7 @@ export default function AIStrategistPage() {
         type: 'BOGO Offer',
         reasoning: 'Inventory for specific items is moving 15% slower than usual. A Buy 1 Get 1 Free offer will accelerate movement and increase AOV before the end of the month.',
         doNotRun: false,
-        actionText: 'Deploy Unified BOGO Campaign',
+        actionText: 'Deploy BOGO Banner & Campaign',
         icon: ShoppingBag,
         color: 'text-blue-500',
         bg: 'bg-blue-50',
@@ -284,9 +284,9 @@ export default function AIStrategistPage() {
                           <Zap size={12} className="text-accent-gold" /> Auto-Generation Scope:
                         </p>
                         <ul className="text-xs font-medium italic text-text-muted space-y-1">
-                           <li>• Generates Unified <strong>Promotion Logic</strong></li>
-                           <li>• Deploys <strong>Campaign Landing Page</strong></li>
-                           <li>• Pushes <strong>Homepage Hero Banner</strong></li>
+                           <li>• Creates 1x <strong>Promotion Rule</strong></li>
+                           <li>• Creates 1x <strong>Campaign Landing Page</strong></li>
+                           <li>• Pushes 1x <strong>Homepage Hero Banner</strong></li>
                         </ul>
                      </div>
                   )}
