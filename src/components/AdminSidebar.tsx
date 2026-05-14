@@ -47,17 +47,15 @@ export const AdminSidebar = React.memo(() => {
     
     // In a real app, admin notifications might have a different user_id or system flag.
     // For now, let's also check for pending withdrawals and open tickets directly.
-    const [{ count: withdrawals }, { count: tickets }, { count: userTickets }, { count: payments }] = await Promise.all([
+    const [{ count: withdrawals }, { count: openTickets }, { count: payments }] = await Promise.all([
       supabase.from('skin_marketer_withdrawals').select('*', { count: 'exact', head: true }).eq('skin_status', 'pending'),
-      supabase.from('skin_marketer_tickets').select('*', { count: 'exact', head: true }).eq('skin_status', 'open'),
-      supabase.from('skin_support_tickets').select('*', { count: 'exact', head: true }).eq('skin_status', 'pending'),
+      supabase.from('skin_tickets').select('*', { count: 'exact', head: true }).eq('skin_status', 'Open'),
       supabase.from('skin_orders').select('*', { count: 'exact', head: true }).eq('skin_status', 'under_review').not('skin_utr', 'is', null)
     ]);
 
     setNotifications([
       ...(withdrawals ? new Array(withdrawals).fill({ type: 'withdrawal' }) : []),
-      ...(tickets ? new Array(tickets).fill({ type: 'ticket' }) : []),
-      ...(userTickets ? new Array(userTickets).fill({ type: 'user_ticket' }) : []),
+      ...(openTickets ? new Array(openTickets).fill({ type: 'ticket' }) : []),
       ...(payments ? new Array(payments).fill({ type: 'payment' }) : [])
     ]);
   };
@@ -72,7 +70,7 @@ export const AdminSidebar = React.memo(() => {
       items: [
         { name: 'Dashboard', href: '/admin', icon: <LayoutDashboard size={16} /> },
         { name: 'Payments Review', href: '/admin/payments', icon: <ShieldCheck size={16} />, badge: getCount('payment') },
-        { name: 'Unified Support', href: '/admin/unified-support', icon: <MessageSquare size={16} />, badge: getCount('ticket') + getCount('user_ticket') },
+        { name: 'Support Tickets', href: '/admin/tickets', icon: <MessageSquare size={16} />, badge: getCount('ticket') },
       ]
     },
     {
