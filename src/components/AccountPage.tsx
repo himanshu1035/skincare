@@ -69,20 +69,11 @@ export const AccountPage = () => {
         .select('*')
         .eq('skin_id', currentUserId)
         .maybeSingle();
-      
-      // Self-Healing: Create profile if missing
+
       if (!profileData && !profileError) {
-        const { data: newProfile, error: createError } = await supabase
-          .from('skin_user_profiles')
-          .insert({
-            skin_id: currentUserId,
-            skin_email: currentUserEmail,
-            skin_role: 'customer'
-          })
-          .select()
-          .single();
-        
-        if (newProfile) profileData = newProfile;
+        // User has been deleted from skin_user_profiles
+        handleLogout();
+        return;
       }
 
       if (profileData) {
