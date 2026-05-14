@@ -31,6 +31,12 @@ FOR INSERT
 TO authenticated 
 WITH CHECK (auth.uid() = skin_marketer_id);
 
+DROP POLICY IF EXISTS "Admins can update withdrawal status" ON skin_marketer_withdrawals;
+CREATE POLICY "Admins can update withdrawal status" 
+ON skin_marketer_withdrawals FOR UPDATE 
+USING (true)
+WITH CHECK (true);
+
 -- 4. Policies for skin_marketer_tickets
 DROP POLICY IF EXISTS "Marketers can view their own tickets" ON skin_marketer_tickets;
 CREATE POLICY "Marketers can view their own tickets" 

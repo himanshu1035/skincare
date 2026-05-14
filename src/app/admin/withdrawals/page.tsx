@@ -75,10 +75,12 @@ export default function AdminWithdrawalsPage() {
       });
 
       if (notifyError) console.warn('Notification Error:', notifyError);
-
+      
+      // Force a slight delay to allow Supabase to propagate changes
+      await new Promise(resolve => setTimeout(resolve, 500));
       await fetchRequests();
       setSelectedRequest(null);
-      alert('Settlement successfully synchronized across all ledgers.');
+      alert('Settlement successfully synchronized across all ledgers. The record has been moved to the "Approved" tab.');
     }
     setProcessing(false);
   };
