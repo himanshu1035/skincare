@@ -182,6 +182,20 @@ export default function CheckoutPage() {
       return;
     }
 
+    // 4. Record Marketer Commission if applicable
+    if (appliedCoupon?.skin_marketer_id) {
+      const commissionAmount = (grandTotal * (appliedCoupon.skin_commission_percent || 0)) / 100;
+      
+      await supabase.from('skin_marketer_commissions').insert({
+        skin_marketer_id: appliedCoupon.skin_marketer_id,
+        skin_order_id: order.skin_id,
+        skin_coupon_id: appliedCoupon.skin_id,
+        skin_order_amount: grandTotal,
+        skin_commission_earned: commissionAmount,
+        skin_status: 'pending'
+      });
+    }
+
     router.push(`/checkout/payment?orderId=${order.skin_id}`);
     setIsSubmitting(false);
   };

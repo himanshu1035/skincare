@@ -75,7 +75,8 @@ export const CouponInput = ({ paymentMethod }: { paymentMethod: string }) => {
             skin_is_first_order_only: false,
             skin_usage_limit: null,
             skin_user_usage_limit: null,
-            skin_marketer_id: mCoupon.skin_marketer_id
+            skin_marketer_id: mCoupon.skin_marketer_id,
+            skin_commission_percent: mCoupon.skin_marketers?.skin_commission_percent || 0
           };
           isMarketerCoupon = true;
         }

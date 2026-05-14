@@ -18,7 +18,6 @@ export const Navbar = React.memo(() => {
   const [isMounted, setIsMounted] = useState(false);
   const [collections, setCollections] = useState<any[]>([]);
   const [announcementText, setAnnouncementText] = useState('FREE SHIPPING ON ORDERS OVER ₹1000');
-  const [activeCampaignsCount, setActiveCampaignsCount] = useState(0);
   const [dynamicCollections, setDynamicCollections] = useState<any[]>([]);
   
   const { items } = useCartStore();
@@ -50,12 +49,6 @@ export const Navbar = React.memo(() => {
     };
 
     const fetchCampaigns = async () => {
-      const { count } = await supabase
-        .from('skin_campaigns')
-        .select('*', { count: 'exact', head: true })
-        .eq('skin_is_active', true);
-      setActiveCampaignsCount(count || 0);
-
       const { data: dynamicCols } = await supabase
         .from('skin_collections')
         .select('skin_name, skin_slug')
@@ -108,15 +101,7 @@ export const Navbar = React.memo(() => {
               </Link>
             ))}
 
-            {activeCampaignsCount > 0 && (
-              <Link 
-                href="/campaign/all" 
-                className="relative group flex items-center gap-2 text-[11px] font-black text-accent-gold hover:text-text-dark transition-colors tracking-[0.2em] uppercase"
-              >
-                Campaigns
-                <span className="absolute -top-3 -right-6 bg-accent-gold text-white text-[7px] font-black px-1.5 py-0.5 rounded-sm animate-pulse">HOT</span>
-              </Link>
-            )}
+
             
             {/* Mega Menu Dropdown */}
             <div className="relative group">
@@ -147,26 +132,7 @@ export const Navbar = React.memo(() => {
                   </div>
                 </div>
 
-                <div className="mt-10 pt-8 border-t border-secondary-ivory bg-secondary-ivory/30 -mx-10 px-10 rounded-b-3xl">
-                  <p className="text-[10px] font-black text-accent-gold uppercase tracking-[0.4em] mb-6">Limited Time Offers</p>
-                  <div className="flex flex-wrap gap-4">
-                    {dynamicCollections.map(col => (
-                      <Link 
-                        key={col.skin_slug} 
-                        href={`/collections/${col.skin_slug}`}
-                        className="px-5 py-2.5 bg-white text-text-dark text-[10px] font-black uppercase tracking-widest rounded-full hover:bg-accent-gold hover:text-white transition-all shadow-sm border border-secondary-ivory flex items-center gap-2 group"
-                      >
-                        <Zap size={12} className="text-accent-gold group-hover:text-white" />
-                        {col.skin_name}
-                      </Link>
-                    ))}
-                    {dynamicCollections.length === 0 && (
-                       <Link href="/campaign/all" className="text-[10px] font-bold text-text-muted hover:text-accent-gold transition-colors italic">
-                         View All Active Campaigns →
-                       </Link>
-                    )}
-                  </div>
-                </div>
+
               </div>
             </div>
           </div>
@@ -237,11 +203,7 @@ export const Navbar = React.memo(() => {
                           {link.name}
                         </Link>
                       ))}
-                      {activeCampaignsCount > 0 && (
-                         <Link href="/campaign/all" className="flex items-center justify-between text-xl font-black text-accent-gold uppercase tracking-tight" onClick={() => setIsMobileMenuOpen(false)}>
-                            OFFERS & CAMPAIGNS <span className="bg-accent-gold text-white text-[10px] px-2 py-1 rounded-lg">HOT</span>
-                         </Link>
-                      )}
+
                     </div>
                   <div className="pt-8 border-t border-gray-100">
                     <p className="text-[10px] font-black text-text-muted uppercase tracking-[0.4em] mb-6">Explore Collections</p>

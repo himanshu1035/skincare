@@ -77,11 +77,6 @@ export const AdminSidebar = React.memo(() => {
     {
       title: "Marketing & Growth",
       items: [
-        { name: 'Growth Engine', href: '/admin/ai-strategist', icon: <BrainCircuit size={16} /> },
-        { name: 'Launch Guide', href: '/admin/marketing-guide', icon: <Sparkles size={16} /> },
-        { name: 'Banners', href: '/admin/banners', icon: <ImageIcon size={16} /> },
-        { name: 'Promotions', href: '/admin/promotions', icon: <Zap size={16} /> },
-        { name: 'Campaign Pages', href: '/admin/campaigns', icon: <Compass size={16} /> },
         { name: 'Store Coupons', href: '/admin/coupons', icon: <Ticket size={16} /> },
       ]
     },

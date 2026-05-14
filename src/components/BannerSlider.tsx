@@ -38,8 +38,6 @@ export const BannerSlider: React.FC<{ initialBanners: Banner[] }> = ({ initialBa
     switch (banner.skin_link_type) {
       case 'collection': return `/collections/${banner.skin_link_id}`;
       case 'product': return `/products/${banner.skin_link_id}`;
-      case 'campaign': return `/campaign/${banner.skin_link_id}`;
-      case 'offer': return `/campaign/offer-${banner.skin_link_id}`;
       default: return banner.skin_link_id || '#';
     }
   };

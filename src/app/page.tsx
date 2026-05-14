@@ -12,46 +12,26 @@ export default async function Home() {
   const supabase = createClient();
   
   // 1. Parallel data fetching for maximum performance
-  const [collectionsRes, bestSellerColRes, shippingSettingsRes, bannersRes] = await Promise.all([
+  const [collectionsRes, bestSellerColRes, shippingSettingsRes] = await Promise.all([
     supabase.from('skin_collections').select('*').neq('skin_slug', 'dermskincare-guide').limit(3),
     supabase.from('skin_collections').select('skin_id').ilike('skin_name', '%best seller%').single(),
-    supabase.from('skin_settings').select('*').in('skin_key', ['free_shipping_threshold']),
-    supabase.from('skin_banners')
-      .select('*')
-      .eq('skin_is_active', true)
-      .lte('skin_start_date', new Date().toISOString())
-      .gte('skin_end_date', new Date().toISOString())
-      .order('skin_priority', { ascending: false })
+    supabase.from('skin_settings').select('*').in('skin_key', ['free_shipping_threshold'])
   ]);
 
   const collections = collectionsRes.data;
   const bestSellerCollection = bestSellerColRes.data;
   const shippingSettings = shippingSettingsRes.data;
-  let activeBanners = bannersRes?.data || [];
   
-  // If no scheduled banners, fetch those without dates
-  if (activeBanners.length === 0) {
-    const { data: simpleBanners } = await supabase
-      .from('skin_banners')
-      .select('*')
-      .eq('skin_is_active', true)
-      .is('skin_start_date', null)
-      .order('skin_priority', { ascending: false });
-    activeBanners = simpleBanners || [];
-  }
-
-  // Final fallback for premium experience with requested purple image
-  if (activeBanners.length === 0) {
-    activeBanners = [{
-      skin_id: 'default',
-      skin_title: 'Unveil Your Glow',
-      skin_subtitle: 'Discover the power of dermatologist-recommended Korean skincare.',
-      skin_image_desktop: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?q=80&w=2000&auto=format&fit=crop',
-      skin_cta_text: 'EXPLORE COLLECTIONS',
-      skin_link_type: 'collection',
-      skin_link_id: 'all'
-    }];
-  }
+  // Static Hero Banner (since Banner Engine is removed)
+  const activeBanners = [{
+    skin_id: 'default',
+    skin_title: 'Unveil Your Glow',
+    skin_subtitle: 'Discover the power of dermatologist-recommended Korean skincare.',
+    skin_image_desktop: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?q=80&w=2000&auto=format&fit=crop',
+    skin_cta_text: 'EXPLORE COLLECTIONS',
+    skin_link_type: 'collection',
+    skin_link_id: 'all'
+  }];
   
   const freeShippingThreshold = shippingSettings?.find(s => s.skin_key === 'free_shipping_threshold')?.skin_value || '1000';
 

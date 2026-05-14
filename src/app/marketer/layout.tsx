@@ -99,7 +99,7 @@ export default function MarketerLayout({
     { label: 'Financials', icon: <TrendingUp size={18} />, path: '/marketer/earnings', type: 'workspace' },
     { label: 'Sales Tracking', icon: <ShoppingBag size={18} />, path: '/marketer/orders', type: 'workspace' },
     { label: 'Withdrawals', icon: <Shield size={18} />, path: '/marketer/withdraw', type: 'financial' },
-    { label: 'Support', icon: <LifeBuoy size={18} />, path: '/support', type: 'help' }, 
+    { label: 'Support', icon: <LifeBuoy size={18} />, path: '/marketer/support', type: 'help' }, 
     { label: 'Settings', icon: <User size={18} />, path: '/marketer/settings', type: 'account' },
   ];
 
@@ -113,7 +113,7 @@ export default function MarketerLayout({
 
   const accountItems = [
     { label: 'Withdrawals', icon: <Shield size={18} />, path: '/marketer/withdraw', type: 'withdrawal' },
-    { label: 'Support Tickets', icon: <LifeBuoy size={18} />, path: '/support', type: 'support' }, 
+    { label: 'Support Tickets', icon: <LifeBuoy size={18} />, path: '/marketer/support', type: 'support' }, 
     { label: 'Settlement Settings', icon: <User size={18} />, path: '/marketer/settings', type: 'settings' },
   ];
 

@@ -15,13 +15,47 @@ export const AccountPage = () => {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
 
+  const [isChecking, setIsChecking] = useState(true);
+
   useEffect(() => {
-    if (!user) {
-      router.push('/auth');
-      return;
-    }
-    fetchProfile();
-  }, [user]);
+    const checkAuth = async () => {
+      // 1. Check client-side store first
+      if (user) {
+        setIsChecking(false);
+        fetchProfile();
+        return;
+      }
+
+      // 2. If store says null, verify with Supabase directly (handles hydration lag)
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        router.push('/auth');
+      } else {
+        // Sync session user to store if missing
+        const { data: profileData } = await supabase
+          .from('skin_user_profiles')
+          .select('*')
+          .eq('skin_id', session.user.id)
+          .single();
+        
+        if (profileData) {
+          useAuthStore.getState().setUser({
+            id: session.user.id,
+            email: session.user.email!,
+            firstName: profileData.skin_first_name,
+            lastName: profileData.skin_last_name,
+            phone: profileData.skin_phone,
+          });
+        }
+        
+        setIsChecking(false);
+        fetchProfile();
+      }
+    };
+
+    checkAuth();
+  }, [user, router]);
 
   const fetchProfile = async () => {
     try {
@@ -54,7 +88,7 @@ export const AccountPage = () => {
     router.push('/');
   };
 
-  if (!user || loading) return (
+  if (isChecking || loading) return (
     <div className="min-h-[60vh] flex items-center justify-center">
       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent-gold"></div>
     </div>
@@ -74,11 +108,11 @@ export const AccountPage = () => {
         <div className="flex-1 text-center md:text-left">
           <p className="text-[10px] font-black text-accent-gold uppercase tracking-[0.4em] mb-2">Authenticated Account</p>
           <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-text-dark mb-4">
-            Hello, {user.firstName || 'User'}!
+            Hello, {user?.firstName || 'User'}!
           </h1>
           <div className="flex flex-wrap justify-center md:justify-start gap-6 text-sm font-medium text-text-muted">
-            <div className="flex items-center gap-2"><Mail size={16} /> {user.email}</div>
-            <div className="flex items-center gap-2"><Phone size={16} /> {user.phone || 'No phone set'}</div>
+            <div className="flex items-center gap-2"><Mail size={16} /> {user?.email}</div>
+            <div className="flex items-center gap-2"><Phone size={16} /> {user?.phone || 'No phone set'}</div>
           </div>
         </div>
         <button 

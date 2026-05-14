@@ -71,16 +71,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               SALE
             </div>
           )}
-          {product.isBOGO && (
-            <div className="bg-accent-gold text-white text-[9px] font-black px-3 py-1.5 tracking-widest uppercase rounded-lg shadow-xl">
-              BOGO
-            </div>
-          )}
-          {product.isGift && (
-            <div className="bg-pink-600 text-white text-[9px] font-black px-3 py-1.5 tracking-widest uppercase rounded-lg shadow-xl">
-              GIFT
-            </div>
-          )}
+
         </div>
 
         {/* Quick Add Overlay */}
