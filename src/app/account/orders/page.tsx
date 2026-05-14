@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { createClient } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Package, Truck, CheckCircle2, Clock, MapPin, IndianRupee, ArrowRight, Loader2, ChevronDown, ChevronUp, ShoppingBag, CreditCard, ShieldCheck, XCircle } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
@@ -36,32 +36,46 @@ export default function UserOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const supabase = createClient();
 
   useEffect(() => {
     const checkUser = async () => {
+      // Use the singleton supabase instance
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session && !user) {
+      
+      // If no session but Zustand thinks we are logged in, the session might be expired
+      if (!session) {
+        console.warn("No active Supabase session found. Redirecting to auth.");
         router.push('/auth');
         return;
       }
+
       setIsCheckingAuth(false);
-      const userId = session?.user?.id || user?.id;
-      if (userId) fetchUserOrders(userId);
+      const userId = session.user.id;
+      fetchUserOrders(userId);
     };
     checkUser();
-  }, [user, router]);
+  }, [router]);
 
   const fetchUserOrders = async (userId: string) => {
     setLoading(true);
-    const { data } = await supabase
-      .from('skin_orders')
-      .select('*')
-      .eq('skin_user_id', userId)
-      .order('skin_created_at', { ascending: false });
-    
-    if (data) setOrders(data);
-    setLoading(false);
+    try {
+      const { data, error } = await supabase
+        .from('skin_orders')
+        .select('*')
+        .eq('skin_user_id', userId)
+        .order('skin_created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching orders:', error.message);
+        setOrders([]);
+      } else if (data) {
+        setOrders(data);
+      }
+    } catch (err) {
+      console.error('Unexpected error fetching orders:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const toggleOrder = (orderId: string) => {

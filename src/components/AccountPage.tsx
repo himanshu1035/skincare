@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { User, Mail, Phone, ShoppingBag, Truck, MapPin, LogOut, ChevronRight, Package, ShieldCheck } from 'lucide-react';
-import { createClient } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { Button } from './ui/Button';
 import { formatPrice } from '@/lib/utils';
 
@@ -14,7 +14,6 @@ export const AccountPage = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
-  const supabase = createClient();
 
   useEffect(() => {
     if (!user) {
@@ -25,13 +24,28 @@ export const AccountPage = () => {
   }, [user]);
 
   const fetchProfile = async () => {
-    const { data } = await supabase
-      .from('skin_user_profiles')
-      .select('*, skin_orders(*)')
-      .eq('skin_id', user?.id)
-      .single();
-    if (data) setProfile(data);
-    setLoading(false);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const currentUserId = session?.user?.id || user?.id;
+
+      if (!currentUserId) return;
+
+      const { data, error } = await supabase
+        .from('skin_user_profiles')
+        .select('*, skin_orders(*)')
+        .eq('skin_id', currentUserId)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching profile:', error.message);
+      } else if (data) {
+        setProfile(data);
+      }
+    } catch (err) {
+      console.error('Unexpected error fetching profile:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleLogout = async () => {
