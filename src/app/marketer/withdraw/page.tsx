@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase';
 import { 
   Wallet, 
   ArrowUpRight, 
+  ArrowDownRight,
   CreditCard, 
   History, 
   CheckCircle2, 
