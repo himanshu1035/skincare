@@ -47,17 +47,22 @@ export const CollectionModal = ({ collection, onClose, onSuccess }: CollectionMo
     e.preventDefault();
     setLoading(true);
     
+    const finalData = {
+      ...formData,
+      skin_show_in_navbar: formData.skin_is_pinned
+    };
+
     let error;
     if (collection) {
       const { error: err } = await supabase
         .from('skin_collections')
-        .update(formData)
+        .update(finalData)
         .eq('skin_id', collection.skin_id);
       error = err;
     } else {
       const { error: err } = await supabase
         .from('skin_collections')
-        .insert([formData]);
+        .insert([finalData]);
       error = err;
     }
 

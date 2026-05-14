@@ -64,6 +64,17 @@ export const Navbar = React.memo(() => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMobileMenuOpen]);
+
   // Hardcoded Top Bar Menus as requested
   const topNavLinks = [
     { name: 'Shop All', href: '/collections/all' },
@@ -178,58 +189,59 @@ export const Navbar = React.memo(() => {
           </div>
         </div>
 
-        {/* Mobile Menu Overlay */}
-        <AnimatePresence>
-          {isMobileMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, x: -100 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -100 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed inset-0 z-[70] bg-white lg:hidden overflow-y-auto"
-            >
-              <div className="p-8 flex flex-col h-full">
-                <div className="flex items-center justify-between mb-12">
-                  <span className="text-xl font-black tracking-tighter">COSRX</span>
-                  <button onClick={() => setIsMobileMenuOpen(false)} className="p-2">
-                    <X size={24} />
-                  </button>
-                </div>
-                <div className="flex flex-col space-y-8">
-                   <button 
-                    onClick={() => { setIsMobileMenuOpen(false); setIsSearchOpen(true); }}
-                    className="flex items-center gap-4 text-2xl font-black border-b border-gray-100 pb-4 uppercase tracking-tighter text-left"
-                  >
-                    <Search size={24} /> SEARCH
-                  </button>
-                    <div className="space-y-4">
-                      <p className="text-[10px] font-black text-accent-gold uppercase tracking-[0.4em]">Quick Access</p>
-                      <Link href="/collections/all" className="block text-xl font-bold uppercase tracking-tight" onClick={() => setIsMobileMenuOpen(false)}>
-                        Shop All
+        </div>
+      </nav>
+
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, x: -100 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -100 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="fixed inset-0 z-[100] bg-white lg:hidden overflow-y-auto"
+          >
+            <div className="p-8 flex flex-col h-full">
+              <div className="flex items-center justify-between mb-12">
+                <span className="text-xl font-black tracking-tighter">COSRX</span>
+                <button onClick={() => setIsMobileMenuOpen(false)} className="p-2">
+                  <X size={24} />
+                </button>
+              </div>
+              <div className="flex flex-col space-y-8">
+                 <button 
+                  onClick={() => { setIsMobileMenuOpen(false); setIsSearchOpen(true); }}
+                  className="flex items-center gap-4 text-2xl font-black border-b border-gray-100 pb-4 uppercase tracking-tighter text-left"
+                >
+                  <Search size={24} /> SEARCH
+                </button>
+                  <div className="space-y-4">
+                    <p className="text-[10px] font-black text-accent-gold uppercase tracking-[0.4em]">Quick Access</p>
+                    <Link href="/collections/all" className="block text-xl font-bold uppercase tracking-tight" onClick={() => setIsMobileMenuOpen(false)}>
+                      Shop All
+                    </Link>
+                    {pinnedCollections.map((col) => (
+                      <Link key={col.skin_slug} href={`/collections/${col.skin_slug}`} className="block text-xl font-bold uppercase tracking-tight" onClick={() => setIsMobileMenuOpen(false)}>
+                        {col.skin_name}
                       </Link>
-                      {pinnedCollections.map((col) => (
-                        <Link key={col.skin_slug} href={`/collections/${col.skin_slug}`} className="block text-xl font-bold uppercase tracking-tight" onClick={() => setIsMobileMenuOpen(false)}>
-                          {col.skin_name}
-                        </Link>
-                      ))}
-                    </div>
-                  <div className="pt-8 border-t border-gray-100">
-                    <p className="text-[10px] font-black text-text-muted uppercase tracking-[0.4em] mb-6">Explore Collections</p>
-                    <div className="grid grid-cols-1 gap-4">
-                      {collections.map((col) => (
-                        <Link key={col.skin_slug} href={`/collections/${col.skin_slug}`} className="text-sm font-bold text-text-muted hover:text-black uppercase" onClick={() => setIsMobileMenuOpen(false)}>
-                          {col.skin_name}
-                        </Link>
-                      ))}
-                    </div>
+                    ))}
+                  </div>
+                <div className="pt-8 border-t border-gray-100">
+                  <p className="text-[10px] font-black text-text-muted uppercase tracking-[0.4em] mb-6">Explore Collections</p>
+                  <div className="grid grid-cols-1 gap-4">
+                    {collections.map((col) => (
+                      <Link key={col.skin_slug} href={`/collections/${col.skin_slug}`} className="text-sm font-bold text-text-muted hover:text-black uppercase" onClick={() => setIsMobileMenuOpen(false)}>
+                        {col.skin_name}
+                      </Link>
+                    ))}
                   </div>
                 </div>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-      </nav>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
       <SearchOverlay isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </>

@@ -84,7 +84,7 @@ export default function AdminMarketerCouponsPage() {
   const stats = [
     { label: 'Active Codes', value: coupons.filter(c => c.skin_is_active).length, icon: <Zap className="text-accent-gold" />, bg: 'bg-accent-gold/10' },
     { label: 'Total Partners', value: new Set(coupons.map(c => c.skin_marketer_id)).size, icon: <UserCheck className="text-blue-600" />, bg: 'bg-blue-50' },
-    { label: 'Total Attribution', value: coupons.reduce((acc, c) => acc + (c.skin_marketer_commissions?.[0]?.count || 0), 0), icon: <TrendingUp className="text-green-600" />, bg: 'bg-green-50' },
+    { label: 'Total Attribution', value: coupons.reduce((acc, c) => acc + (Number(c.skin_marketer_commissions?.[0]?.count) || 0), 0), icon: <TrendingUp className="text-green-600" />, bg: 'bg-green-50' },
     { label: 'Avg Discount', value: '10%', icon: <Ticket className="text-purple-600" />, bg: 'bg-purple-50' },
   ];
 

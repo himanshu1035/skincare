@@ -61,20 +61,55 @@ export const AccountPage = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const currentUserId = session?.user?.id || user?.id;
+      const currentUserEmail = session?.user?.email || user?.email;
 
-      if (!currentUserId) return;
-
-      const { data, error } = await supabase
+      // 1. Fetch Profile
+      let { data: profileData, error: profileError } = await supabase
         .from('skin_user_profiles')
-        .select('*, skin_orders(*)')
+        .select('*')
         .eq('skin_id', currentUserId)
-        .single();
+        .maybeSingle();
       
-      if (error) {
-        console.error('Error fetching profile:', error.message);
-      } else if (data) {
-        setProfile(data);
+      // Self-Healing: Create profile if missing
+      if (!profileData && !profileError) {
+        const { data: newProfile, error: createError } = await supabase
+          .from('skin_user_profiles')
+          .insert({
+            skin_id: currentUserId,
+            skin_email: currentUserEmail,
+            skin_role: 'customer'
+          })
+          .select()
+          .single();
+        
+        if (newProfile) profileData = newProfile;
       }
+
+      if (profileData) {
+        setProfile(profileData);
+        // Sync name to AuthStore
+        useAuthStore.getState().setUser({
+          ...user!,
+          firstName: profileData.skin_first_name || user?.firstName || '',
+          lastName: profileData.skin_last_name || user?.lastName || '',
+          phone: profileData.skin_phone || user?.phone || ''
+        });
+      }
+
+      // 2. Fetch Orders (Wide-Net: ID or Email)
+      const { data: ordersData } = await supabase
+        .from('skin_orders')
+        .select('*')
+        .or(`skin_user_id.eq.${currentUserId},skin_customer_email.eq.${currentUserEmail}`)
+        .order('skin_created_at', { ascending: false });
+
+      if (ordersData) {
+        setProfile((prev: any) => ({
+          ...prev,
+          skin_orders: ordersData
+        }));
+      }
+
     } catch (err) {
       console.error('Unexpected error fetching profile:', err);
     } finally {

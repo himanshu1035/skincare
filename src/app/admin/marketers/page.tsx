@@ -68,7 +68,8 @@ export default function AdminMarketersPage() {
     validityDays: 30,
     isOneTimeUse: false,
     codeLength: 10,
-    defaultCommission: 5
+    defaultCommission: 5,
+    isStackableAllowed: false
   });
 
   useEffect(() => {
@@ -85,7 +86,8 @@ export default function AdminMarketersPage() {
         validityDays: data.skin_coupon_duration_days,
         isOneTimeUse: data.skin_is_one_time_use,
         codeLength: data.skin_code_length,
-        defaultCommission: data.skin_default_commission
+        defaultCommission: data.skin_default_commission,
+        isStackableAllowed: data.skin_is_stackable_allowed || false
       });
       if (!editingMarketer) {
         setFormData(prev => ({
@@ -176,9 +178,9 @@ export default function AdminMarketersPage() {
       .update({
         skin_default_discount: globalFormData.defaultDiscount,
         skin_coupon_duration_days: globalFormData.validityDays,
-        skin_is_one_time_use: globalFormData.isOneTimeUse,
         skin_code_length: globalFormData.codeLength,
-        skin_default_commission: globalFormData.defaultCommission
+        skin_default_commission: globalFormData.defaultCommission,
+        skin_is_stackable_allowed: globalFormData.isStackableAllowed
       })
       .eq('skin_id', 1);
 
@@ -287,7 +289,7 @@ export default function AdminMarketersPage() {
     const [couponsRes, salesRes] = await Promise.all([
       supabase.from('skin_marketer_coupons').select('*, skin_marketer_commissions(count)').eq('skin_marketer_id', marketer.skin_id),
       supabase.from('skin_marketer_commissions')
-        .select('*, skin_orders(*)')
+        .select('*, skin_orders(*, skin_user_profiles(*))')
         .eq('skin_marketer_id', marketer.skin_id)
         .order('skin_created_at', { ascending: false })
     ]);
@@ -513,12 +515,27 @@ export default function AdminMarketersPage() {
                             <div>
                                <p className="text-sm font-black text-text-dark tracking-widest uppercase">{c.skin_code}</p>
                                <p className="text-[9px] text-text-muted font-bold uppercase mt-1 italic">
-                                  D: {c.skin_discount_percent}% · Used: {c.skin_marketer_commissions?.[0]?.count || 0} times
+                                  D: {c.skin_discount_percent}% · Used: {Number(c.skin_marketer_commissions?.[0]?.count) || 0} times
                                </p>
+                               <div className="flex items-center gap-2 mt-2">
+                                  <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase ${c.skin_is_active ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'}`}>
+                                     {c.skin_is_active ? 'Live' : 'Paused'}
+                                  </span>
+                                  {(Number(c.skin_marketer_commissions?.[0]?.count) || 0) === 0 && (
+                                    <button 
+                                      onClick={async () => {
+                                        if (confirm('Delete this unused coupon?')) {
+                                          const { error } = await supabase.from('skin_marketer_coupons').delete().eq('skin_id', c.skin_id);
+                                          if (!error) openMarketerDetails(selectedMarketer);
+                                        }
+                                      }}
+                                      className="p-2 bg-red-50 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all"
+                                    >
+                                      <Trash2 size={12} />
+                                    </button>
+                                  )}
+                               </div>
                             </div>
-                            <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase ${c.skin_is_active ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'}`}>
-                               {c.skin_is_active ? 'Live' : 'Paused'}
-                            </span>
                          </div>
                        ))}
                        {marketerCoupons.length === 0 && <p className="text-[10px] text-text-muted italic uppercase">No coupons generated yet.</p>}
@@ -628,6 +645,21 @@ export default function AdminMarketersPage() {
                       <label className="text-[10px] font-black text-text-muted uppercase tracking-widest ml-1">Default Discount %</label>
                       <input type="number" value={globalFormData.defaultDiscount} onChange={(e) => setGlobalFormData({...globalFormData, defaultDiscount: parseInt(e.target.value)})} className="w-full h-12 bg-secondary-ivory/30 border-none rounded-xl px-4 text-xs font-bold outline-none" />
                    </div>
+                </div>
+
+                <div className="bg-secondary-ivory/30 p-6 rounded-2xl border border-secondary-ivory">
+                   <label className="flex items-center justify-between cursor-pointer">
+                      <div>
+                         <p className="text-xs font-black text-text-dark uppercase tracking-tight">Enable Stacking</p>
+                         <p className="text-[9px] text-text-muted font-bold uppercase mt-1 italic">Allow affiliate coupons to be combined with store coupons.</p>
+                      </div>
+                      <input 
+                        type="checkbox" 
+                        checked={globalFormData.isStackableAllowed} 
+                        onChange={(e) => setGlobalFormData({...globalFormData, isStackableAllowed: e.target.checked})}
+                        className="w-6 h-6 rounded-lg border-2 border-secondary-ivory checked:bg-accent-gold transition-all"
+                      />
+                   </label>
                 </div>
 
                 <div className="flex flex-col gap-3 pt-4">

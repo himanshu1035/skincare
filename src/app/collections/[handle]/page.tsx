@@ -84,7 +84,30 @@ export default async function CollectionPage({ params }: { params: Promise<{ han
     <main className="min-h-screen bg-white">
       <Navbar />
       
-      <div className="pt-32 pb-24">
+      <div className="pt-24 pb-24">
+        {/* Collection Hero */}
+        <section className="relative h-[45vh] min-h-[400px] overflow-hidden mb-16 mx-4 md:mx-8 rounded-[3rem] group">
+           <img 
+              src={collection?.skin_image_url || 'https://images.unsplash.com/photo-1612817288484-6f916006741a?q=80&w=2000&auto=format&fit=crop'} 
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-[3000ms] group-hover:scale-110" 
+              alt={collection?.skin_name || handle} 
+           />
+           <div className="absolute inset-0 bg-gradient-to-t from-text-dark/80 via-text-dark/20 to-transparent" />
+           <div className="absolute bottom-12 left-12 right-12 z-10">
+              <div className="container max-w-none px-0">
+                <span className="text-accent-gold font-bold tracking-[0.4em] uppercase text-[10px] mb-4 block flex items-center gap-2">
+                  {collection?.skin_is_dynamic ? <><Sparkles size={14} /> Seasonal Selection</> : 'Curated Collection'}
+                </span>
+                <h1 className="text-6xl md:text-7xl font-black text-white tracking-tighter uppercase mb-4 leading-none">
+                   {collection?.skin_name || handle.replace('-', ' ')}
+                </h1>
+                <p className="text-white/80 max-w-2xl leading-relaxed text-sm md:text-base font-medium italic">
+                  {collection?.skin_description || `Discover our curated selection of premium skincare formulas designed for your specific concerns.`}
+                </p>
+              </div>
+           </div>
+        </section>
+
         <div className="container">
           {collection?.skin_is_dynamic && (
             <div className="mb-12 p-8 bg-secondary-ivory rounded-[3rem] border border-accent-gold/20 flex flex-col md:flex-row items-center justify-between gap-8 shadow-sm">
@@ -114,17 +137,6 @@ export default async function CollectionPage({ params }: { params: Promise<{ han
                )}
             </div>
           )}
-
-          <header className="mb-16">
-            <span className="text-accent-gold font-bold tracking-[0.2em] uppercase text-[10px] mb-4 block flex items-center gap-2">
-              {collection?.skin_is_dynamic ? <><Sparkles size={14} /> Dynamic Collection</> : 'Collection'}
-            </span>
-            <h1 className="text-5xl font-black text-text-dark tracking-tighter uppercase mb-6">{collection?.skin_name || handle.replace('-', ' ')}</h1>
-            <p className="text-text-muted max-w-2xl leading-relaxed text-sm font-medium italic">
-              {collection?.skin_description || `Discover our curated selection of ${handle.replace('-', ' ')} products designed for your skin concerns.`}
-            </p>
-          </header>
-
           {productsWithPromos.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-12">
               {productsWithPromos.map((product: any) => (
