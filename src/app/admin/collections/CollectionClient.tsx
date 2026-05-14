@@ -64,7 +64,8 @@ export const CollectionClient = ({ collections: initialCollections }: Collection
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {initialCollections?.map((col) => {
-          const isFeatured = col.skin_name.toLowerCase().includes('best');
+          const isFeatured = col.skin_show_on_homepage;
+          const isPinned = col.skin_show_in_navbar;
           const isDynamic = col.skin_is_dynamic;
           return (
             <div key={col.skin_id} className={cn(
@@ -76,9 +77,9 @@ export const CollectionClient = ({ collections: initialCollections }: Collection
                    <Zap size={10} className="animate-pulse" /> LIVE OFFER
                 </div>
               )}
-              {isFeatured && !isDynamic && (
-                <div className="absolute top-0 right-0 bg-text-dark text-white text-[8px] font-black px-4 py-2 rounded-bl-2xl uppercase tracking-widest">
-                  Featured Menu
+              {isPinned && !isDynamic && (
+                <div className="absolute top-0 right-0 bg-text-dark text-white text-[8px] font-black px-4 py-2 rounded-bl-2xl uppercase tracking-widest flex items-center gap-1.5">
+                  <Globe size={10} className="text-accent-gold" /> PINNED
                 </div>
               )}
               <div className="flex items-start justify-between mb-6">

@@ -105,7 +105,6 @@ export const AdminSidebar = React.memo(() => {
     {
       title: "Site Configuration",
       items: [
-        { name: 'Navigation', href: '/admin/navigation', icon: <Compass size={16} /> },
         { name: 'Store Settings', href: '/admin/settings', icon: <Settings size={16} /> },
         { name: 'System Health', href: '/admin/diagnostics', icon: <Sparkles size={16} /> },
       ]

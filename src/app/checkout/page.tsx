@@ -16,7 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CouponInput } from '@/components/CouponInput';
 
 export default function CheckoutPage() {
-  const { items, promoItems, getTotal, discountAmount, appliedCoupon, promoSavings, getGrandTotal, removeCoupon } = useCartStore();
+  const { items, promoItems, getTotal, discountAmount, appliedCoupons, promoSavings, getGrandTotal, removeCoupon } = useCartStore();
   const { user } = useAuthStore();
   const { data: savedData, setData: setSavedData } = useCheckoutStore();
   
@@ -47,10 +47,14 @@ export default function CheckoutPage() {
 
   // Auto-remove prepaid only coupons if switching to COD
   useEffect(() => {
-    if (paymentMethod === 'COD' && appliedCoupon?.skin_is_prepaid_only) {
-      removeCoupon();
+    if (paymentMethod === 'COD') {
+      appliedCoupons.forEach(coupon => {
+        if (coupon.skin_is_prepaid_only) {
+          removeCoupon(coupon.skin_code);
+        }
+      });
     }
-  }, [paymentMethod, appliedCoupon, removeCoupon]);
+  }, [paymentMethod, appliedCoupons, removeCoupon]);
 
   const fetchSettings = async () => {
     const { data } = await supabase.from('skin_settings').select('*');
@@ -129,8 +133,6 @@ export default function CheckoutPage() {
       
       if (profileSyncError) {
         console.error("Profile Sync Error:", profileSyncError);
-        // We don't throw here to avoid blocking the order if it's a minor sync issue, 
-        // but the foreign key error usually happens if the record is missing.
       }
     }
 
@@ -155,11 +157,11 @@ export default function CheckoutPage() {
       skin_status: 'cancelled',
       skin_shipping_charge: shipping,
       skin_cod_charge: codFee,
-      skin_coupon_code: appliedCoupon?.skin_code || null,
+      skin_coupon_code: appliedCoupons.map(c => c.skin_code).join(', ') || null,
       skin_discount_amount: discountAmount,
       skin_promo_savings: promoSavings,
-      skin_marketer_id: appliedCoupon?.skin_marketer_id || null,
-      skin_marketer_coupon_id: appliedCoupon?.skin_marketer_id ? appliedCoupon.skin_id : null
+      skin_marketer_id: appliedCoupons.find(c => c.skin_marketer_id)?.skin_marketer_id || null, // Primary marketer
+      skin_marketer_coupon_id: appliedCoupons.find(c => c.skin_marketer_id)?.skin_id || null
     };
 
     let { data: order, error: orderError } = await supabase.from('skin_orders').insert(orderPayload).select().single();
@@ -347,7 +349,7 @@ export default function CheckoutPage() {
               </div>
 
               <div className="mb-8">
-                <CouponInput paymentMethod={paymentMethod} />
+                <CouponInput paymentMethod={paymentMethod} settings={settings} />
               </div>
 
               <div className="space-y-4 pt-8 border-t-2 border-dashed border-secondary-ivory">

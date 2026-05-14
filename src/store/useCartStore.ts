@@ -17,7 +17,7 @@ export interface CartItem {
 interface CartStore {
   items: CartItem[];
   promoItems: CartItem[];
-  appliedCoupon: any | null;
+  appliedCoupons: any[];
   discountAmount: number;
   promoSavings: number;
   addItem: (item: CartItem) => void;
@@ -27,7 +27,7 @@ interface CartStore {
   getTotal: () => number;
   getGrandTotal: () => number;
   applyCoupon: (coupon: any, amount: number) => void;
-  removeCoupon: () => void;
+  removeCoupon: (code: string) => void;
   refreshPromotions: () => Promise<void>;
 }
 
@@ -36,7 +36,7 @@ export const useCartStore = create<CartStore>()(
     (set, get) => ({
       items: [],
       promoItems: [],
-      appliedCoupon: null,
+      appliedCoupons: [],
       discountAmount: 0,
       promoSavings: 0,
       
@@ -50,9 +50,6 @@ export const useCartStore = create<CartStore>()(
         const promotions = await fetchActivePromotions();
         const { savings, freeItems } = evaluatePromotions(items, promotions);
         
-        // Convert evaluation results to CartItems
-        // Note: For simplicity, we'll assume freeItems metadata comes from the eval logic
-        // In a real app, you might need to fetch full product details for freeItems
         set({ promoSavings: savings, promoItems: freeItems as CartItem[] });
       },
 
@@ -88,7 +85,7 @@ export const useCartStore = create<CartStore>()(
         get().refreshPromotions();
       },
 
-      clearCart: () => set({ items: [], promoItems: [], appliedCoupon: null, discountAmount: 0, promoSavings: 0 }),
+      clearCart: () => set({ items: [], promoItems: [], appliedCoupons: [], discountAmount: 0, promoSavings: 0 }),
       
       getTotal: () => {
         return get().items.reduce((total, item) => total + item.price * item.quantity, 0);
@@ -99,8 +96,40 @@ export const useCartStore = create<CartStore>()(
         return Math.max(0, subtotal - get().discountAmount - get().promoSavings);
       },
 
-      applyCoupon: (coupon, amount) => set({ appliedCoupon: coupon, discountAmount: amount }),
-      removeCoupon: () => set({ appliedCoupon: null, discountAmount: 0 }),
+      applyCoupon: (coupon, amount) => {
+        const { appliedCoupons, discountAmount } = get();
+        if (appliedCoupons.find(c => c.skin_code === coupon.skin_code)) return;
+        
+        set({ 
+          appliedCoupons: [...appliedCoupons, coupon], 
+          discountAmount: discountAmount + amount 
+        });
+      },
+      
+      removeCoupon: (code) => {
+        const { appliedCoupons } = get();
+        const couponToRemove = appliedCoupons.find(c => c.skin_code === code);
+        if (!couponToRemove) return;
+
+        // Recalculate discount after removal (this is simplified, in a complex system we'd re-apply all)
+        // For now, we'll just subtract the amount that was added for this specific coupon
+        // Note: A more robust way is to re-evaluate all coupons against the subtotal
+        set((state) => {
+            const newCoupons = state.appliedCoupons.filter(c => c.skin_code !== code);
+            // Re-calculating total discount from scratch for accuracy
+            const subtotal = get().getTotal();
+            let newTotalDiscount = 0;
+            newCoupons.forEach(c => {
+               if (c.skin_type === 'percent') newTotalDiscount += (subtotal * c.skin_value) / 100;
+               else newTotalDiscount += c.skin_value;
+            });
+
+            return {
+                appliedCoupons: newCoupons,
+                discountAmount: newTotalDiscount
+            };
+        });
+      },
     }),
     {
       name: 'skin-cart-storage',

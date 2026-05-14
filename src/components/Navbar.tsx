@@ -18,7 +18,7 @@ export const Navbar = React.memo(() => {
   const [isMounted, setIsMounted] = useState(false);
   const [collections, setCollections] = useState<any[]>([]);
   const [announcementText, setAnnouncementText] = useState('FREE SHIPPING ON ORDERS OVER ₹1000');
-  const [dynamicCollections, setDynamicCollections] = useState<any[]>([]);
+  const [pinnedCollections, setPinnedCollections] = useState<any[]>([]);
   
   const { items } = useCartStore();
   const { user } = useAuthStore();
@@ -48,19 +48,18 @@ export const Navbar = React.memo(() => {
       if (data) setCollections(data);
     };
 
-    const fetchCampaigns = async () => {
-      const { data: dynamicCols } = await supabase
+    const fetchPinnedCollections = async () => {
+      const { data: pinned } = await supabase
         .from('skin_collections')
         .select('skin_name, skin_slug')
-        .eq('skin_is_dynamic', true)
-        .eq('skin_is_active', true)
-        .eq('skin_show_in_navbar', true);
-      if (dynamicCols) setDynamicCollections(dynamicCols);
+        .eq('skin_show_in_navbar', true)
+        .order('skin_name');
+      if (pinned) setPinnedCollections(pinned);
     };
 
     fetchSettings();
     fetchCollections();
-    fetchCampaigns();
+    fetchPinnedCollections();
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -98,7 +97,7 @@ export const Navbar = React.memo(() => {
               Shop All
             </Link>
             
-            {dynamicCollections.map((col) => (
+            {pinnedCollections.map((col) => (
               <Link 
                 key={col.skin_slug} 
                 href={`/collections/${col.skin_slug}`}
@@ -208,7 +207,7 @@ export const Navbar = React.memo(() => {
                       <Link href="/collections/all" className="block text-xl font-bold uppercase tracking-tight" onClick={() => setIsMobileMenuOpen(false)}>
                         Shop All
                       </Link>
-                      {dynamicCollections.map((col) => (
+                      {pinnedCollections.map((col) => (
                         <Link key={col.skin_slug} href={`/collections/${col.skin_slug}`} className="block text-xl font-bold uppercase tracking-tight" onClick={() => setIsMobileMenuOpen(false)}>
                           {col.skin_name}
                         </Link>
