@@ -27,22 +27,22 @@ export const AccountPage = () => {
       }
 
       // 2. If store says null, verify with Supabase directly (handles hydration lag)
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data, error } = await supabase.auth.getUser();
       
-      if (!session) {
+      if (error || !data.user) {
         router.push('/auth');
       } else {
         // Sync session user to store if missing
         const { data: profileData } = await supabase
           .from('skin_user_profiles')
           .select('*')
-          .eq('skin_id', session.user.id)
+          .eq('skin_id', data.user.id)
           .single();
         
         if (profileData) {
           useAuthStore.getState().setUser({
-            id: session.user.id,
-            email: session.user.email!,
+            id: data.user.id,
+            email: data.user.email!,
             firstName: profileData.skin_first_name,
             lastName: profileData.skin_last_name,
             phone: profileData.skin_phone,

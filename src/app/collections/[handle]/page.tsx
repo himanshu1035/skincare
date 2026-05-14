@@ -56,26 +56,9 @@ export default async function CollectionPage({ params }: { params: Promise<{ han
     console.error('Error fetching collection products:', e);
   }
 
-  // Fallback to mock if empty
-  if (products.length === 0) {
-    products = [
-      {
-        skin_id: '1',
-        skin_name: 'Advanced Snail 96 Mucin Power Essence',
-        skin_price: 25.00,
-        skin_image_url: 'https://cdn.shopify.com/s/files/1/0513/3775/6828/files/james_800x1067_1_1_4e9750cc-2cd6-4817-ace5-be2305a85806.jpg',
-        skin_slug: 'advanced-snail-96-mucin-power-essence',
-        skin_brand: 'COSRX'
-      },
-      {
-        skin_id: '2',
-        skin_name: 'The Retinol 0.1 Cream',
-        skin_price: 27.00,
-        skin_image_url: 'https://cdn.shopify.com/s/files/1/0513/3775/6828/files/02_800x1067_c1901a88-75c4-4b5c-a55d-85f8c85855f4.jpg',
-        skin_slug: 'the-retinol-0-1-cream',
-        skin_brand: 'COSRX'
-      }
-    ];
+  // If no collection found and not 'all' view, 404
+  if (!collection && handle !== 'all') {
+    notFound();
   }
 
   // Fetch promotions to show badges
@@ -141,11 +124,24 @@ export default async function CollectionPage({ params }: { params: Promise<{ han
             </p>
           </header>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-12">
-            {productsWithPromos.map((product: any) => (
-              <ProductCard key={product.skin_id} product={product} />
-            ))}
-          </div>
+          {productsWithPromos.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-12">
+              {productsWithPromos.map((product: any) => (
+                <ProductCard key={product.skin_id} product={product} />
+              ))}
+            </div>
+          ) : (
+            <div className="py-24 text-center bg-secondary-ivory/30 rounded-[3rem] border border-dashed border-secondary-ivory">
+               <Package className="mx-auto text-text-muted mb-6 opacity-20" size={64} />
+               <h3 className="text-xl font-black text-text-dark uppercase tracking-tighter mb-2">Collection is Empty</h3>
+               <p className="text-xs font-medium text-text-muted italic mb-8">We are currently updating this selection. Check back soon!</p>
+               <Link href="/collections/all">
+                  <button className="h-14 px-10 bg-text-dark text-white rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-accent-gold transition-all">
+                     CONTINUE SHOPPING
+                  </button>
+               </Link>
+            </div>
+          )}
         </div>
       </div>
 

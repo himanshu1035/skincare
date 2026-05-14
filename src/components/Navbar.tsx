@@ -89,15 +89,22 @@ export const Navbar = React.memo(() => {
             <span className="text-3xl font-black tracking-tighter text-text-dark">COSRX</span>
           </Link>
 
-          {/* Desktop Nav - Standardized Menus */}
+          {/* Desktop Nav - Dynamic Menus */}
           <div className="hidden lg:flex items-center space-x-10">
-            {topNavLinks.map((link) => (
+            <Link 
+              href="/collections/all"
+              className="text-[11px] font-black text-text-dark hover:text-accent-gold transition-colors tracking-[0.2em] uppercase"
+            >
+              Shop All
+            </Link>
+            
+            {dynamicCollections.map((col) => (
               <Link 
-                key={link.href} 
-                href={link.href}
+                key={col.skin_slug} 
+                href={`/collections/${col.skin_slug}`}
                 className="text-[11px] font-black text-text-dark hover:text-accent-gold transition-colors tracking-[0.2em] uppercase"
               >
-                {link.name}
+                {col.skin_name}
               </Link>
             ))}
 
@@ -198,12 +205,14 @@ export const Navbar = React.memo(() => {
                   </button>
                     <div className="space-y-4">
                       <p className="text-[10px] font-black text-accent-gold uppercase tracking-[0.4em]">Quick Access</p>
-                      {topNavLinks.map((link) => (
-                        <Link key={link.href} href={link.href} className="block text-xl font-bold uppercase tracking-tight" onClick={() => setIsMobileMenuOpen(false)}>
-                          {link.name}
+                      <Link href="/collections/all" className="block text-xl font-bold uppercase tracking-tight" onClick={() => setIsMobileMenuOpen(false)}>
+                        Shop All
+                      </Link>
+                      {dynamicCollections.map((col) => (
+                        <Link key={col.skin_slug} href={`/collections/${col.skin_slug}`} className="block text-xl font-bold uppercase tracking-tight" onClick={() => setIsMobileMenuOpen(false)}>
+                          {col.skin_name}
                         </Link>
                       ))}
-
                     </div>
                   <div className="pt-8 border-t border-gray-100">
                     <p className="text-[10px] font-black text-text-muted uppercase tracking-[0.4em] mb-6">Explore Collections</p>

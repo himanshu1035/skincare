@@ -56,8 +56,8 @@ export default function MarketerLayout({
     if (data) setNotifications(data);
   };
   const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) {
       router.replace('/marketer/login');
       return;
     }
@@ -65,7 +65,7 @@ export default function MarketerLayout({
     const { data: profile } = await supabase
       .from('skin_marketers')
       .select('*')
-      .eq('skin_id', session.user.id)
+      .eq('skin_id', user.id)
       .single();
 
     if (!profile || !profile.skin_is_active) {
