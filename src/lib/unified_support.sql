@@ -6,10 +6,10 @@ ALTER TABLE skin_support_tickets ADD COLUMN IF NOT EXISTS skin_type TEXT DEFAULT
 ALTER TABLE skin_support_tickets ADD COLUMN IF NOT EXISTS skin_last_message_at TIMESTAMPTZ DEFAULT NOW();
 
 -- 1.1 Migrate Legacy Marketer Tickets (Optional but recommended)
--- INSERT INTO skin_support_tickets (skin_id, skin_user_id, skin_subject, skin_message, skin_status, skin_type, skin_created_at)
--- SELECT skin_id, skin_marketer_id, skin_subject, skin_message, skin_status, 'marketer', skin_created_at 
--- FROM skin_marketer_tickets
--- ON CONFLICT (skin_id) DO NOTHING;
+INSERT INTO skin_support_tickets (skin_id, skin_user_id, skin_subject, skin_message, skin_status, skin_type, skin_created_at)
+SELECT skin_id, skin_marketer_id, skin_subject, skin_message, skin_status, 'marketer', skin_created_at 
+FROM skin_marketer_tickets
+ON CONFLICT (skin_id) DO NOTHING;
 
 -- 2. Create Support Messages Table for Chat History
 CREATE TABLE IF NOT EXISTS skin_support_messages (
