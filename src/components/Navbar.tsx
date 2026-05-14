@@ -259,9 +259,9 @@ export const Navbar = React.memo(() => {
           )}
         </AnimatePresence>
 
-        <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
-        <SearchOverlay isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
       </nav>
+      <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+      <SearchOverlay isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </>
   );
 });

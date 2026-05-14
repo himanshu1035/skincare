@@ -55,10 +55,10 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed right-0 top-0 h-full w-full max-w-lg bg-white shadow-[-20px_0_50px_rgba(0,0,0,0.1)] z-[9999] flex flex-col"
+            className="fixed right-0 top-0 h-screen w-full max-w-[480px] bg-white shadow-[-20px_0_50px_rgba(0,0,0,0.15)] z-[9999] flex flex-col"
           >
             {/* Header */}
-            <div className="p-8 border-b border-secondary-ivory flex items-center justify-between bg-white sticky top-0 z-10">
+            <div className="p-8 border-b border-secondary-ivory flex items-center justify-between bg-white shrink-0">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-secondary-ivory flex items-center justify-center text-text-dark">
                   <ShoppingCart size={24} />
@@ -79,17 +79,17 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
             </div>
 
             {/* Free Shipping Progress */}
-            <div className="px-8 py-6 bg-secondary-ivory/30 border-b border-secondary-ivory">
+            <div className="px-8 py-6 bg-secondary-ivory/30 border-b border-secondary-ivory shrink-0">
               <p className="text-[10px] font-black uppercase tracking-widest mb-3 text-text-dark">
                 {total >= threshold 
                   ? "🎉 You qualify for FREE SHIPPING!" 
                   : `Spend ${formatPrice(threshold - total)} more for FREE SHIPPING`}
               </p>
-              <div className="h-1.5 w-full bg-white rounded-full overflow-hidden">
+              <div className="h-1.5 w-full bg-white rounded-full overflow-hidden relative">
                 <motion.div 
                   initial={{ width: 0 }}
                   animate={{ width: `${progress}%` }}
-                  className="h-full bg-accent-gold"
+                  className="absolute left-0 top-0 h-full bg-accent-gold"
                 />
               </div>
             </div>
@@ -179,7 +179,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
 
             {/* Footer */}
             {items.length > 0 && (
-              <div className="p-8 bg-white border-t border-secondary-ivory shadow-[0_-20px_50px_rgba(0,0,0,0.05)] sticky bottom-0 z-10">
+              <div className="p-8 bg-white border-t border-secondary-ivory shadow-[0_-20px_50px_rgba(0,0,0,0.05)] shrink-0">
                 <div className="space-y-4 mb-8">
                   <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-text-muted">
                     <span>Subtotal</span>
