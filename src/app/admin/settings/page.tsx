@@ -180,6 +180,76 @@ export default function AdminSettingsPage() {
             </div>
           </div>
         </div>
+
+        {/* Security Management Section */}
+        <div className="bg-white border border-red-100 rounded-xl p-6 space-y-6 md:col-span-2">
+          <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
+            <ShieldCheck className="text-red-600" size={20} />
+            <h2 className="text-sm font-bold uppercase tracking-widest text-red-600">Security Management</h2>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Current Password</label>
+              <input 
+                type="password"
+                id="current_password"
+                className="w-full bg-gray-50 border border-gray-100 rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-black outline-none font-bold"
+                placeholder="Required to confirm"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">New Password</label>
+              <input 
+                type="password"
+                id="new_password"
+                className="w-full bg-gray-50 border border-gray-100 rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-black outline-none font-bold"
+                placeholder="Min. 6 characters"
+              />
+            </div>
+            <div className="space-y-2 flex items-end">
+               <button 
+                 onClick={async () => {
+                   const curr = (document.getElementById('current_password') as HTMLInputElement).value;
+                   const next = (document.getElementById('new_password') as HTMLInputElement).value;
+                   
+                   if (!curr || !next) return alert("Fill all password fields");
+                   if (next.length < 6) return alert("New password must be 6+ chars");
+
+                   setSaving(true);
+                   try {
+                     // 1. Verify current password by signing in again
+                     const { data: { session } } = await supabase.auth.getSession();
+                     const { error: signInError } = await supabase.auth.signInWithPassword({
+                       email: session?.user.email!,
+                       password: curr
+                     });
+
+                     if (signInError) throw new Error("Incorrect current password");
+
+                     // 2. Update to new password
+                     const { error: updateError } = await supabase.auth.updateUser({
+                       password: next
+                     });
+
+                     if (updateError) throw updateError;
+
+                     alert("Admin password updated successfully!");
+                     (document.getElementById('current_password') as HTMLInputElement).value = '';
+                     (document.getElementById('new_password') as HTMLInputElement).value = '';
+                   } catch (err: any) {
+                     alert(err.message);
+                   } finally {
+                     setSaving(false);
+                   }
+                 }}
+                 className="w-full h-12 bg-red-600 text-white rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-red-700 transition-all shadow-md"
+               >
+                 UPDATE PASSWORD
+               </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="bg-gray-50 border border-gray-100 rounded-xl p-6 flex flex-col md:flex-row items-center justify-between gap-6">
