@@ -98,19 +98,31 @@ export const CouponInput = ({ paymentMethod, settings }: { paymentMethod: string
       const hasMarketerCoupon = appliedCoupons.some(c => c.skin_marketer_id);
       const allowMarketerStacking = settings?.marketer_coupon_stacking === 'yes';
 
-      if (isMarketerCoupon && hasMarketerCoupon && !allowMarketerStacking) {
-        throw new Error('Only one marketer coupon can be used per order.');
+      // Rule 1: Only ONE marketer coupon allowed per order, ever.
+      if (isMarketerCoupon && hasMarketerCoupon) {
+        throw new Error('Only one affiliate coupon can be used per order.');
       }
 
+      // Rule 2: Unstackable coupon restrictions
+      // If adding a non-stackable coupon but cart already has coupons
+      if (!coupon.skin_is_stackable && appliedCoupons.length > 0) {
+        throw new Error('This coupon cannot be stacked with existing coupons.');
+      }
+      
+      // If cart already has a non-stackable coupon
+      if (appliedCoupons.some(c => !c.skin_is_stackable)) {
+        throw new Error('An exclusive non-stackable coupon is already applied.');
+      }
+
+      // Rule 3: Marketer Stacking Rule (Admin Toggle)
+      // This toggle decides if a marketer coupon can stack with Store coupons
       if (appliedCoupons.length > 0) {
-         // If adding a non-stackable coupon to existing coupons
-         if (!coupon.skin_is_stackable) {
-            throw new Error('This coupon cannot be stacked with others.');
-         }
-         // If current coupons are not stackable
-         if (appliedCoupons.some(c => !c.skin_is_stackable)) {
-            throw new Error('The existing coupons in your cart do not allow stacking.');
-         }
+        if (isMarketerCoupon && !allowMarketerStacking) {
+          throw new Error('Affiliate coupons cannot be combined with store coupons.');
+        }
+        if (!isMarketerCoupon && hasMarketerCoupon && !allowMarketerStacking) {
+          throw new Error('Store coupons cannot be combined with your applied affiliate coupon.');
+        }
       }
 
       // 3. Validate Expiry (Standard only)
