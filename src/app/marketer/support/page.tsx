@@ -59,7 +59,10 @@ export default function MarketerSupport() {
         skin_status: 'open'
       });
 
-    if (!error) {
+    if (error) {
+      console.error('Ticket Submission Error:', error);
+      alert('Failed to submit ticket: ' + error.message);
+    } else {
       setSubject('');
       setMessage('');
       setIsModalOpen(false);

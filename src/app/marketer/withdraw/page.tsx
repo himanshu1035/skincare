@@ -105,7 +105,8 @@ export default function MarketerWithdraw() {
       });
 
     if (reqError) {
-      setError('Failed to process request. Please try again.');
+      console.error('Withdrawal Error:', reqError);
+      setError('Failed to process request: ' + reqError.message);
     } else {
       setSuccess(true);
       setAmount('');
