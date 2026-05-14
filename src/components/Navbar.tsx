@@ -188,8 +188,6 @@ export const Navbar = React.memo(() => {
             </button>
           </div>
         </div>
-
-        </div>
       </nav>
 
       {/* Mobile Menu Overlay */}
