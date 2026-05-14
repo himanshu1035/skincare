@@ -76,8 +76,9 @@ export default function AdminWithdrawalsPage() {
 
       if (notifyError) console.warn('Notification Error:', notifyError);
 
-      fetchRequests();
+      await fetchRequests();
       setSelectedRequest(null);
+      alert('Settlement successfully synchronized across all ledgers.');
     }
     setProcessing(false);
   };

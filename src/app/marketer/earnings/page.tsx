@@ -23,10 +23,9 @@ export default function MarketerEarningsPage() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalEarned: 0,
-    pendingPayout: 0,
-    clearedBalance: 0,
-    totalRevenue: 0,
-    conversionRate: 0
+    walletBalance: 0,
+    totalPaid: 0,
+    totalPending: 0
   });
   
   const supabase = createClient();
@@ -40,47 +39,31 @@ export default function MarketerEarningsPage() {
     if (!session) return;
 
     setLoading(true);
-    const { data } = await supabase
-      .from('skin_marketer_commissions')
-      .select(`
-        skin_id, 
-        skin_commission_earned, 
-        skin_bonus_earned, 
-        skin_order_amount, 
-        skin_created_at, 
-        skin_order_id,
-        skin_orders(skin_total_amount, skin_discount_amount, skin_payment_method, skin_status)
-      `)
-      .eq('skin_marketer_id', session.user.id)
-      .order('skin_created_at', { ascending: false });
+    
+    // Fetch Commissions & Withdrawals
+    const [commissionsRes, withdrawalsRes] = await Promise.all([
+      supabase.from('skin_marketer_commissions').select('*').eq('skin_marketer_id', session.user.id).eq('skin_status', 'approved'),
+      supabase.from('skin_marketer_withdrawals').select('*').eq('skin_marketer_id', session.user.id)
+    ]);
 
-    if (data) {
-      setCommissions(data);
+    if (commissionsRes.data && withdrawalsRes.data) {
+      setCommissions(commissionsRes.data);
       
-      let cleared = 0;
-      let unclear = 0;
-      let revenue = 0;
-
-      data.forEach((c: any) => {
-        const amount = Number(c.skin_commission_earned) + Number(c.skin_bonus_earned);
-        const order = c.skin_orders as any;
-        const isCOD = order?.skin_payment_method === 'COD';
-        const isDelivered = order?.skin_status === 'delivered';
-
-        if (!isCOD || isDelivered) {
-          cleared += amount;
-        } else {
-          unclear += amount;
-        }
-        revenue += Number(c.skin_order_amount);
-      });
+      const earned = commissionsRes.data.reduce((acc, c) => acc + Number(c.skin_commission_earned) + Number(c.skin_bonus_earned), 0);
+      
+      const paid = withdrawalsRes.data
+        .filter(w => w.skin_status === 'approved')
+        .reduce((acc, w) => acc + Number(w.skin_amount), 0);
+      
+      const pending = withdrawalsRes.data
+        .filter(w => w.skin_status === 'pending')
+        .reduce((acc, w) => acc + Number(w.skin_amount), 0);
 
       setStats({
-        totalEarned: cleared + unclear,
-        pendingPayout: unclear,
-        clearedBalance: cleared,
-        totalRevenue: revenue,
-        conversionRate: data.length > 0 ? (data.length / revenue) * 100 : 0
+        totalEarned: earned,
+        totalPaid: paid,
+        totalPending: pending,
+        walletBalance: earned - paid - pending
       });
     }
     setLoading(false);
@@ -115,10 +98,10 @@ export default function MarketerEarningsPage() {
       {/* Financial Summary */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {[
-          { label: 'Cleared Balance', value: formatPrice(stats.clearedBalance), icon: <CheckCircle2 size={20} />, color: 'bg-text-dark text-white' },
-          { label: 'Unclear Balance', value: formatPrice(stats.pendingPayout), icon: <Clock size={20} />, color: 'bg-white text-orange-600' },
-          { label: 'Total Earnings', value: formatPrice(stats.totalEarned), icon: <DollarSign size={20} />, color: 'bg-white text-text-dark' },
-          { label: 'Net Revenue', value: formatPrice(stats.totalRevenue), icon: <TrendingUp size={20} />, color: 'bg-white text-blue-600' },
+          { label: 'Wallet Balance', value: formatPrice(stats.walletBalance), icon: <DollarSign size={20} />, color: 'bg-text-dark text-white' },
+          { label: 'Total Earned', value: formatPrice(stats.totalEarned), icon: <TrendingUp size={20} />, color: 'bg-white text-blue-600' },
+          { label: 'Total Paid', value: formatPrice(stats.totalPaid), icon: <CheckCircle2 size={20} />, color: 'bg-white text-green-600' },
+          { label: 'Pending Payout', value: formatPrice(stats.totalPending), icon: <Clock size={20} />, color: 'bg-white text-orange-600' },
         ].map((stat, i) => (
           <motion.div 
             key={i}
@@ -129,9 +112,9 @@ export default function MarketerEarningsPage() {
           >
              <div className="flex items-center justify-between mb-4">
                 <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${stat.color === 'bg-text-dark text-white' ? 'bg-white/10' : 'bg-secondary-ivory/50'}`}>
-                  {stat.icon}
+                   {stat.icon}
                 </div>
-                {i < 2 ? <ArrowUpRight size={16} className="opacity-30" /> : <PieChart size={16} className="opacity-30" />}
+                <ArrowUpRight size={16} className="opacity-30" />
              </div>
              <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${stat.color === 'bg-text-dark text-white' ? 'text-white/60' : 'text-text-muted'}`}>{stat.label}</p>
              <p className="text-2xl font-black tracking-tighter">{stat.value}</p>
@@ -173,15 +156,21 @@ export default function MarketerEarningsPage() {
           </div>
         </div>
 
-        {/* Payout Information */}
+        {/* Payout Action */}
         <div className="space-y-8">
-           <div className="bg-white rounded-[3rem] p-10 border border-secondary-ivory shadow-sm">
-              <h3 className="text-xl font-black uppercase tracking-widest mb-4 text-text-dark italic">Payout Settings</h3>
-              <p className="text-text-muted text-[10px] font-black uppercase tracking-widest mb-6">Settlement Method:</p>
-              <div className="p-6 bg-secondary-ivory/30 rounded-2xl border border-secondary-ivory border-dashed flex flex-col items-center gap-4">
-                 <PieChart className="text-text-muted opacity-30" size={32} />
-                 <p className="text-[9px] text-text-muted font-bold uppercase tracking-widest text-center">Banking details can be updated by contacting store administration.</p>
-              </div>
+           <div className="bg-text-dark rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden group text-center">
+              <DollarSign className="absolute -left-8 -bottom-8 w-40 h-40 text-white/5 group-hover:scale-110 transition-transform duration-700" />
+              <h3 className="text-xl font-black uppercase tracking-widest mb-4 italic">Liquidate Balance</h3>
+              <p className="text-white/60 text-[10px] font-black uppercase tracking-widest mb-8 leading-relaxed">
+                 Available for immediate transfer: <br/>
+                 <span className="text-2xl text-white tracking-tighter mt-2 inline-block">{formatPrice(stats.walletBalance)}</span>
+              </p>
+              <Link 
+                href="/marketer/withdraw"
+                className="w-full h-16 bg-white text-text-dark rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-accent-gold transition-all flex items-center justify-center gap-3 relative z-10"
+              >
+                 Withdraw Funds <ArrowUpRight size={18} />
+              </Link>
            </div>
         </div>
       </div>

@@ -31,25 +31,26 @@ export default async function AdminCustomersPage() {
   }
 
   // 3. Join in memory and Calculate stats
-  const customersWithStats = (customers || []).map(customer => {
-    const orders = (allOrders || []).filter(o => o.skin_user_id === customer.skin_id);
-    
-    const totalSpent = orders
-      .filter((o: any) => o.skin_payment_status === 'verified' || o.skin_status === 'delivered')
-      .reduce((acc: number, o: any) => acc + (Number(o.skin_total_amount) || Number(o.skin_total) || 0), 0);
-    
-    const lastOrder = orders.length > 0 
-      ? new Date(Math.max(...orders.map((o: any) => new Date(o.skin_created_at).getTime())))
-      : null;
-
-    return {
-      ...customer,
-      totalSpent,
-      lastOrderDate: lastOrder,
-      orderCount: orders.length,
-      isMarketer: (allMarketers || []).some(m => m.skin_id === customer.skin_id)
-    };
-  });
+  const customersWithStats = (customers || [])
+    .filter(customer => !(allMarketers || []).some(m => m.skin_id === customer.skin_id)) // Remove Marketers
+    .map(customer => {
+      const orders = (allOrders || []).filter(o => o.skin_user_id === customer.skin_id);
+      
+      const totalSpent = orders
+        .filter((o: any) => o.skin_payment_status === 'verified' || o.skin_status === 'delivered')
+        .reduce((acc: number, o: any) => acc + (Number(o.skin_total_amount) || Number(o.skin_total) || 0), 0);
+      
+      const lastOrder = orders.length > 0 
+        ? new Date(Math.max(...orders.map((o: any) => new Date(o.skin_created_at).getTime())))
+        : null;
+  
+      return {
+        ...customer,
+        totalSpent,
+        lastOrderDate: lastOrder,
+        orderCount: orders.length
+      };
+    });
 
   return (
     <div className="space-y-12">

@@ -44,6 +44,8 @@ export default function AdminMarketersPage() {
   const [selectedMarketer, setSelectedMarketer] = useState<any>(null);
   const [marketerCoupons, setMarketerCoupons] = useState<any[]>([]);
   const [marketerSales, setMarketerSales] = useState<any[]>([]);
+  const [adjustmentAmount, setAdjustmentAmount] = useState('');
+  const [isAdjusting, setIsAdjusting] = useState(false);
   const supabase = createClient();
 
   const [formData, setFormData] = useState({
@@ -293,6 +295,40 @@ export default function AdminMarketersPage() {
     setLoading(false);
   };
 
+  const handleAdjustWallet = async (type: 'bonus' | 'deduction') => {
+    if (!adjustmentAmount || Number(adjustmentAmount) <= 0 || !selectedMarketer) return;
+    setIsAdjusting(true);
+    
+    try {
+      if (type === 'bonus') {
+        const { error } = await supabase.from('skin_marketer_commissions').insert({
+          skin_marketer_id: selectedMarketer.skin_id,
+          skin_order_amount: 0,
+          skin_commission_earned: 0,
+          skin_bonus_earned: Number(adjustmentAmount),
+          skin_status: 'approved'
+        });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('skin_marketer_withdrawals').insert({
+          skin_marketer_id: selectedMarketer.skin_id,
+          skin_amount: Number(adjustmentAmount),
+          skin_upi_id: 'ADMIN_ADJUSTMENT',
+          skin_status: 'approved',
+          skin_admin_note: 'Administrative Deduction'
+        });
+        if (error) throw error;
+      }
+      alert(`Wallet adjusted successfully: ${type.toUpperCase()}`);
+      setAdjustmentAmount('');
+      openMarketerDetails(selectedMarketer); // Refresh data
+    } catch (err: any) {
+      alert("Adjustment Error: " + err.message);
+    } finally {
+      setIsAdjusting(false);
+    }
+  };
+
   const [levelFilter, setLevelFilter] = useState('all');
 
   const filteredMarketers = marketers.filter(m => {
@@ -511,6 +547,47 @@ export default function AdminMarketersPage() {
                     </div>
                  </div>
               </div>
+
+               {/* Manual Adjustment Section */}
+               <div className="mt-12 p-10 bg-text-dark rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden">
+                  <div className="relative z-10">
+                     <div className="flex items-center justify-between mb-8">
+                        <div>
+                           <h3 className="text-lg font-black uppercase italic leading-none">Wallet Governance</h3>
+                           <p className="text-[9px] font-black text-white/40 uppercase tracking-widest mt-2">Manual balance override and bonus injection.</p>
+                        </div>
+                        <ShieldCheck className="text-accent-gold" size={32} />
+                     </div>
+                     
+                     <div className="flex flex-col md:flex-row items-center gap-6">
+                        <div className="flex-1 w-full relative">
+                           <input 
+                             type="number" 
+                             value={adjustmentAmount}
+                             onChange={(e) => setAdjustmentAmount(e.target.value)}
+                             placeholder="Adjustment Amount (₹)"
+                             className="w-full h-16 bg-white/10 border-2 border-white/10 rounded-2xl px-8 text-xl font-black text-white placeholder:text-white/20 focus:border-accent-gold outline-none transition-all"
+                           />
+                        </div>
+                        <div className="flex items-center gap-4 w-full md:w-auto">
+                           <button 
+                             disabled={isAdjusting || !adjustmentAmount}
+                             onClick={() => handleAdjustWallet('bonus')}
+                             className="h-16 px-8 bg-accent-gold text-text-dark rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center gap-2 whitespace-nowrap disabled:opacity-50"
+                           >
+                              {isAdjusting ? <Loader2 className="animate-spin" size={16} /> : <Zap size={16} />} Add Bonus
+                           </button>
+                           <button 
+                             disabled={isAdjusting || !adjustmentAmount}
+                             onClick={() => handleAdjustWallet('deduction')}
+                             className="h-16 px-8 bg-red-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center gap-2 whitespace-nowrap disabled:opacity-50"
+                           >
+                              {isAdjusting ? <Loader2 className="animate-spin" size={16} /> : <Ban size={16} />} Deduct Balance
+                           </button>
+                        </div>
+                     </div>
+                  </div>
+               </div>
             </motion.div>
           </div>
         )}

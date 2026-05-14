@@ -205,25 +205,15 @@ function OrdersContent() {
                </header>
 
                <div className="space-y-6">
-                  <div className="bg-secondary-ivory/30 p-6 rounded-[2rem] border border-secondary-ivory">
-                     <h3 className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-4 flex items-center gap-2">
-                        <Package size={14} /> Manifest Items
-                     </h3>
-                     <div className="space-y-4">
-                        {selectedSale.skin_orders?.skin_items?.map((item: any, idx: number) => (
-                          <div key={idx} className="flex items-center justify-between group">
-                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center border border-secondary-ivory">
-                                   <Package size={16} className="text-text-muted" />
-                                </div>
-                                <div>
-                                   <p className="text-[11px] font-black text-text-dark uppercase">{item.skin_title}</p>
-                                   <p className="text-[9px] text-text-muted font-bold uppercase italic">Qty: {item.skin_quantity} · {formatPrice(item.skin_price)}</p>
-                                </div>
-                             </div>
-                          </div>
-                        ))}
+                  <div className="bg-secondary-ivory/30 p-8 rounded-[2.5rem] border border-secondary-ivory text-center">
+                     <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm border border-secondary-ivory">
+                        <Package size={24} className="text-text-dark" />
                      </div>
+                     <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">Order Volume</p>
+                     <p className="text-2xl font-black text-text-dark uppercase italic">
+                        {selectedSale.skin_orders?.skin_items?.reduce((acc: number, item: any) => acc + (item.skin_quantity || 1), 0)} Items Purchased
+                     </p>
+                     <p className="text-[9px] text-text-muted/60 font-bold uppercase tracking-widest mt-2 italic">Detailed manifest is restricted to administration.</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">

@@ -19,7 +19,8 @@ import {
   AlertCircle,
   CheckCircle2,
   ChevronRight,
-  ArrowRight
+  ArrowRight,
+  X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatPrice } from '@/lib/utils';
@@ -32,6 +33,10 @@ export default function AdminCouponsPage() {
   const [selectedCoupon, setSelectedCoupon] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all');
+  const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
+  const [auditData, setAuditData] = useState<any[]>([]);
+  const [auditingCoupon, setAuditingCoupon] = useState<any>(null);
+  const [auditingLoading, setAuditingLoading] = useState(false);
   
   const supabase = createClient();
 
@@ -109,6 +114,21 @@ export default function AdminCouponsPage() {
     if (!error) {
       setCoupons(coupons.filter(c => c.skin_id !== id));
     }
+  };
+
+  const openCouponAudit = async (coupon: any) => {
+    setAuditingCoupon(coupon);
+    setIsAuditModalOpen(true);
+    setAuditingLoading(true);
+    
+    const { data, error } = await supabase
+      .from('skin_orders')
+      .select('*, skin_user_profiles(*)')
+      .eq('skin_coupon_code', coupon.skin_code)
+      .order('skin_created_at', { ascending: false });
+    
+    if (data) setAuditData(data);
+    setAuditingLoading(false);
   };
 
   const filteredCoupons = coupons.filter(c => {
@@ -246,10 +266,17 @@ export default function AdminCouponsPage() {
                     </td>
                     <td className="px-8 py-6 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        <button 
+                          onClick={() => openCouponAudit(coupon)}
+                          className="p-2.5 bg-accent-gold/10 rounded-xl text-accent-gold hover:bg-accent-gold hover:text-white transition-all group/audit"
+                          title="View Usage Audit"
+                        >
+                          <TrendingUp size={16} className="group-hover/audit:scale-110 transition-transform" />
+                        </button>
                         {coupon.source === 'admin' && (
                           <button 
                             onClick={() => { setSelectedCoupon(coupon); setIsModalOpen(true); }}
-                            className="p-2.5 bg-secondary-ivory/50 rounded-xl text-text-muted hover:text-accent-gold hover:bg-white hover:shadow-md transition-all"
+                            className="p-2.5 bg-secondary-ivory/50 rounded-xl text-text-muted hover:text-blue-500 hover:bg-white hover:shadow-md transition-all"
                           >
                             <Edit2 size={16} />
                           </button>
@@ -287,6 +314,75 @@ export default function AdminCouponsPage() {
           onSave={fetchCoupons}
         />
       )}
+
+      {/* Audit Modal */}
+      <AnimatePresence>
+        {isAuditModalOpen && auditingCoupon && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsAuditModalOpen(false)} className="absolute inset-0 bg-black/60 backdrop-blur-md" />
+            <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }} className="relative bg-white w-full max-w-3xl rounded-[3rem] shadow-2xl p-12 border border-secondary-ivory max-h-[85vh] overflow-y-auto custom-scrollbar">
+               <header className="flex items-center justify-between mb-10">
+                  <div>
+                    <h2 className="text-3xl font-black tracking-tighter text-text-dark uppercase italic leading-none">Campaign Audit: {auditingCoupon.skin_code}</h2>
+                    <p className="text-[10px] font-black text-text-muted uppercase tracking-widest mt-2 flex items-center gap-2">
+                       <CheckCircle2 size={12} className="text-green-500" /> Conversions: {auditData.length} · Total Savings: {formatPrice(auditData.reduce((acc, o) => acc + (Number(o.skin_discount_amount) || 0), 0))}
+                    </p>
+                  </div>
+                  <button onClick={() => setIsAuditModalOpen(false)} className="w-12 h-12 rounded-full bg-secondary-ivory flex items-center justify-center hover:bg-red-50 hover:text-red-500 transition-all"><X size={24}/></button>
+               </header>
+
+               {auditingLoading ? (
+                 <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-accent-gold" /></div>
+               ) : (
+                 <div className="space-y-6">
+                    {auditData.length > 0 ? (
+                      <div className="divide-y divide-secondary-ivory border border-secondary-ivory rounded-[2.5rem] overflow-hidden">
+                         {auditData.map((order) => (
+                            <div key={order.skin_id} className="p-8 flex items-center justify-between hover:bg-secondary-ivory/10 transition-colors group">
+                               <div className="flex items-center gap-5">
+                                  <div className="w-12 h-12 rounded-2xl bg-secondary-ivory flex items-center justify-center font-black text-text-dark uppercase">
+                                     {order.skin_user_profiles?.skin_first_name?.[0] || 'U'}
+                                  </div>
+                                  <div>
+                                     <p className="text-sm font-black text-text-dark uppercase tracking-tight">{order.skin_user_profiles?.skin_first_name} {order.skin_user_profiles?.skin_last_name}</p>
+                                     <p className="text-[9px] text-text-muted font-bold uppercase tracking-widest mt-1">
+                                        {new Date(order.skin_created_at).toLocaleDateString()} · ID: {(order.skin_id || '').slice(0, 8)}
+                                     </p>
+                                  </div>
+                               </div>
+                               <div className="flex items-center gap-8">
+                                  <div className="text-right">
+                                     <p className="text-sm font-black text-text-dark">{formatPrice(order.skin_total_amount)}</p>
+                                     <p className="text-[9px] font-black text-accent-gold uppercase mt-1">Saved: {formatPrice(order.skin_discount_amount)}</p>
+                                  </div>
+                                  <a 
+                                    href={`/admin/orders/${order.skin_id}`} 
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-3 bg-secondary-ivory rounded-xl text-text-muted hover:text-white hover:bg-text-dark transition-all"
+                                  >
+                                     <ChevronRight size={18} />
+                                  </a>
+                               </div>
+                            </div>
+                         ))}
+                      </div>
+                    ) : (
+                      <div className="py-20 text-center bg-secondary-ivory/20 rounded-[2.5rem] border border-dashed border-secondary-ivory">
+                         <p className="text-sm font-bold text-text-muted italic">No conversion data found for this campaign.</p>
+                      </div>
+                    )}
+                 </div>
+               )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <style jsx>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #f1f1f1; border-radius: 10px; }
+      `}</style>
     </div>
   );
 }
