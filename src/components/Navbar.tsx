@@ -59,7 +59,7 @@ export const Navbar = React.memo(() => {
         .from('skin_collections')
         .select('skin_name, skin_slug')
         .eq('skin_is_pinned', true)
-        .limit(3);
+        .order('skin_name');
       if (pinned) setPinnedCollections(pinned);
     };
 
