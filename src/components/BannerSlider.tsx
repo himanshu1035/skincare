@@ -67,18 +67,18 @@ export const BannerSlider: React.FC<{ initialBanners: Banner[] }> = ({ initialBa
              <div className="absolute inset-0 bg-gradient-to-r from-white via-white/40 to-transparent" />
           </div>
 
-          {/* Mobile View - Original Cover */}
+          {/* Mobile View - Enhanced for Readability */}
           <div className="md:hidden absolute inset-0">
              <img 
                src={currentBanner.skin_image_mobile || currentBanner.skin_image_desktop} 
                alt={currentBanner.skin_title} 
                className="w-full h-full object-cover"
              />
-             <div className="absolute inset-0 bg-text-dark/20 backdrop-blur-[1px]" />
+             <div className="absolute inset-0 bg-gradient-to-t from-text-dark via-text-dark/40 to-transparent" />
           </div>
 
           {/* Content */}
-          <div className="container relative h-full flex flex-col justify-center items-start pt-20 z-10">
+          <div className="container relative h-full flex flex-col justify-center items-center md:items-start pt-20 z-10 text-center md:text-left">
             <motion.div
               initial={{ y: 40, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -95,22 +95,22 @@ export const BannerSlider: React.FC<{ initialBanners: Banner[] }> = ({ initialBa
                   Limited Time Exclusive
                 </motion.span>
                 <h1 
-                  className="text-6xl md:text-8xl font-black tracking-tighter leading-[0.9] uppercase text-text-dark"
+                  className="text-5xl md:text-8xl font-black font-outfit tracking-tighter leading-[0.9] uppercase text-white md:text-text-dark"
                 >
                   {currentBanner.skin_title}
                 </h1>
                 <p 
-                  className="text-lg md:text-xl font-medium max-w-lg leading-relaxed italic text-text-muted"
+                  className="text-base md:text-xl font-medium max-w-lg leading-relaxed italic text-white/80 md:text-text-muted"
                 >
                   {currentBanner.skin_subtitle}
                 </p>
               </div>
 
-              <Link href={getLink(currentBanner)}>
+              <Link href={getLink(currentBanner)} className="mx-auto md:mx-0">
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="group px-10 py-5 bg-text-dark text-white rounded-full font-black text-xs tracking-[0.2em] uppercase flex items-center gap-4 shadow-2xl hover:bg-accent-gold transition-all mt-10"
+                  className="group px-10 py-5 bg-white md:bg-text-dark text-text-dark md:text-white rounded-full font-black text-xs tracking-[0.2em] uppercase flex items-center gap-4 shadow-2xl hover:bg-accent-gold transition-all mt-10"
                 >
                   {currentBanner.skin_cta_text}
                   <ArrowRight size={18} className="group-hover:translate-x-2 transition-transform" />
