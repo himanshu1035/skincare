@@ -3,7 +3,16 @@ import { createClient } from '@/lib/supabase';
 export async function recordMarketerCommission(orderId: string) {
   const supabase = createClient();
 
-  // 1. Fetch order details
+  // 1. Check if commission already exists for this order
+  const { data: existing } = await supabase
+    .from('skin_marketer_commissions')
+    .select('skin_id')
+    .eq('skin_order_id', orderId)
+    .maybeSingle();
+
+  if (existing) return; // Prevent duplicates
+
+  // 2. Fetch order details
   const { data: order, error: orderError } = await supabase
     .from('skin_orders')
     .select('*, skin_marketers(*)')
@@ -12,22 +21,18 @@ export async function recordMarketerCommission(orderId: string) {
 
   if (orderError || !order || !order.skin_marketer_id) return;
 
-  // 2. Fetch marketer settings
   const marketer = order.skin_marketers;
   if (!marketer) return;
 
-  // 3. Calculate commission (New Logic: Commission is % of the DISCOUNT given to user)
+  // 3. Calculate commission (Consistent with Checkout Logic: % of Order Total)
   const orderAmount = Number(order.skin_total_amount);
-  const discountAmount = Number(order.skin_discount_amount || 0);
-  const commissionPercent = Number(marketer.skin_commission_percent);
-  const fixedBonus = Number(marketer.skin_fixed_bonus);
+  const commissionPercent = Number(marketer.skin_commission_percent || 0);
+  const fixedBonus = Number(marketer.skin_fixed_bonus || 0);
 
-  // If commission is 5% and discount was 100, marketer gets 5
-  const commissionEarned = (discountAmount * commissionPercent) / 100;
-  const totalCommission = commissionEarned + fixedBonus;
+  const commissionEarned = (orderAmount * commissionPercent) / 100;
 
   // 4. Record in skin_marketer_commissions
-  const { error: commError } = await supabase
+  await supabase
     .from('skin_marketer_commissions')
     .insert({
       skin_marketer_id: order.skin_marketer_id,
@@ -36,10 +41,23 @@ export async function recordMarketerCommission(orderId: string) {
       skin_order_amount: orderAmount,
       skin_commission_earned: commissionEarned,
       skin_bonus_earned: fixedBonus,
-      skin_status: 'approved' // Automatically approve since payment is verified
+      skin_status: 'approved' 
     });
+}
 
-  if (commError) {
-    console.error("Error recording marketer commission:", commError);
+export async function approveMarketerCommission(orderId: string) {
+  const supabase = createClient();
+  
+  // Update existing pending commission to approved
+  const { error } = await supabase
+    .from('skin_marketer_commissions')
+    .update({ skin_status: 'approved' })
+    .eq('skin_order_id', orderId)
+    .eq('skin_status', 'pending');
+
+  if (error) {
+    console.error("Error approving marketer commission:", error);
+    // FALLBACK: If no pending record exists, try recording it fresh
+    await recordMarketerCommission(orderId);
   }
 }

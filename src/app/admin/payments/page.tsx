@@ -47,8 +47,8 @@ export default function AdminPaymentsPage() {
     
     if (!error) {
       if (status === 'processing') {
-        const { recordMarketerCommission } = await import('@/lib/marketerUtils');
-        await recordMarketerCommission(orderId);
+        const { approveMarketerCommission } = await import('@/lib/marketerUtils');
+        await approveMarketerCommission(orderId);
       }
       setOrders(orders.filter(o => o.skin_id !== orderId));
     }
