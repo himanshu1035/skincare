@@ -13,33 +13,45 @@ const getAdminClient = () => {
 };
 
 export async function updateCustomer(customerId: string, data: any) {
-  const supabase = getAdminClient();
-  
-  // 1. Update Auth User (Email/Password)
-  const updateData: any = {};
-  if (data.email) updateData.email = data.email;
-  if (data.password) updateData.password = data.password;
-  
-  if (Object.keys(updateData).length > 0) {
-    const { error: authError } = await supabase.auth.admin.updateUserById(customerId, updateData);
-    if (authError) throw authError;
+  try {
+    const supabase = getAdminClient();
+    
+    // 1. Update Auth User (Email/Password)
+    const updateData: any = {};
+    if (data.email) updateData.email = data.email;
+    if (data.password) updateData.password = data.password;
+    
+    if (Object.keys(updateData).length > 0) {
+      const { error: authError } = await supabase.auth.admin.updateUserById(customerId, updateData);
+      if (authError) {
+        console.error("Auth Update Error:", authError);
+        return { success: false, error: authError.message };
+      }
+    }
+
+    // 2. Update Profile Table
+    const { error: profileError } = await supabase
+      .from('skin_user_profiles')
+      .update({
+        skin_first_name: data.firstName,
+        skin_last_name: data.lastName,
+        skin_username: `${data.firstName} ${data.lastName}`.trim(),
+        skin_phone: data.phone,
+        skin_role: data.role
+      })
+      .eq('skin_id', customerId);
+
+    if (profileError) {
+      console.error("Profile Update Error:", profileError);
+      return { success: false, error: profileError.message };
+    }
+
+    revalidatePath('/admin/customers');
+    return { success: true };
+  } catch (error: any) {
+    console.error("Unexpected Customer Update Error:", error);
+    return { success: false, error: error.message || "An unexpected error occurred" };
   }
-
-  // 2. Update Profile Table
-  const { error: profileError } = await supabase
-    .from('skin_user_profiles')
-    .update({
-      skin_first_name: data.firstName,
-      skin_last_name: data.lastName,
-      skin_username: `${data.firstName} ${data.lastName}`.trim(),
-      skin_phone: data.phone,
-      skin_role: data.role
-    })
-    .eq('skin_id', customerId);
-
-  if (profileError) throw profileError;
-  revalidatePath('/admin/customers');
-  return { success: true };
 }
 
 export async function deleteCustomer(customerId: string) {

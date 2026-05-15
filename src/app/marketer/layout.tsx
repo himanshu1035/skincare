@@ -113,6 +113,7 @@ export default function MarketerLayout({
 
   const accountItems = [
     { label: 'Withdrawals', icon: <Shield size={18} />, path: '/marketer/withdraw', type: 'withdrawal' },
+    { label: 'Platform Rules', icon: <Shield size={18} />, path: '/marketer/rules', type: 'rules' },
     { label: 'Support Tickets', icon: <LifeBuoy size={18} />, path: '/marketer/support', type: 'support' }, 
     { label: 'Settlement Settings', icon: <User size={18} />, path: '/marketer/settings', type: 'settings' },
   ];

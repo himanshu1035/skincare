@@ -31,11 +31,15 @@ export const CustomerEditModal = ({ customer, onClose }: CustomerEditModalProps)
     setLoading(true);
     setError(null);
     try {
-      await updateCustomer(customer.skin_id, formData);
-      router.refresh();
-      onClose();
+      const result = await updateCustomer(customer.skin_id, formData);
+      if (result.success) {
+        router.refresh();
+        onClose();
+      } else {
+        setError(result.error || 'Failed to update customer');
+      }
     } catch (err: any) {
-      setError(err.message || 'Failed to update customer');
+      setError(err.message || 'An unexpected error occurred');
     } finally {
       setLoading(false);
     }

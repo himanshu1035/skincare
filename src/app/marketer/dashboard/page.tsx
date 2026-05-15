@@ -47,11 +47,11 @@ export default function MarketerDashboard() {
 
     setLoading(true);
     
-    // Fetch Profile, Commissions, and Withdrawals
+    // Fetch Profile, Commissions (Both Approved & Pending), and Withdrawals
     const [marketerRes, settingsRes, commissionsRes, withdrawalsRes] = await Promise.all([
       supabase.from('skin_marketers').select('*').eq('skin_id', session.user.id).single(),
       supabase.from('skin_marketer_settings').select('skin_tiered_rules').eq('skin_id', 1).single(),
-      supabase.from('skin_marketer_commissions').select('*, skin_orders(*)').eq('skin_marketer_id', session.user.id).eq('skin_status', 'approved'),
+      supabase.from('skin_marketer_commissions').select('*, skin_orders(*)').eq('skin_marketer_id', session.user.id),
       supabase.from('skin_marketer_withdrawals').select('*').eq('skin_marketer_id', session.user.id)
     ]);
 
@@ -59,24 +59,28 @@ export default function MarketerDashboard() {
     if (settingsRes.data?.skin_tiered_rules) setTieredRules(settingsRes.data.skin_tiered_rules);
 
     if (commissionsRes.data && withdrawalsRes.data) {
-      const earned = commissionsRes.data.reduce((acc, c) => acc + Number(c.skin_commission_earned) + Number(c.skin_bonus_earned), 0);
+      const approvedCommissions = commissionsRes.data.filter(c => c.skin_status === 'approved');
+      const pendingCommissions = commissionsRes.data.filter(c => c.skin_status === 'pending');
+
+      const earned = approvedCommissions.reduce((acc, c) => acc + Number(c.skin_commission_earned) + Number(c.skin_bonus_earned), 0);
+      const pendingEarned = pendingCommissions.reduce((acc, c) => acc + Number(c.skin_commission_earned) + Number(c.skin_bonus_earned), 0);
       
       const paid = withdrawalsRes.data
         .filter(w => w.skin_status === 'approved')
         .reduce((acc, w) => acc + Number(w.skin_amount), 0);
       
-      const pending = withdrawalsRes.data
+      const pendingWithdrawals = withdrawalsRes.data
         .filter(w => w.skin_status === 'pending')
         .reduce((acc, w) => acc + Number(w.skin_amount), 0);
 
-      setRecentSales(commissionsRes.data.slice(0, 5).sort((a, b) => new Date(b.skin_created_at).getTime() - new Date(a.skin_created_at).getTime()));
+      setRecentSales(approvedCommissions.slice(0, 5).sort((a, b) => new Date(b.skin_created_at).getTime() - new Date(a.skin_created_at).getTime()));
       
       setStats({
         totalEarned: earned,
         totalPaid: paid,
-        totalPending: pending,
-        walletBalance: earned - paid - pending,
-        conversions: commissionsRes.data.length
+        totalPending: pendingEarned + pendingWithdrawals, // Total value stuck in pending (commissions + withdrawals)
+        walletBalance: earned - paid - pendingWithdrawals,
+        conversions: approvedCommissions.length
       });
     }
 
@@ -200,15 +204,17 @@ export default function MarketerDashboard() {
 
                <div className="mt-10 grid grid-cols-2 gap-6">
                     <div className="p-6 bg-secondary-ivory/30 rounded-3xl border border-secondary-ivory">
-                       <p className="text-[9px] font-black text-text-muted uppercase tracking-widest mb-2">Wallet Yield</p>
+                       <p className="text-[9px] font-black text-text-muted uppercase tracking-widest mb-2">Current Yield</p>
                        <p className="text-xl font-black text-text-dark uppercase">{profile?.skin_commission_percent || 0}% Commission</p>
                     </div>
-                    <div className="p-6 bg-accent-gold/5 rounded-3xl border border-accent-gold/20">
-                       <p className="text-[9px] font-black text-accent-gold uppercase tracking-widest mb-2">Availability</p>
-                       <p className="text-xl font-black text-text-dark uppercase">
-                          Instant Payouts
-                       </p>
-                    </div>
+                    {tier?.next && (
+                      <div className="p-6 bg-accent-gold/5 rounded-3xl border border-accent-gold/20">
+                         <p className="text-[9px] font-black text-accent-gold uppercase tracking-widest mb-2">Next Tier Reward</p>
+                         <p className="text-xl font-black text-text-dark uppercase">
+                            {tier.next.commission}% commission
+                         </p>
+                      </div>
+                    )}
                  </div>
               </div>
            </div>
@@ -247,21 +253,47 @@ export default function MarketerDashboard() {
         </div>
 
         {/* Pulse & Stats - Removed and replaced with simplified guard */}
+        {/* Withdrawal History (Replaces Network Rules) */}
         <div className="space-y-8">
            <div className="bg-white rounded-[3rem] p-10 border border-secondary-ivory shadow-sm">
-              <h3 className="text-xl font-black uppercase tracking-widest mb-6 text-text-dark italic">Network Rules</h3>
-              <div className="space-y-4">
-                 {[
-                   { label: 'Commission Tier', value: `${profile?.skin_commission_percent || 0}% Value` },
-                   { label: 'Discount Cap', value: `${profile?.skin_default_discount || 0}% Off` },
-                   { label: 'Withdrawal Limit', value: '₹500.00' }
-                 ].map((p, i) => (
-                   <div key={i} className="flex items-center justify-between py-4 border-b border-secondary-ivory/50 last:border-0">
-                      <p className="text-[9px] font-black text-text-muted uppercase tracking-widest">{p.label}</p>
-                      <p className="text-[10px] font-black text-text-dark uppercase">{p.value}</p>
+              <h3 className="text-xl font-black uppercase tracking-widest mb-6 text-text-dark italic">Withdrawal History</h3>
+              <div className="space-y-6">
+                 {stats.totalPaid > 0 ? (
+                   <div className="space-y-4">
+                     <div className="flex items-center justify-between p-4 bg-green-50 rounded-2xl border border-green-100">
+                       <div className="flex items-center gap-3">
+                         <CheckCircle2 size={16} className="text-green-600" />
+                         <div>
+                           <p className="text-[10px] font-black text-green-600 uppercase">Paid Out</p>
+                           <p className="text-lg font-black text-text-dark">{formatPrice(stats.totalPaid)}</p>
+                         </div>
+                       </div>
+                     </div>
+                     <Link href="/marketer/withdraw" className="block text-center py-4 rounded-2xl border-2 border-secondary-ivory text-[10px] font-black uppercase tracking-widest hover:bg-secondary-ivory transition-all">
+                        Full Statement
+                     </Link>
                    </div>
-                 ))}
+                 ) : (
+                   <div className="text-center py-10">
+                      <Activity size={32} className="mx-auto text-secondary-ivory mb-4" />
+                      <p className="text-[10px] font-black text-text-muted uppercase tracking-widest leading-relaxed">No withdrawals processed yet.</p>
+                   </div>
+                 )}
               </div>
+           </div>
+           
+           {/* Quick Links */}
+           <div className="bg-text-dark rounded-[3rem] p-10 shadow-2xl shadow-text-dark/20 text-white relative overflow-hidden">
+              <Zap size={80} className="absolute -bottom-4 -right-4 opacity-10 rotate-12" />
+              <h4 className="text-lg font-black uppercase tracking-widest mb-6 italic">Support Hub</h4>
+              <Link href="/marketer/support" className="flex items-center justify-between p-5 bg-white/10 rounded-2xl border border-white/10 hover:bg-white/20 transition-all group mb-4">
+                 <span className="text-[10px] font-black uppercase tracking-widest">Get Assistance</span>
+                 <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
+              </Link>
+              <Link href="/marketer/rules" className="flex items-center justify-between p-5 bg-white/10 rounded-2xl border border-white/10 hover:bg-white/20 transition-all group">
+                 <span className="text-[10px] font-black uppercase tracking-widest">Platform Rules</span>
+                 <ShieldCheck size={16} className="group-hover:translate-x-1 transition-transform" />
+              </Link>
            </div>
         </div>
       </div>

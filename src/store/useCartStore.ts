@@ -149,37 +149,38 @@ export const useCartStore = create<CartStore>()(
         const { appliedCoupons, discountAmount } = get();
         if (appliedCoupons.find(c => c.skin_code === coupon.skin_code)) return;
         
+        // Add the calculated discount to the coupon object immediately for display
+        const couponWithDiscount = { ...coupon, calculated_discount: amount };
+        
         set({ 
-          appliedCoupons: [...appliedCoupons, coupon], 
+          appliedCoupons: [...appliedCoupons, couponWithDiscount], 
           discountAmount: discountAmount + amount 
         });
       },
       
       removeCoupon: (code) => {
-        const { appliedCoupons } = get();
-        const couponToRemove = appliedCoupons.find(c => c.skin_code === code);
-        if (!couponToRemove) return;
+        const { appliedCoupons, getTotal } = get();
+        const newCoupons = appliedCoupons.filter(c => c.skin_code !== code);
+        
+        // Re-calculating total discount from scratch for accuracy using existing logic
+        const subtotal = getTotal();
+        let newTotalDiscount = 0;
+        
+        const recalculatedCoupons = newCoupons.map(c => {
+          let discount = 0;
+          if (c.skin_type === 'percentage' || c.skin_type === 'percent') {
+            discount = (subtotal * c.skin_value) / 100;
+            if (c.skin_max_discount_amount) discount = Math.min(discount, c.skin_max_discount_amount);
+          } else {
+            discount = Math.min(c.skin_value || 0, subtotal);
+          }
+          newTotalDiscount += discount;
+          return { ...c, calculated_discount: discount };
+        });
 
-        // Recalculate discount after removal (this is simplified, in a complex system we'd re-apply all)
-        // For now, we'll just subtract the amount that was added for this specific coupon
-        // Note: A more robust way is to re-evaluate all coupons against the subtotal
-        set((state) => {
-            const newCoupons = state.appliedCoupons.filter(c => c.skin_code !== code);
-            // Re-calculating total discount from scratch for accuracy
-            const subtotal = get().getTotal();
-            let newTotalDiscount = 0;
-            newCoupons.forEach(c => {
-               if (c.skin_type === 'percent' || c.skin_type === 'percentage' || c.skin_discount_percent) {
-                  const val = c.skin_discount_percent || c.skin_value;
-                  newTotalDiscount += (subtotal * val) / 100;
-               }
-               else newTotalDiscount += c.skin_value || c.skin_discount_amount || 0;
-            });
-
-            return {
-                appliedCoupons: newCoupons,
-                discountAmount: newTotalDiscount
-            };
+        set({
+          appliedCoupons: recalculatedCoupons,
+          discountAmount: newTotalDiscount
         });
       },
     }),
