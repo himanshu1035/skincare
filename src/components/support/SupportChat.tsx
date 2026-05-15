@@ -68,13 +68,27 @@ export const SupportChat = ({ ticketId, currentUserRole }: SupportChatProps) => 
         table: 'skin_ticket_messages',
         filter: `skin_ticket_id=eq.${ticketId}`
       }, async (payload) => {
-        // Fetch attachments for the new message
-        const { data: attachments } = await supabase
-          .from('skin_ticket_attachments')
-          .select('*')
-          .eq('skin_message_id', payload.new.skin_id);
+        // Prevent duplicate messages if we already added it optimistically
+        setMessages(prev => {
+          if (prev.some(m => m.skin_id === payload.new.skin_id)) return prev;
           
-        setMessages(prev => [...prev, { ...payload.new, skin_ticket_attachments: attachments || [] }]);
+          // Fetch attachments for the new message in background
+          const fetchAttachments = async () => {
+            const { data: attachments } = await supabase
+              .from('skin_ticket_attachments')
+              .select('*')
+              .eq('skin_message_id', payload.new.skin_id);
+            
+            if (attachments && attachments.length > 0) {
+              setMessages(current => current.map(m => 
+                m.skin_id === payload.new.skin_id ? { ...m, skin_ticket_attachments: attachments } : m
+              ));
+            }
+          };
+          fetchAttachments();
+          
+          return [...prev, { ...payload.new, skin_ticket_attachments: [] }];
+        });
       })
       .subscribe();
 
@@ -86,8 +100,24 @@ export const SupportChat = ({ ticketId, currentUserRole }: SupportChatProps) => 
     if (!newMessage.trim() && !uploadedUrl) return;
 
     const { data: { session } } = await supabase.auth.getSession();
-    const msg = newMessage;
+    const msgContent = newMessage;
     setNewMessage('');
+
+    // OPTIMISTIC UPDATE: Add to UI immediately
+    const tempId = crypto.randomUUID();
+    const optimisticMsg = {
+      skin_id: tempId,
+      skin_ticket_id: ticketId,
+      skin_sender_id: session?.user.id,
+      skin_sender_type: currentUserRole,
+      skin_message: msgContent || (uploadedUrl ? 'Sent an attachment' : ''),
+      skin_is_internal_note: currentUserRole === 'admin' ? isInternalNote : false,
+      skin_created_at: new Date().toISOString(),
+      skin_ticket_attachments: uploadedUrl ? [{ skin_file_url: uploadedUrl, skin_file_name: fileName }] : [],
+      isOptimistic: true
+    };
+    
+    setMessages(prev => [...prev, optimisticMsg]);
 
     // 1. Insert Message
     const { data: messageData, error: msgError } = await supabase
@@ -96,7 +126,7 @@ export const SupportChat = ({ ticketId, currentUserRole }: SupportChatProps) => 
         skin_ticket_id: ticketId,
         skin_sender_id: session?.user.id,
         skin_sender_type: currentUserRole,
-        skin_message: msg || (uploadedUrl ? 'Sent an attachment' : ''),
+        skin_message: msgContent || (uploadedUrl ? 'Sent an attachment' : ''),
         skin_is_internal_note: currentUserRole === 'admin' ? isInternalNote : false
       })
       .select()
@@ -104,8 +134,13 @@ export const SupportChat = ({ ticketId, currentUserRole }: SupportChatProps) => 
 
     if (msgError) {
       console.error(msgError);
+      // Remove optimistic message on error
+      setMessages(prev => prev.filter(m => m.skin_id !== tempId));
       return;
     }
+
+    // Replace optimistic message with real one to avoid duplicates when realtime fires
+    setMessages(prev => prev.map(m => m.skin_id === tempId ? { ...messageData, skin_ticket_attachments: optimisticMsg.skin_ticket_attachments } : m));
 
     // 2. Insert Attachment if exists
     if (uploadedUrl && messageData) {
@@ -122,7 +157,10 @@ export const SupportChat = ({ ticketId, currentUserRole }: SupportChatProps) => 
     if (!isInternalNote) {
       await supabase
         .from('skin_tickets')
-        .update({ skin_last_reply_at: new Date().toISOString() })
+        .update({ 
+          skin_last_reply_at: new Date().toISOString(),
+          skin_updated_at: new Date().toISOString() 
+        })
         .eq('skin_id', ticketId);
     }
   };
