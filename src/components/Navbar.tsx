@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Search, ShoppingBag, User, Menu, X, ChevronDown, Package, Truck, Zap } from 'lucide-react';
+import { Search, ShoppingBag, User, Menu, X, ChevronDown, Package, Truck, Zap, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/useAuthStore';
