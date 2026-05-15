@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Search, ShoppingBag, User, Menu, X, ChevronDown, Package, Truck, Zap, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '@/store/useCartStore';
@@ -29,6 +30,8 @@ export const Navbar = React.memo(() => {
   const { items } = useCartStore();
   const { user } = useAuthStore();
   const supabase = createClient();
+
+  const pathname = usePathname();
 
   useEffect(() => {
     setIsMounted(true);
@@ -71,7 +74,7 @@ export const Navbar = React.memo(() => {
     fetchPinnedCollections();
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [pathname]);
 
   useEffect(() => {
     if (isMobileMenuOpen) {
@@ -109,7 +112,7 @@ export const Navbar = React.memo(() => {
           </Link>
 
           {/* Desktop Nav - Dynamic Menus */}
-          <div className="hidden lg:flex items-center space-x-10">
+          <div className="hidden lg:flex items-center space-x-6">
             <Link 
               href="/collections/all"
               className="text-[11px] font-black text-text-dark hover:text-accent-gold transition-colors tracking-[0.2em] uppercase"

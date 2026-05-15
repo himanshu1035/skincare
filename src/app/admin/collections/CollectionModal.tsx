@@ -31,6 +31,20 @@ export const CollectionModal = ({ collection, onClose, onSuccess }: CollectionMo
     skin_show_on_homepage: collection?.skin_show_on_homepage ?? true,
   });
 
+  React.useEffect(() => {
+    if (collection) {
+      setFormData({
+        skin_name: collection.skin_name || '',
+        skin_slug: collection.skin_slug || '',
+        skin_description: collection.skin_description || '',
+        skin_image_url: collection.skin_image_url || '',
+        skin_is_dynamic: collection.skin_is_dynamic || false,
+        skin_is_pinned: collection.skin_is_pinned ?? false,
+        skin_show_on_homepage: collection.skin_show_on_homepage ?? true,
+      });
+    }
+  }, [collection]);
+
   const generateSlug = (name: string) => {
     return name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
   };
