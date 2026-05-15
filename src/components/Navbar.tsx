@@ -116,6 +116,13 @@ export const Navbar = React.memo(() => {
             >
               Shop All
             </Link>
+
+            <Link 
+              href="/best-sellers"
+              className="text-[11px] font-black text-accent-gold hover:text-text-dark transition-colors tracking-[0.2em] uppercase flex items-center gap-1.5"
+            >
+              <Star size={12} fill="currentColor" /> Best Sellers
+            </Link>
             
             {pinnedCollections.map((col) => (
               <Link 

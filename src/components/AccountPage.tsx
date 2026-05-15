@@ -19,20 +19,20 @@ export const AccountPage = () => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      // 1. Check client-side store first
-      if (user) {
+      // 1. Check if we already have a user in the store
+      const currentUser = useAuthStore.getState().user;
+      if (currentUser) {
         setIsChecking(false);
-        fetchProfile();
+        fetchProfile(currentUser.id, currentUser.email);
         return;
       }
 
-      // 2. If store says null, verify with Supabase directly (handles hydration lag)
+      // 2. Fallback: verify with Supabase directly
       const { data, error } = await supabase.auth.getUser();
       
       if (error || !data.user) {
         router.push('/auth');
       } else {
-        // Sync session user to store if missing
         const { data: profileData } = await supabase
           .from('skin_user_profiles')
           .select('*')
@@ -50,18 +50,19 @@ export const AccountPage = () => {
         }
         
         setIsChecking(false);
-        fetchProfile();
+        fetchProfile(data.user.id, data.user.email!);
       }
     };
 
     checkAuth();
-  }, [user, router]);
+  }, [router]);
 
-  const fetchProfile = async () => {
+  const fetchProfile = async (targetId?: string, targetEmail?: string) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const currentUserId = session?.user?.id || user?.id;
-      const currentUserEmail = session?.user?.email || user?.email;
+      const currentUserId = targetId || user?.id;
+      const currentUserEmail = targetEmail || user?.email;
+
+      if (!currentUserId) return;
 
       // 1. Fetch Profile
       let { data: profileData, error: profileError } = await supabase
@@ -71,34 +72,22 @@ export const AccountPage = () => {
         .maybeSingle();
 
       if (!profileData && !profileError) {
-        // User has been deleted from skin_user_profiles
         handleLogout();
         return;
       }
 
-      if (profileData) {
-        setProfile(profileData);
-        // Sync name to AuthStore
-        useAuthStore.getState().setUser({
-          ...user!,
-          firstName: profileData.skin_first_name || user?.firstName || '',
-          lastName: profileData.skin_last_name || user?.lastName || '',
-          phone: profileData.skin_phone || user?.phone || ''
-        });
-      }
-
-      // 2. Fetch Orders (Wide-Net: ID or Email)
+      // 2. Fetch Orders
       const { data: ordersData } = await supabase
         .from('skin_orders')
         .select('*')
         .or(`skin_user_id.eq.${currentUserId},skin_customer_email.eq.${currentUserEmail}`)
         .order('skin_created_at', { ascending: false });
 
-      if (ordersData) {
-        setProfile((prev: any) => ({
-          ...prev,
-          skin_orders: ordersData
-        }));
+      if (profileData) {
+        setProfile({
+          ...profileData,
+          skin_orders: ordersData || []
+        });
       }
 
     } catch (err) {
@@ -134,11 +123,11 @@ export const AccountPage = () => {
         <div className="flex-1 text-center md:text-left">
           <p className="text-[10px] font-black text-accent-gold uppercase tracking-[0.4em] mb-2">Authenticated Account</p>
           <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-text-dark mb-4">
-            Hello, {user?.firstName || 'User'}!
+            Hello, {profile?.skin_first_name || user?.firstName || 'User'}!
           </h1>
           <div className="flex flex-wrap justify-center md:justify-start gap-6 text-sm font-medium text-text-muted">
-            <div className="flex items-center gap-2"><Mail size={16} /> {user?.email}</div>
-            <div className="flex items-center gap-2"><Phone size={16} /> {user?.phone || 'No phone set'}</div>
+            <div className="flex items-center gap-2"><Mail size={16} /> {profile?.skin_email || user?.email}</div>
+            <div className="flex items-center gap-2"><Phone size={16} /> {profile?.skin_phone || user?.phone || 'No phone set'}</div>
           </div>
         </div>
         <button 
@@ -190,7 +179,7 @@ export const AccountPage = () => {
             <Button 
               onClick={() => router.push('/account/orders')}
               variant="secondary"
-              className="w-full h-16 rounded-[1.5rem] bg-secondary-ivory/50 border-none font-black tracking-widest text-xs"
+              className="w-full h-16 rounded-[1.5rem] bg-secondary-ivory text-text-dark border-none font-black tracking-widest text-xs hover:bg-accent-gold hover:text-white"
             >
               <Truck size={18} className="mr-3" /> TRACK SHIPMENTS
             </Button>
