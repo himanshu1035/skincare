@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { 
@@ -26,31 +26,25 @@ import {
   CreditCard
 } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const AdminSidebar = React.memo(() => {
   const pathname = usePathname();
   const router = useRouter();
 
-  const [notifications, setNotifications] = React.useState<any[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000); // Polling for admin
+    const interval = setInterval(fetchNotifications, 30000); 
     return () => clearInterval(interval);
   }, []);
 
   const fetchNotifications = async () => {
     const { createClient } = await import('@/lib/supabase');
     const supabase = createClient();
-    const { data } = await supabase
-      .from('skin_marketer_notifications')
-      .select('*')
-      .eq('skin_user_id', '00000000-0000-0000-0000-000000000000') // Placeholder for admin
-      .eq('skin_is_read', false);
     
-    // In a real app, admin notifications might have a different user_id or system flag.
-    // For now, let's also check for pending withdrawals and open tickets directly.
     const [{ count: withdrawals }, { count: openTickets }, { count: payments }] = await Promise.all([
       supabase.from('skin_marketer_withdrawals').select('*', { count: 'exact', head: true }).eq('skin_status', 'pending'),
       supabase.from('skin_tickets').select('*', { count: 'exact', head: true }).eq('skin_status', 'Open'),
@@ -123,14 +117,14 @@ export const AdminSidebar = React.memo(() => {
     router.push('/admin/login');
   };
 
-  return (
-    <aside className="w-64 bg-white border-r border-secondary-ivory h-screen sticky top-0 flex flex-col transition-all duration-300 shadow-[20px_0_40px_rgba(0,0,0,0.01)]">
-      <div className="p-8 border-b border-secondary-ivory bg-white">
+  const SidebarContent = () => (
+    <div className="flex flex-col h-full bg-white">
+      <div className="p-8 border-b border-secondary-ivory">
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 bg-text-dark rounded-xl flex items-center justify-center text-white shadow-xl group-hover:rotate-12 transition-transform duration-500">
+          <div className="w-10 h-10 bg-text-dark rounded-xl flex items-center justify-center text-white shadow-xl">
              <span className="font-black text-lg">C</span>
           </div>
-          <div className="flex flex-col">
+          <div className="flex flex-col text-left">
             <span className="text-sm font-black tracking-tighter text-text-dark uppercase">COSRX India</span>
             <span className="text-[8px] font-black text-accent-gold uppercase tracking-[0.3em]">Management Suite</span>
           </div>
@@ -140,7 +134,7 @@ export const AdminSidebar = React.memo(() => {
       <nav className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
         {groups.map((group, idx) => (
           <div key={idx} className="space-y-3">
-            <h3 className="px-4 text-[9px] font-black uppercase tracking-[0.3em] text-text-muted/60">{group.title}</h3>
+            <h3 className="px-4 text-[9px] font-black uppercase tracking-[0.3em] text-text-muted/60 text-left">{group.title}</h3>
             <div className="space-y-1">
               {group.items.map((item) => {
                 const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
@@ -148,6 +142,7 @@ export const AdminSidebar = React.memo(() => {
                   <Link 
                     key={item.href} 
                     href={item.href}
+                    onClick={() => setIsMobileMenuOpen(false)}
                     className={cn(
                       "flex items-center justify-between px-4 py-3 rounded-2xl transition-all duration-300 group text-[11px] font-black uppercase tracking-widest",
                       isActive 
@@ -166,9 +161,6 @@ export const AdminSidebar = React.memo(() => {
                          {item.badge}
                       </span>
                     )}
-                    {isActive && !item.badge && (
-                      <motion.div layoutId="active-indicator" className="w-1.5 h-1.5 bg-accent-gold rounded-full" />
-                    )}
                   </Link>
                 );
               })}
@@ -186,12 +178,61 @@ export const AdminSidebar = React.memo(() => {
           <span>Terminate Session</span>
         </button>
       </div>
+    </div>
+  );
 
-      <style jsx>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 3px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #f1f1f1; border-radius: 10px; }
-      `}</style>
-    </aside>
+  return (
+    <>
+      {/* Mobile Header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-20 bg-white/80 backdrop-blur-xl border-b border-secondary-ivory z-[60] px-6 flex items-center justify-between shadow-sm">
+        <Link href="/" className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-text-dark rounded-xl flex items-center justify-center text-white shadow-md">
+             <span className="font-black">C</span>
+          </div>
+          <span className="text-[10px] font-black tracking-[0.2em] text-text-dark uppercase">Admin Suite</span>
+        </Link>
+        <button 
+          onClick={() => setIsMobileMenuOpen(true)}
+          className="w-12 h-12 rounded-2xl bg-secondary-ivory flex items-center justify-center text-text-dark hover:bg-text-dark hover:text-white transition-all shadow-sm"
+        >
+          <Compass size={20} />
+        </button>
+      </div>
+
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:flex w-64 bg-white border-r border-secondary-ivory h-screen sticky top-0 flex-col transition-all duration-300 shadow-[20px_0_40px_rgba(0,0,0,0.01)]">
+        <SidebarContent />
+      </aside>
+
+      {/* Mobile Sidebar Overlay */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="fixed inset-0 bg-black/40 backdrop-blur-md z-[100] lg:hidden"
+            />
+            <motion.aside 
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed inset-y-0 left-0 w-[85%] max-w-xs bg-white z-[110] shadow-2xl flex flex-col lg:hidden"
+            >
+              <div className="absolute top-6 right-6 z-[120]">
+                <button onClick={() => setIsMobileMenuOpen(false)} className="w-10 h-10 rounded-full bg-secondary-ivory flex items-center justify-center shadow-md">
+                  <ChevronRight size={20} className="rotate-180" />
+                </button>
+              </div>
+              <SidebarContent />
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   );
 });
 

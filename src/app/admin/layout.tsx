@@ -47,7 +47,7 @@ export default function AdminLayout({
   return (
     <div className="flex min-h-screen bg-secondary-ivory/20 text-text-dark font-sans selection:bg-accent-gold/20">
       <AdminSidebar />
-      <main className="flex-1 overflow-x-hidden p-6 md:p-10 scroll-smooth">
+      <main className="flex-1 overflow-x-hidden p-6 md:p-10 pt-28 lg:pt-10 scroll-smooth">
         <div className="max-w-7xl mx-auto">
           <Suspense fallback={
             <div className="py-20 flex items-center justify-center">

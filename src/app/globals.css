@@ -74,3 +74,9 @@
     max-width: 80rem;
   }
 }
+
+.responsive-table-container {
+  overflow-x: auto;
+  width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
