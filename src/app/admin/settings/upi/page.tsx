@@ -24,9 +24,39 @@ export default function UPIManagementPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const supabase = createClient();
 
+  const [globalSettings, setGlobalSettings] = useState({
+    primary_upi_id: '',
+    primary_upi_name: ''
+  });
+  const [isSavingGlobal, setIsSavingGlobal] = useState(false);
+
   useEffect(() => {
     fetchAccounts();
+    fetchGlobalUPI();
   }, []);
+
+  const fetchGlobalUPI = async () => {
+    const { data } = await supabase.from('skin_settings').select('*').in('skin_key', ['primary_upi_id', 'primary_upi_name']);
+    if (data) {
+      const settings: any = {};
+      data.forEach(s => settings[s.skin_key] = s.skin_value);
+      setGlobalSettings({
+        primary_upi_id: settings.primary_upi_id || '',
+        primary_upi_name: settings.primary_upi_name || ''
+      });
+    }
+  };
+
+  const saveGlobalUPI = async () => {
+    setIsSavingGlobal(true);
+    const updates = [
+      { skin_key: 'primary_upi_id', skin_value: globalSettings.primary_upi_id },
+      { skin_key: 'primary_upi_name', skin_value: globalSettings.primary_upi_name }
+    ];
+    const { error } = await supabase.from('skin_settings').upsert(updates);
+    if (!error) alert('Global Payment Config Saved!');
+    setIsSavingGlobal(false);
+  };
 
   const fetchAccounts = async () => {
     setLoading(true);
@@ -81,30 +111,74 @@ export default function UPIManagementPage() {
   };
 
   return (
-    <main className="min-h-screen bg-secondary-ivory/20 p-8 md:p-12">
-      <div className="max-w-4xl mx-auto space-y-10">
+    <main className="min-h-screen bg-secondary-ivory/20 p-8 md:p-12 pb-32">
+      <div className="max-w-4xl mx-auto space-y-12">
         <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div>
-            <h1 className="text-4xl font-black text-text-dark tracking-tighter uppercase">UPI Rotation</h1>
-            <p className="text-text-muted text-xs mt-2 font-medium italic">Manage multiple VPA accounts for random order assignment.</p>
+            <h1 className="text-4xl font-black text-text-dark tracking-tighter uppercase">Payment Management</h1>
+            <p className="text-text-muted text-xs mt-2 font-medium italic">Manage global merchant config and rotation pool.</p>
           </div>
           <button 
             onClick={() => setIsAdding(true)}
             className="h-14 px-8 bg-text-dark text-white rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-accent-gold transition-all shadow-xl flex items-center gap-3"
           >
-            <Plus size={16} /> ADD NEW UPI ID
+            <Plus size={16} /> ADD ROTATION ID
           </button>
         </header>
 
+        {/* Global Config Section */}
+        <div className="bg-white p-10 rounded-[2.5rem] border border-secondary-ivory shadow-sm space-y-8">
+           <div className="flex items-center gap-4 pb-6 border-b border-secondary-ivory/50">
+             <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shadow-inner">
+               <Smartphone size={24} />
+             </div>
+             <h2 className="text-sm font-black uppercase tracking-widest text-text-dark">Primary Merchant Config</h2>
+           </div>
+
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-text-muted ml-4">Primary UPI ID (Fallback)</label>
+                <input 
+                  type="text"
+                  value={globalSettings.primary_upi_id}
+                  onChange={(e) => setGlobalSettings({...globalSettings, primary_upi_id: e.target.value})}
+                  className="w-full h-14 bg-secondary-ivory/30 border-none rounded-2xl px-6 text-sm font-bold focus:ring-2 focus:ring-accent-gold outline-none"
+                  placeholder="merchant@upi"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-text-muted ml-4">Primary Display Name</label>
+                <input 
+                  type="text"
+                  value={globalSettings.primary_upi_name}
+                  onChange={(e) => setGlobalSettings({...globalSettings, primary_upi_name: e.target.value})}
+                  className="w-full h-14 bg-secondary-ivory/30 border-none rounded-2xl px-6 text-sm font-bold focus:ring-2 focus:ring-accent-gold outline-none"
+                  placeholder="COSRX OFFICIAL"
+                />
+              </div>
+           </div>
+           
+           <div className="flex justify-end">
+              <button 
+                onClick={saveGlobalUPI}
+                disabled={isSavingGlobal}
+                className="h-12 px-10 bg-text-dark text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-accent-gold transition-all shadow-md flex items-center gap-3"
+              >
+                {isSavingGlobal ? <Loader2 className="animate-spin" size={14} /> : <CheckCircle2 size={14} />}
+                SAVE MERCHANT CONFIG
+              </button>
+           </div>
+        </div>
+
         {/* Info Card */}
-        <div className="bg-accent-gold/5 border border-accent-gold/20 p-6 rounded-[2.5rem] flex items-start gap-6">
+        <div className="bg-accent-gold/5 border border-accent-gold/20 p-8 rounded-[2.5rem] flex items-start gap-6">
           <div className="w-12 h-12 bg-accent-gold text-white rounded-2xl flex items-center justify-center shrink-0 shadow-lg">
             <ShieldCheck size={24} />
           </div>
-          <div className="space-y-1">
-            <h3 className="text-sm font-black text-text-dark uppercase tracking-widest">How rotation works</h3>
+          <div className="space-y-2">
+            <h3 className="text-sm font-black text-text-dark uppercase tracking-widest">Smart Rotation pool</h3>
             <p className="text-xs text-text-muted font-medium leading-relaxed italic">
-              When a customer proceeds to payment, the system will randomly select one of your <span className="text-accent-gold font-bold">Active</span> UPI accounts below. This helps in distributing transactions and managing account limits effectively.
+              When a customer pays via UPI, the system will prioritize a <span className="text-accent-gold font-bold">random active account</span> from the pool below. If the pool is empty or disabled, it will default to your <span className="text-blue-600 font-bold">Primary Merchant Config</span> above.
             </p>
           </div>
         </div>

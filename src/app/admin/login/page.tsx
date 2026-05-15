@@ -5,20 +5,40 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Lock, User, AlertCircle } from 'lucide-react';
 
+import { createClient } from '@/lib/supabase';
+
 export default function AdminLoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const supabase = createClient();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (username === 'admin' && password === 'admin') {
-      // Store in session storage for simple persistence
-      sessionStorage.setItem('admin_auth', 'true');
-      router.push('/admin');
-    } else {
-      setError('Invalid admin credentials');
+    setLoading(true);
+    setError('');
+
+    try {
+      const { data: config } = await supabase.from('skin_admin_config').select('*');
+      
+      if (!config) throw new Error('Could not load security config');
+
+      const adminUser = config.find(c => c.skin_key === 'admin_username')?.skin_value;
+      const adminPass = config.find(c => c.skin_key === 'admin_password')?.skin_value;
+
+      if (username === adminUser && password === adminPass) {
+        // Store in session storage for simple persistence
+        sessionStorage.setItem('admin_auth', 'true');
+        router.push('/admin');
+      } else {
+        setError('Invalid admin credentials');
+      }
+    } catch (err: any) {
+      setError('Connection error. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 

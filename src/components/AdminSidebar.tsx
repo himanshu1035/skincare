@@ -112,7 +112,7 @@ export const AdminSidebar = React.memo(() => {
       title: "Site Configuration",
       items: [
         { name: 'Store Settings', href: '/admin/settings', icon: <Settings size={16} /> },
-        { name: 'UPI Rotation', href: '/admin/settings/upi', icon: <Zap size={16} /> },
+        { name: 'Payment Setup', href: '/admin/settings/upi', icon: <CreditCard size={16} /> },
         { name: 'System Health', href: '/admin/diagnostics', icon: <Sparkles size={16} /> },
       ]
     }

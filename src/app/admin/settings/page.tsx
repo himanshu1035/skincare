@@ -22,7 +22,24 @@ export default function AdminSettingsPage() {
 
   useEffect(() => {
     fetchSettings();
+    fetchAdminConfig();
   }, []);
+
+  const [adminConfig, setAdminConfig] = useState({
+    username: '',
+    password: ''
+  });
+
+  const fetchAdminConfig = async () => {
+    const { data } = await supabase.from('skin_admin_config').select('*');
+    if (data) {
+      const config = data.reduce((acc: any, item: any) => {
+        acc[item.skin_key.replace('admin_', '')] = item.skin_value;
+        return acc;
+      }, {});
+      setAdminConfig(config);
+    }
+  };
 
   const fetchSettings = async () => {
     setLoading(true);
@@ -39,20 +56,28 @@ export default function AdminSettingsPage() {
 
   const handleSave = async () => {
     setSaving(true);
-    const updates = Object.entries(settings).map(([key, value]) => ({
-      skin_key: key,
-      skin_value: value,
-      skin_updated_at: new Date().toISOString()
-    }));
+    try {
+      // 1. Save Store Settings
+      const updates = Object.entries(settings)
+        .filter(([key]) => !['upi_id', 'upi_name'].includes(key)) // Remove legacy UPI keys
+        .map(([key, value]) => ({
+          skin_key: key,
+          skin_value: value,
+          skin_updated_at: new Date().toISOString()
+        }));
 
-    const { error } = await supabase
-      .from('skin_settings')
-      .upsert(updates);
+      await supabase.from('skin_settings').upsert(updates);
 
-    if (error) {
-      alert("Error saving settings: " + error.message);
-    } else {
-      alert("Settings saved successfully!");
+      // 2. Save Admin Config
+      const adminUpdates = [
+        { skin_key: 'admin_username', skin_value: adminConfig.username },
+        { skin_key: 'admin_password', skin_value: adminConfig.password }
+      ];
+      await supabase.from('skin_admin_config').upsert(adminUpdates);
+
+      alert("Settings and Admin Credentials saved successfully!");
+    } catch (err: any) {
+      alert("Error saving: " + err.message);
     }
     setSaving(false);
   };
@@ -64,93 +89,112 @@ export default function AdminSettingsPage() {
   );
 
   return (
-    <div className="max-w-4xl space-y-8">
+    <div className="max-w-4xl space-y-8 pb-20">
       <header>
-        <h1 className="text-2xl font-bold text-gray-900">Store Settings</h1>
-        <p className="text-gray-500 text-xs mt-1">Configure your shipping and payment logistics.</p>
+        <h1 className="text-4xl font-black text-text-dark tracking-tighter uppercase">Store Settings</h1>
+        <p className="text-text-muted text-xs mt-2 font-medium italic">Configure logistics and administrative access.</p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Shipping Section */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-6">
-          <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
-            <Truck className="text-blue-600" size={20} />
-            <h2 className="text-sm font-bold uppercase tracking-widest">Shipping Rates</h2>
+        <div className="bg-white border border-secondary-ivory rounded-[2.5rem] p-10 space-y-8 shadow-sm">
+          <div className="flex items-center gap-4 pb-6 border-b border-secondary-ivory/50">
+            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shadow-inner">
+              <Truck size={24} />
+            </div>
+            <h2 className="text-sm font-black uppercase tracking-widest text-text-dark">Shipping Rates</h2>
           </div>
           
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Flat Shipping Price (₹)</label>
+              <label className="text-[10px] font-black text-text-muted uppercase tracking-widest ml-4">Flat Shipping Price (₹)</label>
               <input 
                 type="number"
                 value={settings.shipping_price}
                 onChange={(e) => setSettings({ ...settings, shipping_price: e.target.value })}
-                className="w-full bg-gray-50 border border-gray-100 rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-black outline-none font-bold"
+                className="w-full h-14 bg-secondary-ivory/30 border-none rounded-2xl px-6 text-sm font-bold focus:ring-2 focus:ring-accent-gold outline-none"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Free Shipping Threshold (₹)</label>
+              <label className="text-[10px] font-black text-text-muted uppercase tracking-widest ml-4">Free Shipping Threshold (₹)</label>
               <input 
                 type="number"
                 value={settings.free_shipping_threshold}
                 onChange={(e) => setSettings({ ...settings, free_shipping_threshold: e.target.value })}
-                className="w-full bg-gray-50 border border-gray-100 rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-black outline-none font-bold"
+                className="w-full h-14 bg-secondary-ivory/30 border-none rounded-2xl px-6 text-sm font-bold focus:ring-2 focus:ring-accent-gold outline-none"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Announcement Bar Text</label>
+              <label className="text-[10px] font-black text-text-muted uppercase tracking-widest ml-4">Announcement Text</label>
               <textarea 
                 value={settings.announcement_text}
                 onChange={(e) => setSettings({ ...settings, announcement_text: e.target.value })}
-                className="w-full bg-gray-50 border border-gray-100 rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-black outline-none font-bold min-h-[80px]"
-                placeholder="e.g. FREE SHIPPING ON ORDERS OVER ₹1000"
+                className="w-full bg-secondary-ivory/30 border-none rounded-2xl px-6 py-4 text-sm font-bold focus:ring-2 focus:ring-accent-gold outline-none min-h-[100px]"
+                placeholder="FREE SHIPPING ON ORDERS OVER ₹1000"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Dashboard Access Section */}
+        <div className="bg-white border border-accent-gold/20 rounded-[2.5rem] p-10 space-y-8 shadow-sm">
+          <div className="flex items-center gap-4 pb-6 border-b border-accent-gold/10">
+            <div className="w-12 h-12 bg-accent-gold/10 text-accent-gold rounded-2xl flex items-center justify-center shadow-inner">
+              <ShieldCheck size={24} />
+            </div>
+            <h2 className="text-sm font-black uppercase tracking-widest text-text-dark">Admin Access</h2>
+          </div>
+          
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-text-muted uppercase tracking-widest ml-4">Admin Username</label>
+              <input 
+                type="text"
+                value={adminConfig.username}
+                onChange={(e) => setAdminConfig({ ...adminConfig, username: e.target.value })}
+                className="w-full h-14 bg-secondary-ivory/30 border-none rounded-2xl px-6 text-sm font-bold focus:ring-2 focus:ring-accent-gold outline-none"
+                placeholder="admin"
               />
             </div>
 
-            <div className="pt-4 border-t border-gray-100">
-              <h3 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-4">UPI Payment Config</h3>
-              <div className="grid grid-cols-1 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">UPI ID (VPA)</label>
-                  <input 
-                    type="text"
-                    value={settings.upi_id}
-                    onChange={(e) => setSettings({ ...settings, upi_id: e.target.value })}
-                    className="w-full bg-gray-50 border border-gray-100 rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-black outline-none font-bold"
-                    placeholder="e.g. yourname@okaxis"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Merchant Name</label>
-                  <input 
-                    type="text"
-                    value={settings.upi_name}
-                    onChange={(e) => setSettings({ ...settings, upi_name: e.target.value })}
-                    className="w-full bg-gray-50 border border-gray-100 rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-black outline-none font-bold"
-                    placeholder="e.g. COSRX INDIA"
-                  />
-                </div>
-              </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-text-muted uppercase tracking-widest ml-4">Admin Password</label>
+              <input 
+                type="password"
+                value={adminConfig.password}
+                onChange={(e) => setAdminConfig({ ...adminConfig, password: e.target.value })}
+                className="w-full h-14 bg-secondary-ivory/30 border-none rounded-2xl px-6 text-sm font-bold focus:ring-2 focus:ring-accent-gold outline-none"
+                placeholder="••••••••"
+              />
+            </div>
+
+            <div className="p-4 bg-accent-gold/5 rounded-2xl border border-accent-gold/10">
+              <p className="text-[9px] font-bold text-accent-gold uppercase tracking-widest leading-relaxed">
+                <AlertTriangle size={10} className="inline mr-1" />
+                Updating these will change your login credentials for the admin panel immediately.
+              </p>
             </div>
           </div>
         </div>
 
         {/* COD Section */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-6">
-          <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
-            <Banknote className="text-green-600" size={20} />
-            <h2 className="text-sm font-bold uppercase tracking-widest">Cash on Delivery</h2>
+        <div className="bg-white border border-secondary-ivory rounded-[2.5rem] p-10 space-y-8 shadow-sm">
+          <div className="flex items-center gap-4 pb-6 border-b border-secondary-ivory/50">
+            <div className="w-12 h-12 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center shadow-inner">
+              <Banknote size={24} />
+            </div>
+            <h2 className="text-sm font-black uppercase tracking-widest text-text-dark">Cash on Delivery</h2>
           </div>
           
           <div className="space-y-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">COD Available</label>
+              <label className="text-[10px] font-black text-text-muted uppercase tracking-widest ml-4">COD Status</label>
               <select 
                 value={settings.cod_available}
                 onChange={(e) => setSettings({ ...settings, cod_available: e.target.value })}
-                className="w-full bg-gray-50 border border-gray-100 rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-black outline-none font-bold appearance-none cursor-pointer"
+                className="w-full h-14 bg-secondary-ivory/30 border-none rounded-2xl px-6 text-sm font-black uppercase tracking-widest focus:ring-2 focus:ring-accent-gold outline-none appearance-none cursor-pointer"
               >
                 <option value="yes">YES - ACTIVE</option>
                 <option value="no">NO - DISABLED</option>
@@ -158,95 +202,13 @@ export default function AdminSettingsPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">COD Handling Price (₹)</label>
+              <label className="text-[10px] font-black text-text-muted uppercase tracking-widest ml-4">COD Handling Fee (₹)</label>
               <input 
                 type="number"
                 value={settings.cod_handling_price}
                 onChange={(e) => setSettings({ ...settings, cod_handling_price: e.target.value })}
-                className="w-full bg-gray-50 border border-gray-100 rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-black outline-none font-bold"
+                className="w-full h-14 bg-secondary-ivory/30 border-none rounded-2xl px-6 text-sm font-bold focus:ring-2 focus:ring-accent-gold outline-none"
               />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Pre-pay Handling for COD</label>
-              <select 
-                value={settings.prepay_handling_for_cod}
-                onChange={(e) => setSettings({ ...settings, prepay_handling_for_cod: e.target.value })}
-                className="w-full bg-gray-50 border border-gray-100 rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-black outline-none font-bold appearance-none cursor-pointer"
-              >
-                <option value="yes">YES - MUST PRE-PAY</option>
-                <option value="no">NO - PAY AT DELIVERY</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Security Management Section */}
-        <div className="bg-white border border-red-100 rounded-xl p-6 space-y-6 md:col-span-2">
-          <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
-            <ShieldCheck className="text-red-600" size={20} />
-            <h2 className="text-sm font-bold uppercase tracking-widest text-red-600">Security Management</h2>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Current Password</label>
-              <input 
-                type="password"
-                id="current_password"
-                className="w-full bg-gray-50 border border-gray-100 rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-black outline-none font-bold"
-                placeholder="Required to confirm"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">New Password</label>
-              <input 
-                type="password"
-                id="new_password"
-                className="w-full bg-gray-50 border border-gray-100 rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-black outline-none font-bold"
-                placeholder="Min. 6 characters"
-              />
-            </div>
-            <div className="space-y-2 flex items-end">
-               <button 
-                 onClick={async () => {
-                   const curr = (document.getElementById('current_password') as HTMLInputElement).value;
-                   const next = (document.getElementById('new_password') as HTMLInputElement).value;
-                   
-                   if (!curr || !next) return alert("Fill all password fields");
-                   if (next.length < 6) return alert("New password must be 6+ chars");
-
-                   setSaving(true);
-                   try {
-                     // 1. Verify current password by signing in again
-                     const { data: { session } } = await supabase.auth.getSession();
-                     const { error: signInError } = await supabase.auth.signInWithPassword({
-                       email: session?.user.email!,
-                       password: curr
-                     });
-
-                     if (signInError) throw new Error("Incorrect current password");
-
-                     // 2. Update to new password
-                     const { error: updateError } = await supabase.auth.updateUser({
-                       password: next
-                     });
-
-                     if (updateError) throw updateError;
-
-                     alert("Admin password updated successfully!");
-                     (document.getElementById('current_password') as HTMLInputElement).value = '';
-                     (document.getElementById('new_password') as HTMLInputElement).value = '';
-                   } catch (err: any) {
-                     alert(err.message);
-                   } finally {
-                     setSaving(false);
-                   }
-                 }}
-                 className="w-full h-12 bg-red-600 text-white rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-red-700 transition-all shadow-md"
-               >
-                 UPDATE PASSWORD
-               </button>
             </div>
           </div>
         </div>
