@@ -13,11 +13,17 @@ export default async function Home() {
   
   // 1. Parallel data fetching for maximum performance
   const [collectionsRes, bestSellerColRes, shippingSettingsRes] = await Promise.all([
-    supabase.from('skin_collections').select('*').neq('skin_slug', 'dermskincare-guide').limit(3),
-    supabase.from('skin_collections').select('skin_id').ilike('skin_name', '%best seller%').single(),
+    supabase.from('skin_collections')
+      .select('*')
+      .eq('skin_show_on_homepage', true)
+      .limit(3),
+    supabase.from('skin_collections')
+      .select('skin_id')
+      .eq('skin_slug', 'best-sellers')
+      .single(),
     supabase.from('skin_settings').select('*').in('skin_key', ['free_shipping_threshold'])
   ]);
-
+ 
   const collections = collectionsRes.data;
   const bestSellerCollection = bestSellerColRes.data;
   const shippingSettings = shippingSettingsRes.data;

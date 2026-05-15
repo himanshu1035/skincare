@@ -49,9 +49,10 @@ export const CollectionModal = ({ collection, onClose, onSuccess }: CollectionMo
     
     const finalData = {
       ...formData,
-      skin_show_in_navbar: formData.skin_is_pinned
+      skin_show_in_navbar: formData.skin_is_pinned, // Sync for legacy code
+      skin_is_pinned: formData.skin_is_pinned // Explicitly save both
     };
-
+ 
     let error;
     if (collection) {
       const { error: err } = await supabase

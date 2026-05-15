@@ -42,7 +42,13 @@ export const CollectionClient = ({ collections: initialCollections }: Collection
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('Delete this collection? Products will NOT be deleted, but the grouping will be removed.')) return;
+    
+    // 1. Delete links in junction table first (Foreign Key constraint fix)
+    await supabase.from('skin_collection_products').delete().eq('skin_collection_id', id);
+    
+    // 2. Delete the collection itself
     const { error } = await supabase.from('skin_collections').delete().eq('skin_id', id);
+    
     if (!error) {
       router.refresh();
     } else {
@@ -78,8 +84,16 @@ export const CollectionClient = ({ collections: initialCollections }: Collection
                 </div>
               )}
               {isPinned && !isDynamic && (
-                <div className="absolute top-0 right-0 bg-text-dark text-white text-[8px] font-black px-4 py-2 rounded-bl-2xl uppercase tracking-widest flex items-center gap-1.5">
+                <div className="absolute top-0 right-0 bg-text-dark text-white text-[8px] font-black px-4 py-2 rounded-bl-2xl uppercase tracking-widest flex items-center gap-1.5 shadow-lg z-10">
                   <Globe size={10} className="text-accent-gold" /> PINNED
+                </div>
+              )}
+              {isFeatured && !isDynamic && (
+                <div className={cn(
+                  "absolute top-0 bg-accent-gold text-white text-[8px] font-black px-4 py-2 rounded-bl-2xl uppercase tracking-widest flex items-center gap-1.5 shadow-lg z-10",
+                  isPinned ? "right-20" : "right-0"
+                )}>
+                  <Home size={10} /> HOME
                 </div>
               )}
               <div className="flex items-start justify-between mb-6">
