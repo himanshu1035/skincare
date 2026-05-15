@@ -153,6 +153,9 @@ export const BannerSlider: React.FC<{ initialBanners: Banner[] }> = ({ initialBa
         </>
       )}
 
+      {/* Bottom Gradient Blend */}
+      <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-white to-transparent z-10 pointer-events-none" />
+
       {/* Campaign Progress Bar (Visual only for premium feel) */}
       <div className="absolute -bottom-1 left-0 w-full h-1 bg-white/10 z-20">
         <motion.div 
