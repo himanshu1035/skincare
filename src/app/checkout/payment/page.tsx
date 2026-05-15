@@ -91,7 +91,43 @@ function PaymentPageContent() {
         acc[item.skin_key] = item.skin_value;
         return acc;
       }, {});
-      setSettings(settingsObj);
+      
+      // NEW: MULTI-UPI ROTATION LOGIC
+      // 1. Fetch all active UPI accounts
+      const { data: upiAccounts } = await supabase
+        .from('skin_upi_accounts')
+        .select('*')
+        .eq('skin_is_active', true);
+
+      let selectedVpa = settingsObj.upi_id; // Fallback
+      let selectedName = settingsObj.upi_name; // Fallback
+
+      if (upiAccounts && upiAccounts.length > 0) {
+        // 2. Randomly select one
+        const randomAccount = upiAccounts[Math.floor(Math.random() * upiAccounts.length)];
+        selectedVpa = randomAccount.skin_vpa;
+        selectedName = randomAccount.skin_name;
+        
+        // 3. Persist the assigned UPI to the order if not already set
+        if (!orderData.skin_assigned_upi) {
+          await supabase
+            .from('skin_orders')
+            .update({ skin_assigned_upi: selectedVpa })
+            .eq('skin_id', orderId);
+        } else {
+          // If already set, use the existing one to ensure consistency if page reloads
+          selectedVpa = orderData.skin_assigned_upi;
+          // Try to find the matching name from our list or use default
+          const existingAccount = upiAccounts.find(a => a.skin_vpa === selectedVpa);
+          if (existingAccount) selectedName = existingAccount.skin_name;
+        }
+      }
+
+      setSettings({ 
+        ...settingsObj, 
+        upi_id: selectedVpa, 
+        upi_name: selectedName 
+      });
     }
     setLoading(false);
   };

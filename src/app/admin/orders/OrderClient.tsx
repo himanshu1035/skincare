@@ -169,6 +169,15 @@ export const OrderClient: React.FC<OrderClientProps> = ({ title, subtitle, defau
               <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
             ))}
           </select>
+          <select 
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="h-12 bg-secondary-ivory/50 border-none rounded-xl px-6 text-xs font-black uppercase tracking-widest focus:ring-2 focus:ring-accent-gold outline-none cursor-pointer"
+          >
+            <option value="">ALL ACCOUNTS</option>
+            {[...new Set(orders.map(o => o.skin_assigned_upi).filter(Boolean))].map(upi => (
+              <option key={upi as string} value={upi as string}>{upi as string}</option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -204,6 +213,9 @@ export const OrderClient: React.FC<OrderClientProps> = ({ title, subtitle, defau
                     <td className="px-8 py-6">
                       <div className="flex flex-col gap-1">
                          <span className="text-[10px] font-black uppercase tracking-widest text-text-dark">{order.skin_payment_method || 'COD'}</span>
+                         {order.skin_assigned_upi && (
+                           <span className="text-[8px] font-bold text-text-muted uppercase tracking-tighter -mt-1 mb-1">Via: {order.skin_assigned_upi}</span>
+                         )}
                          <div className="flex items-center gap-2">
                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded w-fit uppercase ${order.skin_payment_status === 'verified' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'}`}>
                              {order.skin_payment_status || 'UNPAID'}

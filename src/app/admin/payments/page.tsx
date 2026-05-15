@@ -108,9 +108,15 @@ export default function AdminPaymentsPage() {
                       </div>
                       <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{order.skin_customer_email}</span>
                    </div>
-                   <div className="pt-4 border-t border-gray-200">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Customer Mobile</p>
-                      <p className="text-sm font-bold text-gray-900">{order.skin_customer_mobile}</p>
+                   <div className="pt-4 border-t border-gray-200 grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Customer Mobile</p>
+                        <p className="text-sm font-bold text-gray-900">{order.skin_customer_mobile}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] font-black text-accent-gold uppercase tracking-widest mb-1">Payment Received On</p>
+                        <p className="text-[11px] font-black text-text-dark uppercase tracking-tighter">{order.skin_assigned_upi || 'DEFAULT'}</p>
+                      </div>
                    </div>
                 </div>
 
