@@ -44,7 +44,7 @@ export const BannerSlider: React.FC<{ initialBanners: Banner[] }> = ({ initialBa
 
   return (
     <div 
-      className="relative w-full h-[85vh] overflow-hidden bg-secondary-ivory"
+      className="relative w-full h-screen overflow-hidden bg-secondary-ivory"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >

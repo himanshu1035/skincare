@@ -92,7 +92,7 @@ export default async function Home() {
       <BannerSlider initialBanners={activeBanners} />
       
       {/* 1. Value Props */}
-      <section className="py-16 bg-white border-b border-secondary-ivory">
+      <section className="pt-32 pb-16 bg-white border-b border-secondary-ivory">
         <div className="container">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 text-center">
             {[
