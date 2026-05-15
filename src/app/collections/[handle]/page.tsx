@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { ProductCard } from '@/components/ProductCard';
+import { PaginatedProductGrid } from '@/components/PaginatedProductGrid';
 import { createClient } from '@/lib/supabase';
 import { CampaignTimer } from '@/components/CampaignTimer';
 import { getEligibleProductsForPromotion, fetchActivePromotions, getPromotionMetadata } from '@/lib/promotionEngine';
@@ -57,7 +58,8 @@ export default async function CollectionPage({ params }: { params: Promise<{ han
        const { data: allProducts, error: allProdErr } = await supabase
         .from('skin_products')
         .select('*')
-        .limit(100);
+        .range(0, 23) // Limit initial load to 24 products
+        .order('skin_created_at', { ascending: false });
        
        if (allProdErr) console.error('Error fetching all products:', allProdErr);
        products = allProducts || [];
@@ -147,11 +149,11 @@ export default async function CollectionPage({ params }: { params: Promise<{ han
             </div>
           )}
           {productsWithPromos.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-12">
-              {productsWithPromos.map((product: any) => (
-                <ProductCard key={product.skin_id} product={product} />
-              ))}
-            </div>
+            <PaginatedProductGrid 
+              initialProducts={productsWithPromos} 
+              handle={handle} 
+              collectionId={collection?.skin_id} 
+            />
           ) : (
             <div className="py-24 text-center bg-secondary-ivory/30 rounded-[3rem] border border-dashed border-secondary-ivory">
                <Package className="mx-auto text-text-muted mb-6 opacity-20" size={64} />

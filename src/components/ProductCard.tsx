@@ -49,9 +49,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
   return (
     <motion.div 
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 15 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
       className="group flex flex-col h-full bg-white transition-all duration-300"
     >
       {/* Image Container */}
@@ -60,6 +61,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           src={displayImage}
           alt={product.skin_name}
           fill
+          sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
           className="object-cover transition-transform duration-1000 group-hover:scale-105"
           onError={() => setImageError(true)}
         />

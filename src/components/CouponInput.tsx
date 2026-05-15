@@ -194,7 +194,7 @@ export const CouponInput = ({ paymentMethod, settings }: { paymentMethod: string
 
       {/* Suggested Coupons Section */}
       <AnimatePresence>
-        {suggestions.length > 0 && appliedCoupons.length === 0 && (
+        {suggestions.filter(s => !appliedCoupons.some(ac => ac.skin_code === s.skin_code)).length > 0 && (
           <motion.div 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -205,17 +205,19 @@ export const CouponInput = ({ paymentMethod, settings }: { paymentMethod: string
               <p className="text-[9px] font-black text-text-muted uppercase tracking-widest">Available Offers</p>
             </div>
             <div className="flex flex-wrap gap-2">
-              {suggestions.map((suggestion) => (
-                <button
-                  key={suggestion.skin_code}
-                  type="button"
-                  onClick={() => handleApply(suggestion.skin_code)}
-                  className="px-4 py-2 bg-white border border-secondary-ivory rounded-xl text-[10px] font-black uppercase tracking-widest text-text-dark hover:border-accent-gold hover:text-accent-gold transition-all shadow-sm flex items-center gap-2 group"
-                >
-                  {suggestion.skin_code}
-                  <span className="text-[8px] opacity-40 font-bold group-hover:opacity-100 transition-opacity">Apply</span>
-                </button>
-              ))}
+              {suggestions
+                .filter(s => !appliedCoupons.some(ac => ac.skin_code === s.skin_code))
+                .map((suggestion) => (
+                  <button
+                    key={suggestion.skin_code}
+                    type="button"
+                    onClick={() => handleApply(suggestion.skin_code)}
+                    className="px-4 py-2 bg-white border border-secondary-ivory rounded-xl text-[10px] font-black uppercase tracking-widest text-text-dark hover:border-accent-gold hover:text-accent-gold transition-all shadow-sm flex items-center gap-2 group"
+                  >
+                    {suggestion.skin_code}
+                    <span className="text-[8px] opacity-40 font-bold group-hover:opacity-100 transition-opacity">Apply</span>
+                  </button>
+                ))}
             </div>
           </motion.div>
         )}

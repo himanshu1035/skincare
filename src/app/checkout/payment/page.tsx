@@ -350,38 +350,10 @@ function PaymentPageContent() {
             <div className="space-y-6 order-1 lg:order-2">
               <header>
                 <h1 className="text-4xl font-black tracking-tighter text-text-dark">Complete Payment</h1>
-                <p className="text-text-muted mt-2 font-medium italic">Secure your order via UPI or Cash on Delivery.</p>
+                <p className="text-text-muted mt-2 font-medium italic italic capitalize">
+                  Method: {paymentMethod === 'upi' ? 'Instant UPI / QR' : 'Cash on Delivery'}
+                </p>
               </header>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <button 
-                  onClick={() => setPaymentMethod('upi')}
-                  className={`p-4 rounded-[1.5rem] border-2 transition-all flex items-center gap-4 group ${paymentMethod === 'upi' ? 'border-accent-gold bg-white shadow-lg scale-[1.02]' : 'border-transparent bg-white/50 hover:bg-white'}`}
-                >
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${paymentMethod === 'upi' ? 'bg-accent-gold text-white' : 'bg-secondary-ivory text-text-muted'}`}>
-                    <Smartphone size={18} />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-black text-text-dark uppercase tracking-widest text-[8px] mb-0.5">Instant</p>
-                    <h3 className="text-sm font-black tracking-tight">UPI / QR</h3>
-                  </div>
-                </button>
-
-                {settings?.cod_available === 'yes' && (
-                  <button 
-                    onClick={() => setPaymentMethod('cod')}
-                    className={`p-4 rounded-[1.5rem] border-2 transition-all flex items-center gap-4 group ${paymentMethod === 'cod' ? 'border-accent-gold bg-white shadow-lg scale-[1.02]' : 'border-transparent bg-white/50 hover:bg-white'}`}
-                  >
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${paymentMethod === 'cod' ? 'bg-accent-gold text-white' : 'bg-secondary-ivory text-text-muted'}`}>
-                      <CreditCard size={18} />
-                    </div>
-                    <div className="text-left">
-                      <p className="font-black text-text-dark uppercase tracking-widest text-[8px] mb-0.5">Secure</p>
-                      <h3 className="text-sm font-black tracking-tight">Cash on Delivery</h3>
-                    </div>
-                  </button>
-                )}
-              </div>
 
               <div className="bg-white rounded-[2.5rem] p-8 shadow-2xl border border-gray-100">
                 {amountToPayNow > 0 ? (

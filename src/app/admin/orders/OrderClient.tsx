@@ -5,7 +5,11 @@ import { createClient } from '@/lib/supabase';
 import { ShoppingBag, Truck, Package, CheckCircle2, Clock, Search, ChevronDown, User, Eye, X, IndianRupee, CreditCard, Ban, Trash2, Edit2, ShieldAlert } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import { EditOrderModal } from './EditOrderModal';
+import dynamic from 'next/dynamic';
+
+const EditOrderModal = dynamic(() => import('./EditOrderModal').then(mod => mod.EditOrderModal), {
+  ssr: false,
+});
 
 const STATUS_CONFIG = {
   'under_review': { color: 'text-orange-600 bg-orange-50', icon: <Clock size={14} /> },
@@ -32,9 +36,13 @@ export const OrderClient: React.FC<OrderClientProps> = ({ title, subtitle, defau
   const [statusFilter, setStatusFilter] = useState('all');
   const supabase = createClient();
 
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const pageSize = 20;
+
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [page, statusFilter]);
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -47,7 +55,7 @@ export const OrderClient: React.FC<OrderClientProps> = ({ title, subtitle, defau
       .is('skin_utr', null)
       .not('skin_status', 'eq', 'cancelled');
 
-    let query = supabase.from('skin_orders').select(`*`);
+    let query = supabase.from('skin_orders').select(`*`, { count: 'exact' });
     
     if (defaultFilter === 'prepaid') {
       query = query.eq('skin_payment_method', 'UPI');
@@ -55,9 +63,18 @@ export const OrderClient: React.FC<OrderClientProps> = ({ title, subtitle, defau
       query = query.eq('skin_payment_method', 'COD');
     }
 
-    const { data } = await query.order('skin_created_at', { ascending: false });
+    if (statusFilter !== 'all') {
+      query = query.eq('skin_status', statusFilter);
+    }
+
+    const { data, count } = await query
+      .order('skin_created_at', { ascending: false })
+      .range(page * pageSize, (page + 1) * pageSize - 1);
     
-    if (data) setOrders(data);
+    if (data) {
+      setOrders(data);
+      if (count !== null) setHasMore(count > (page + 1) * pageSize);
+    }
     setLoading(false);
   };
 
@@ -262,6 +279,35 @@ export const OrderClient: React.FC<OrderClientProps> = ({ title, subtitle, defau
               })}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Pagination Controls */}
+      <div className="flex items-center justify-between px-8 py-6 bg-white border border-secondary-ivory rounded-[2rem] shadow-sm">
+        <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">
+          Showing Page {page + 1}
+        </p>
+        <div className="flex items-center gap-4">
+          <button 
+            disabled={page === 0 || loading}
+            onClick={() => {
+              setPage(p => p - 1);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="px-6 h-12 bg-secondary-ivory rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-text-dark hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            PREVIOUS
+          </button>
+          <button 
+            disabled={!hasMore || loading}
+            onClick={() => {
+              setPage(p => p + 1);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="px-6 h-12 bg-text-dark text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-accent-gold transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            NEXT PAGE
+          </button>
         </div>
       </div>
 

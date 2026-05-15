@@ -221,21 +221,30 @@ export const getEligibleProductsForPromotion = async (promotionId: string) => {
     .filter(t => t.skin_target_type === 'category' && t.skin_target_id)
     .map(t => t.skin_target_id);
 
-  // This is a bit complex for a single Supabase query if both products and categories are involved
-  // We'll fetch all and filter for now, or build a smart query
-  const { data: allProducts } = await supabase.from('skin_products').select('*');
-  if (!allProducts) return [];
+  // 3. Build optimized query with DB-level filtering
+  let baseQuery = supabase.from('skin_products').select('*');
 
-  return allProducts.filter(p => {
-    // Must be in inclusions if inclusions exist
-    if (inclusions.length > 0) {
-      const isIncluded = inclusionProductIds.includes(p.skin_id) || inclusionCategoryIds.includes(p.skin_category_id);
-      if (!isIncluded) return false;
+  // Handle inclusions
+  if (inclusions.length > 0) {
+    const filters = [];
+    if (inclusionProductIds.length > 0) filters.push(`skin_id.in.(${inclusionProductIds.join(',')})`);
+    if (inclusionCategoryIds.length > 0) filters.push(`skin_category_id.in.(${inclusionCategoryIds.join(',')})`);
+    
+    if (filters.length > 0) {
+      baseQuery = baseQuery.or(filters.join(','));
     }
-    // Must NOT be in exclusions
-    const isExcluded = exclusionProductIds.includes(p.skin_id) || exclusionCategoryIds.includes(p.skin_category_id);
-    return !isExcluded;
-  });
+  }
+
+  // Handle exclusions
+  if (exclusionProductIds.length > 0) {
+    baseQuery = baseQuery.not('skin_id', 'in', `(${exclusionProductIds.join(',')})`);
+  }
+  if (exclusionCategoryIds.length > 0) {
+    baseQuery = baseQuery.not('skin_category_id', 'in', `(${exclusionCategoryIds.join(',')})`);
+  }
+
+  const { data: eligibleProducts } = await baseQuery;
+  return eligibleProducts || [];
 };
 
 export const getPromotionMetadata = (promo: Promotion) => {

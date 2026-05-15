@@ -6,8 +6,14 @@ import { Search, ShoppingBag, User, Menu, X, ChevronDown, Package, Truck, Zap } 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/useAuthStore';
-import { CartDrawer } from './CartDrawer';
-import { SearchOverlay } from './SearchOverlay';
+import dynamic from 'next/dynamic';
+
+const CartDrawer = dynamic(() => import('./CartDrawer').then(mod => mod.CartDrawer), {
+  ssr: false,
+});
+const SearchOverlay = dynamic(() => import('./SearchOverlay').then(mod => mod.SearchOverlay), {
+  ssr: false,
+});
 import { createClient } from '@/lib/supabase';
 
 export const Navbar = React.memo(() => {
