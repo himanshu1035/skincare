@@ -61,8 +61,8 @@ export const ProductClient: React.FC<ProductClientProps> = ({ product }) => {
     <div className="pt-32 pb-24">
       <div className="container">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24">
-          <div className="space-y-6">
-            <div className="relative aspect-square bg-secondary-ivory overflow-hidden rounded-[2.5rem] shadow-sm">
+          <div className="space-y-8 flex flex-col items-center">
+            <div className="relative w-full aspect-square bg-secondary-ivory overflow-hidden rounded-[2.5rem] shadow-sm max-w-[500px]">
               <Image
                 src={displayImage}
                 alt={product.skin_name}
@@ -72,20 +72,24 @@ export const ProductClient: React.FC<ProductClientProps> = ({ product }) => {
                 onError={() => setImageError(true)}
               />
             </div>
-            <div className="grid grid-cols-4 gap-4">
-              {[displayImage, displayImage, displayImage, displayImage].map((src, i) => (
-                <div key={i} className="aspect-square bg-secondary-ivory relative cursor-pointer group rounded-2xl overflow-hidden border border-transparent hover:border-accent-gold transition-all">
-                  <Image
-                    src={src}
-                    alt={`${product.skin_name} view ${i + 1}`}
-                    fill
-                    className="object-contain p-2 mix-blend-multiply transition-transform duration-500 group-hover:scale-110"
-                    onError={() => setImageError(true)}
-                  />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
-                </div>
-              ))}
-            </div>
+            
+            {/* Show thumbnails only if we actually have multiple diverse images */}
+            {product.skin_gallery_images && product.skin_gallery_images.length > 0 && (
+              <div className="grid grid-cols-4 gap-4 w-full max-w-[500px]">
+                {product.skin_gallery_images.map((src: string, i: number) => (
+                  <div key={i} className="aspect-square bg-secondary-ivory relative cursor-pointer group rounded-2xl overflow-hidden border border-transparent hover:border-accent-gold transition-all">
+                    <Image
+                      src={src}
+                      alt={`${product.skin_name} view ${i + 1}`}
+                      fill
+                      className="object-contain p-2 mix-blend-multiply transition-transform duration-500 group-hover:scale-110"
+                      onError={() => setImageError(true)}
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col">

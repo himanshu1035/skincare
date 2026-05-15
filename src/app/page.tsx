@@ -91,32 +91,9 @@ export default async function Home() {
       <Navbar />
       <BannerSlider initialBanners={activeBanners} />
       
-      {/* 1. Value Props */}
-      <section className="pt-32 pb-16 bg-white border-b border-secondary-ivory">
-        <div className="container">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 text-center">
-            {[
-              { icon: <Sparkles size={24} />, title: "Derm-Tested", subtitle: "Expert Formulations" },
-              { icon: <Droplets size={24} />, title: "Pure Ingredients", subtitle: "96% Snail Mucin" },
-              { icon: <ShieldCheck size={24} />, title: "100% Authentic", subtitle: "Direct from Korea" },
-              { icon: <Zap size={24} />, title: "Fast Shipping", subtitle: `Free over ₹${freeShippingThreshold}` }
-            ].map((prop, i) => (
-              <div key={i} className="flex flex-col items-center space-y-4 group">
-                <div className="w-16 h-16 rounded-full bg-secondary-ivory flex items-center justify-center text-accent-gold group-hover:bg-accent-gold group-hover:text-white transition-all duration-500 shadow-sm">
-                  {prop.icon}
-                </div>
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.3em] mb-1">{prop.title}</p>
-                  <p className="text-text-muted text-[11px] font-medium">{prop.subtitle}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 2. Collections Grid */}
-      <section className="py-32">
+      {/* 1. Collections Grid - Now first after Hero with blending */}
+      <section className="py-32 relative">
+        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-white to-transparent pointer-events-none" />
         <div className="container">
           <div className="flex flex-col items-center text-center mb-20">
             <span className="text-accent-gold font-bold tracking-[0.4em] uppercase text-[10px] mb-4">Curated Care</span>
@@ -126,7 +103,7 @@ export default async function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {collections?.map((col) => (
-              <Link key={col.skin_slug} href={`/collections/${col.skin_slug}`} className="group relative overflow-hidden rounded-[2.5rem] aspect-[4/5] bg-secondary-ivory">
+              <Link key={col.skin_slug} href={`/collections/${col.skin_slug}`} className="group relative overflow-hidden rounded-[2.5rem] aspect-[4/5] bg-secondary-ivory shadow-sm">
                 <CollectionImage 
                   src={getCollectionImage(col)} 
                   alt={col.skin_name} 
@@ -146,8 +123,8 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* 3. Bestsellers */}
-      <section className="py-32 bg-secondary-ivory/30">
+      {/* 2. Bestsellers - Blended background */}
+      <section className="py-32 bg-secondary-ivory/20 relative">
         <div className="container">
           <div className="flex flex-col md:flex-row items-end justify-between mb-20 gap-8">
             <div className="max-w-xl">
@@ -163,6 +140,30 @@ export default async function Home() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-20">
             {products.map((product: any) => (
               <ProductCard key={product.skin_id} product={product} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 3. Value Props - Now at bottom with extra blending */}
+      <section className="py-24 bg-white">
+        <div className="container">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 text-center border-t border-secondary-ivory pt-24">
+            {[
+              { icon: <Sparkles size={24} />, title: "Derm-Tested", subtitle: "Expert Formulations" },
+              { icon: <Droplets size={24} />, title: "Pure Ingredients", subtitle: "96% Snail Mucin" },
+              { icon: <ShieldCheck size={24} />, title: "100% Authentic", subtitle: "Direct from Korea" },
+              { icon: <Zap size={24} />, title: "Fast Shipping", subtitle: `Free over ₹${freeShippingThreshold}` }
+            ].map((prop, i) => (
+              <div key={i} className="flex flex-col items-center space-y-4 group">
+                <div className="w-16 h-16 rounded-full bg-secondary-ivory flex items-center justify-center text-accent-gold group-hover:bg-accent-gold group-hover:text-white transition-all duration-500 shadow-sm">
+                  {prop.icon}
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] mb-1">{prop.title}</p>
+                  <p className="text-text-muted text-[11px] font-medium">{prop.subtitle}</p>
+                </div>
+              </div>
             ))}
           </div>
         </div>
