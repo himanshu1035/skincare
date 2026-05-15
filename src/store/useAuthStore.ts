@@ -22,7 +22,11 @@ export const useAuthStore = create<AuthStore>()(
       setUser: (user) => set({ user }),
       logout: () => {
         set({ user: null });
-        // Optional: clear other state or handle cookie cleanup
+        // NEW: Also clear cart on logout
+        import('@/store/useCartStore').then(mod => {
+          mod.useCartStore.getState().clearCart();
+          mod.useCartStore.getState().syncUser(null);
+        });
       },
     }),
     {

@@ -20,6 +20,7 @@ interface CartStore {
   appliedCoupons: any[];
   discountAmount: number;
   promoSavings: number;
+  userId: string | null;
   addItem: (item: CartItem) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
@@ -30,6 +31,7 @@ interface CartStore {
   removeCoupon: (code: string) => void;
   revalidateCoupons: (paymentMethod: string) => void;
   refreshPromotions: () => Promise<void>;
+  syncUser: (userId: string | null) => void;
 }
 
 export const useCartStore = create<CartStore>()(
@@ -40,6 +42,16 @@ export const useCartStore = create<CartStore>()(
       appliedCoupons: [],
       discountAmount: 0,
       promoSavings: 0,
+      userId: null,
+ 
+      syncUser: (currentUserId) => {
+        const { userId, clearCart } = get();
+        // If the stored userId doesn't match the current session, clear everything
+        if (userId !== currentUserId) {
+          clearCart();
+          set({ userId: currentUserId });
+        }
+      },
 
       revalidateCoupons: (paymentMethod: string) => {
         const { appliedCoupons, getTotal } = get();
