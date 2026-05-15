@@ -4,6 +4,9 @@ import { Search } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { CustomerTable } from './CustomerTable';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function AdminCustomersPage() {
   const supabase = createClient();
   

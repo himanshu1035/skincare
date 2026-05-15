@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase'; // Assuming this can handle server-side if configured or create a new one
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { revalidatePath } from 'next/cache';
 
 // Admin Service Client (Required for password updates)
 const getAdminClient = () => {
@@ -30,13 +31,14 @@ export async function updateCustomer(customerId: string, data: any) {
     .update({
       skin_first_name: data.firstName,
       skin_last_name: data.lastName,
+      skin_username: `${data.firstName} ${data.lastName}`.trim(),
       skin_phone: data.phone,
       skin_role: data.role
     })
     .eq('skin_id', customerId);
 
   if (profileError) throw profileError;
-
+  revalidatePath('/admin/customers');
   return { success: true };
 }
 
@@ -44,5 +46,7 @@ export async function deleteCustomer(customerId: string) {
   const supabase = getAdminClient();
   const { error } = await supabase.auth.admin.deleteUser(customerId);
   if (error) throw error;
+  
+  revalidatePath('/admin/customers');
   return { success: true };
 }
