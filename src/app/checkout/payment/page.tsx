@@ -150,6 +150,7 @@ function PaymentPageContent() {
     // DEFERRED SIGNUP: Create account now that payment is "submitted"
     if (!currentUserId && checkoutData.email && checkoutData.password) {
       try {
+        const fullName = `${order.skin_first_name} ${order.skin_last_name}`.trim();
         const { data: signupData, error: signupErr } = await supabase.auth.signUp({
           email: checkoutData.email,
           password: checkoutData.password,
@@ -157,20 +158,23 @@ function PaymentPageContent() {
             data: {
               first_name: order.skin_first_name,
               last_name: order.skin_last_name,
-              phone: order.skin_customer_mobile
+              full_name: fullName,
+              username: fullName, // As requested: first and last name as username
+              phone: order.skin_customer_mobile // Use the mobile number from delivery
             }
           }
         });
 
         if (!signupErr && signupData.user) {
           currentUserId = signupData.user.id;
-          // Create profile
+          // Create profile with delivery info
           await supabase.from('skin_user_profiles').insert([{
             skin_id: currentUserId,
             skin_email: checkoutData.email,
             skin_first_name: order.skin_first_name,
             skin_last_name: order.skin_last_name,
-            skin_phone: order.skin_customer_mobile,
+            skin_username: fullName, // Save full name as username in DB
+            skin_phone: order.skin_customer_mobile, // Ensure delivery mobile is used here
             skin_role: 'customer'
           }]);
         }

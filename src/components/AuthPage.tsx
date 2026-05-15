@@ -61,6 +61,7 @@ export const AuthPage: React.FC = () => {
 
         router.push('/account');
       } else {
+        const fullName = `${firstName} ${lastName}`.trim();
         const { data, error: signupError } = await supabase.auth.signUp({
           email,
           password,
@@ -68,6 +69,8 @@ export const AuthPage: React.FC = () => {
             data: {
               first_name: firstName,
               last_name: lastName,
+              full_name: fullName,
+              username: fullName,
               phone: phone
             }
           }
@@ -83,6 +86,7 @@ export const AuthPage: React.FC = () => {
               skin_email: email,
               skin_first_name: firstName,
               skin_last_name: lastName,
+              skin_username: fullName,
               skin_phone: phone,
               skin_role: 'customer'
             }]);

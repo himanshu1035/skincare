@@ -115,6 +115,7 @@ export default function CheckoutPage() {
             skin_email: data.email,
             skin_first_name: data.firstName,
             skin_last_name: data.lastName,
+            skin_username: `${data.firstName} ${data.lastName}`.trim(),
             skin_phone: data.primaryPhone,
             skin_role: 'customer'
           }]);
