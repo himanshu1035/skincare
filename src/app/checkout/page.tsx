@@ -16,7 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CouponInput } from '@/components/CouponInput';
 
 export default function CheckoutPage() {
-  const { items, promoItems, getTotal, discountAmount, appliedCoupons, promoSavings, getGrandTotal, removeCoupon } = useCartStore();
+  const { items, promoItems, getTotal, discountAmount, appliedCoupons, promoSavings, getGrandTotal, removeCoupon, revalidateCoupons } = useCartStore();
   const { user } = useAuthStore();
   const { data: savedData, setData: setSavedData } = useCheckoutStore();
   
@@ -45,23 +45,10 @@ export default function CheckoutPage() {
     fetchSettings();
   }, [items, router]);
 
-  // Auto-remove prepaid only coupons if switching to COD
+  // Recalculate coupons when payment method changes
   useEffect(() => {
-    if (paymentMethod === 'COD') {
-       appliedCoupons.forEach(c => {
-          if (c.skin_type === 'percent' || c.skin_type === 'percentage' || c.skin_discount_percent) {
-             const val = c.skin_discount_percent || c.skin_value;
-             // Logic placeholder: newTotalDiscount += (subtotal * val) / 100;
-          }
-          else {
-             // Logic placeholder: newTotalDiscount += c.skin_value || c.skin_discount_amount || 0;
-          }
-          if (c.skin_is_prepaid_only) {
-            removeCoupon(c.skin_code);
-          }
-       });
-    }
-  }, [paymentMethod, appliedCoupons, removeCoupon]);
+    revalidateCoupons(paymentMethod);
+  }, [paymentMethod, revalidateCoupons]);
 
   const fetchSettings = async () => {
     const [settingsRes, marketerSettingsRes] = await Promise.all([
@@ -113,43 +100,32 @@ export default function CheckoutPage() {
     let currentUserId = user?.id || null;
 
     if (!user) {
-      try {
-        if (isExistingUser) {
+      if (isExistingUser) {
+        try {
           const { data: loginData, error: loginErr } = await supabase.auth.signInWithPassword({
             email: data.email as string,
             password: password
           });
           if (loginErr) throw new Error('Incorrect password for this account.');
           currentUserId = loginData.user.id;
-        } else {
-          const { data: signupData, error: signupErr } = await supabase.auth.signUp({
-            email: data.email as string,
-            password: password,
-          });
-          if (signupErr) throw signupErr;
-          currentUserId = signupData.user?.id || null;
+          
+          // Sync profile for existing user
+          await supabase.from('skin_user_profiles').upsert([{
+            skin_id: currentUserId,
+            skin_email: data.email,
+            skin_first_name: data.firstName,
+            skin_last_name: data.lastName,
+            skin_phone: data.primaryPhone,
+            skin_role: 'customer'
+          }]);
+        } catch (err: any) {
+          alert(err.message);
+          setIsSubmitting(false);
+          return;
         }
-
-      } catch (err: any) {
-        alert(err.message);
-        setIsSubmitting(false);
-        return;
-      }
-    }
-
-    // ALWAYS ensure profile exists in skin_user_profiles before order to prevent Foreign Key errors
-    if (currentUserId) {
-      const { error: profileSyncError } = await supabase.from('skin_user_profiles').upsert([{
-        skin_id: currentUserId,
-        skin_email: data.email,
-        skin_first_name: data.firstName,
-        skin_last_name: data.lastName,
-        skin_phone: data.primaryPhone,
-        skin_role: 'customer'
-      }]);
-      
-      if (profileSyncError) {
-        console.error("Profile Sync Error:", profileSyncError);
+      } else {
+        // NEW USER: Defer registration to payment page
+        setSavedData({ ...data, password } as any);
       }
     }
 

@@ -13,6 +13,7 @@ interface CheckoutData {
   state: string;
   zip: string;
   country: string;
+  password?: string;
 }
 
 interface CheckoutStore {

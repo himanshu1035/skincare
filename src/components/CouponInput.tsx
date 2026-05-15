@@ -192,6 +192,35 @@ export const CouponInput = ({ paymentMethod, settings }: { paymentMethod: string
         </button>
       </div>
 
+      {/* Suggested Coupons Section */}
+      <AnimatePresence>
+        {suggestions.length > 0 && appliedCoupons.length === 0 && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-3 pt-2"
+          >
+            <div className="flex items-center gap-2 px-1">
+              <Sparkles size={12} className="text-accent-gold" />
+              <p className="text-[9px] font-black text-text-muted uppercase tracking-widest">Available Offers</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {suggestions.map((suggestion) => (
+                <button
+                  key={suggestion.skin_code}
+                  type="button"
+                  onClick={() => handleApply(suggestion.skin_code)}
+                  className="px-4 py-2 bg-white border border-secondary-ivory rounded-xl text-[10px] font-black uppercase tracking-widest text-text-dark hover:border-accent-gold hover:text-accent-gold transition-all shadow-sm flex items-center gap-2 group"
+                >
+                  {suggestion.skin_code}
+                  <span className="text-[8px] opacity-40 font-bold group-hover:opacity-100 transition-opacity">Apply</span>
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Applied Coupons List */}
       <AnimatePresence>
         {appliedCoupons.length > 0 && (
@@ -208,9 +237,9 @@ export const CouponInput = ({ paymentMethod, settings }: { paymentMethod: string
                   <div className="w-8 h-8 rounded-lg bg-green-600 flex items-center justify-center text-white">
                     <Check size={16} />
                   </div>
-                  <div>
-                    <p className="text-[10px] font-black text-green-700 uppercase tracking-widest">{coupon.skin_code}</p>
-                    <p className="text-[9px] font-bold text-green-600 uppercase">Stacked Discount Active</p>
+                  <div className="flex-1">
+                    <p className="text-[10px] font-black text-green-700 uppercase tracking-widest leading-none mb-1">{coupon.skin_code}</p>
+                    <p className="text-[8px] font-bold text-green-600 uppercase opacity-80">Discount of {coupon.skin_type === 'percentage' || coupon.skin_type === 'percent' ? `${coupon.skin_value}%` : `₹${coupon.skin_value}`} applied</p>
                   </div>
                 </div>
                 <button 

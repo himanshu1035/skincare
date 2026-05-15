@@ -28,6 +28,7 @@ interface CartStore {
   getGrandTotal: () => number;
   applyCoupon: (coupon: any, amount: number) => void;
   removeCoupon: (code: string) => void;
+  revalidateCoupons: (paymentMethod: string) => void;
   refreshPromotions: () => Promise<void>;
 }
 
@@ -39,6 +40,42 @@ export const useCartStore = create<CartStore>()(
       appliedCoupons: [],
       discountAmount: 0,
       promoSavings: 0,
+
+      revalidateCoupons: (paymentMethod: string) => {
+        const { appliedCoupons, getTotal } = get();
+        const subtotal = getTotal();
+        let newTotalDiscount = 0;
+        
+        const validCoupons = appliedCoupons.filter(coupon => {
+          // Rule 1: Prepaid only check
+          if (coupon.skin_is_prepaid_only && paymentMethod !== 'UPI') {
+            return false;
+          }
+          // Rule 2: Min order amount check
+          if (subtotal < coupon.skin_min_order_amount) {
+            return false;
+          }
+          return true;
+        });
+
+        validCoupons.forEach(coupon => {
+          let discount = 0;
+          if (coupon.skin_type === 'percentage' || coupon.skin_type === 'percent') {
+            discount = (subtotal * coupon.skin_value) / 100;
+            if (coupon.skin_max_discount_amount) {
+              discount = Math.min(discount, coupon.skin_max_discount_amount);
+            }
+          } else if (coupon.skin_type === 'fixed') {
+            discount = Math.min(coupon.skin_value, subtotal);
+          }
+          newTotalDiscount += discount;
+        });
+
+        set({ 
+          appliedCoupons: validCoupons, 
+          discountAmount: newTotalDiscount 
+        });
+      },
       
       refreshPromotions: async () => {
         const { items } = get();

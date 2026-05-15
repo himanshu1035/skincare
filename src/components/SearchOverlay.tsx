@@ -39,11 +39,15 @@ export const SearchOverlay = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
 
   const handleSearch = async () => {
     setIsLoading(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('skin_products')
       .select('*')
       .ilike('skin_name', `%${query}%`)
       .limit(6);
+    
+    if (error) {
+      console.error('Search error:', error);
+    }
     
     setResults(data || []);
     setIsLoading(false);

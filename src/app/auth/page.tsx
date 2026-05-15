@@ -111,7 +111,11 @@ export default function AuthPage() {
         }
       }
     } catch (err: any) {
-      setError(err.message || 'An error occurred during authentication.');
+      if (err.message === 'Invalid login credentials') {
+        setError('Invalid email or password. Please try again.');
+      } else {
+        setError(err.message || 'An error occurred during authentication.');
+      }
     } finally {
       setIsLoading(false);
     }

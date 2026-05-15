@@ -33,28 +33,37 @@ export default async function CollectionPage({ params }: { params: Promise<{ han
        // Dynamic Collection Logic: Fetch products eligible for the promotion
        products = await getEligibleProductsForPromotion(collection.skin_promotion_id);
     } else if (collection) {
-      const { data: collectionProducts } = await supabase
+      const { data: collectionProducts, error: colProdErr } = await supabase
         .from('skin_collection_products')
         .select('skin_product_id')
         .eq('skin_collection_id', collection.skin_id);
       
+      if (colProdErr) console.error('Error fetching collection products:', colProdErr);
+
       if (collectionProducts && collectionProducts.length > 0) {
         const productIds = collectionProducts.map(cp => cp.skin_product_id);
-        const { data: realProducts } = await supabase
+        const { data: realProducts, error: prodErr } = await supabase
           .from('skin_products')
           .select('*')
           .in('skin_id', productIds);
+        
+        if (prodErr) console.error('Error fetching real products:', prodErr);
         products = realProducts || [];
       }
-    } else if (handle === 'all') {
-       const { data: allProducts } = await supabase
+    }
+
+    // Secondary fallback for 'all' handle or if a collection search failed
+    if (products.length === 0 && (handle === 'all' || !collection)) {
+       const { data: allProducts, error: allProdErr } = await supabase
         .from('skin_products')
         .select('*')
-        .limit(40);
+        .limit(100);
+       
+       if (allProdErr) console.error('Error fetching all products:', allProdErr);
        products = allProducts || [];
     }
   } catch (e) {
-    console.error('Error fetching collection products:', e);
+    console.error('Critical error in CollectionPage:', e);
   }
 
   // If no collection found and not 'all' view, 404

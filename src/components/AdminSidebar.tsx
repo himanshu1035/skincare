@@ -22,7 +22,8 @@ import {
   Wallet,
   BrainCircuit,
   TrendingUp,
-  Package
+  Package,
+  CreditCard
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion } from 'framer-motion';
@@ -101,7 +102,9 @@ export const AdminSidebar = React.memo(() => {
     {
       title: "Logistics",
       items: [
-        { name: 'Orders', href: '/admin/orders', icon: <ShoppingBag size={16} /> },
+        { name: 'All Orders', href: '/admin/orders', icon: <ShoppingBag size={16} /> },
+        { name: 'Prepaid Orders', href: '/admin/orders/prepaid', icon: <CreditCard size={16} /> },
+        { name: 'COD Orders', href: '/admin/orders/cod', icon: <Package size={16} /> },
         { name: 'Customers', href: '/admin/customers', icon: <Users size={16} /> },
       ]
     },

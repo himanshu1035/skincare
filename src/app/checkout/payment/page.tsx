@@ -5,6 +5,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { createClient } from '@/lib/supabase';
 import { useCartStore } from '@/store/useCartStore';
+import { useCheckoutStore } from '@/store/useCheckoutStore';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { 
   ShieldCheck, 
@@ -27,6 +28,7 @@ function PaymentPageContent() {
   const orderId = searchParams.get('orderId');
   const router = useRouter();
   const { clearCart, items } = useCartStore();
+  const { data: checkoutData, clearData: clearCheckoutData } = useCheckoutStore();
   
   const [order, setOrder] = useState<any>(null);
   const [settings, setSettings] = useState<any>(null);
@@ -107,9 +109,43 @@ function PaymentPageContent() {
     setIsSubmitting(true);
     setIsCompleting(true); // Stop the beforeunload cancel logic
     
-    // Update status to 'under_review' for UPI so it shows as pending in admin
-    // For COD with upfront payment, it also goes under review for the handling charge
-    const newStatus = 'under_review';
+    let currentUserId = order.skin_user_id;
+
+    // DEFERRED SIGNUP: Create account now that payment is "submitted"
+    if (!currentUserId && checkoutData.email && checkoutData.password) {
+      try {
+        const { data: signupData, error: signupErr } = await supabase.auth.signUp({
+          email: checkoutData.email,
+          password: checkoutData.password,
+          options: {
+            data: {
+              first_name: order.skin_first_name,
+              last_name: order.skin_last_name,
+              phone: order.skin_customer_mobile
+            }
+          }
+        });
+
+        if (!signupErr && signupData.user) {
+          currentUserId = signupData.user.id;
+          // Create profile
+          await supabase.from('skin_user_profiles').insert([{
+            skin_id: currentUserId,
+            skin_email: checkoutData.email,
+            skin_first_name: order.skin_first_name,
+            skin_last_name: order.skin_last_name,
+            skin_phone: order.skin_customer_mobile,
+            skin_role: 'customer'
+          }]);
+        }
+      } catch (err) {
+        console.error("Deferred signup error:", err);
+      }
+    }
+
+    // Logic: If there's an upfront payment (UPI or COD Handing), it goes to 'under_review'
+    // If it's pure COD with NO upfront payment, it goes straight to 'pending'
+    const newStatus = amountToPayNow > 0 ? 'under_review' : 'pending';
 
     const { error } = await supabase
       .from('skin_orders')
@@ -117,12 +153,14 @@ function PaymentPageContent() {
         skin_status: newStatus,
         skin_payment_method: paymentMethod.toUpperCase(),
         skin_utr: utr || null,
-        skin_payment_status: (amountToPayNow > 0) ? 'verified' : 'unpaid'
+        skin_payment_status: (amountToPayNow > 0) ? 'verified' : 'unpaid',
+        skin_user_id: currentUserId // Link the deferred user ID
       })
       .eq('skin_id', orderId);
 
     if (!error) {
-      clearCart(); // ONLY clear cart on success
+      clearCart();
+      clearCheckoutData();
       router.push(`/checkout/status?status=success&orderId=${orderId}`);
     } else {
       alert('Error: ' + error.message);
@@ -226,15 +264,47 @@ function PaymentPageContent() {
                 
                 <h3 className="text-2xl font-black tracking-tight mb-8">Summary</h3>
                 
-                <div className="space-y-6 border-b border-white/10 pb-8 mb-8">
-                  <div className="flex justify-between text-sm">
-                    <span className="opacity-60 font-medium">Total Order Value</span>
+                <div className="space-y-4 border-b border-white/10 pb-8 mb-8">
+                  <div className="flex justify-between text-xs">
+                    <span className="opacity-60 font-medium tracking-widest uppercase">Subtotal</span>
+                    <span className="font-bold">{formatPrice(order.skin_total_amount + (order.skin_discount_amount || 0) + (order.skin_promo_savings || 0) - (order.skin_shipping_charge || 0) - (order.skin_cod_charge || 0))}</span>
+                  </div>
+                  
+                  {order.skin_discount_amount > 0 && (
+                    <div className="flex justify-between text-xs text-green-400">
+                      <span className="opacity-80 font-medium tracking-widest uppercase">Coupon: {order.skin_coupon_code}</span>
+                      <span className="font-bold">-{formatPrice(order.skin_discount_amount)}</span>
+                    </div>
+                  )}
+
+                  {order.skin_promo_savings > 0 && (
+                    <div className="flex justify-between text-xs text-accent-gold">
+                      <span className="opacity-80 font-medium tracking-widest uppercase">Promotional Savings</span>
+                      <span className="font-bold">-{formatPrice(order.skin_promo_savings)}</span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between text-xs">
+                    <span className="opacity-60 font-medium tracking-widest uppercase">Shipping</span>
+                    <span className="font-bold">{order.skin_shipping_charge > 0 ? formatPrice(order.skin_shipping_charge) : 'FREE'}</span>
+                  </div>
+
+                  {order.skin_cod_charge > 0 && (
+                    <div className="flex justify-between text-xs">
+                      <span className="opacity-60 font-medium tracking-widest uppercase">COD Fee</span>
+                      <span className="font-bold">{formatPrice(order.skin_cod_charge)}</span>
+                    </div>
+                  )}
+
+                  <div className="pt-4 mt-4 border-t border-white/5 flex justify-between text-sm">
+                    <span className="opacity-60 font-medium uppercase tracking-widest">Total Order Value</span>
                     <span className="font-bold">{formatPrice(finalTotal)}</span>
                   </div>
+
                   {amountToPayNow > 0 && amountToPayNow < finalTotal && (
-                    <div className="flex justify-between text-sm text-accent-gold">
-                      <span className="font-medium">Balance Due at Doorstep</span>
-                      <span className="font-bold">{formatPrice(finalTotal - amountToPayNow)}</span>
+                    <div className="flex justify-between text-sm text-accent-gold pt-2 border-t border-white/5">
+                      <span className="font-bold uppercase tracking-widest text-[10px]">Balance Due at Doorstep</span>
+                      <span className="font-black">{formatPrice(finalTotal - amountToPayNow)}</span>
                     </div>
                   )}
                 </div>

@@ -43,8 +43,11 @@ export default async function Home() {
       .eq('skin_collection_id', bestSellerCollection.skin_id)
       .limit(8);
     
-    products = bestsellers?.map(b => b.skin_products) || [];
-  } else {
+    products = bestsellers?.map(b => b.skin_products).filter(Boolean) || [];
+  } 
+  
+  // Fallback if no best sellers found or collection is empty
+  if (products.length === 0) {
     const { data: featured } = await supabase
       .from('skin_products')
       .select('*')
