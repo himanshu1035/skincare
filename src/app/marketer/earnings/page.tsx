@@ -43,28 +43,32 @@ export default function MarketerEarningsPage() {
     
     // Fetch Commissions & Withdrawals
     const [commissionsRes, withdrawalsRes] = await Promise.all([
-      supabase.from('skin_marketer_commissions').select('*').eq('skin_marketer_id', session.user.id).eq('skin_status', 'approved'),
+      supabase.from('skin_marketer_commissions').select('*').eq('skin_marketer_id', session.user.id).order('skin_created_at', { ascending: false }),
       supabase.from('skin_marketer_withdrawals').select('*').eq('skin_marketer_id', session.user.id)
     ]);
 
     if (commissionsRes.data && withdrawalsRes.data) {
       setCommissions(commissionsRes.data);
       
-      const earned = commissionsRes.data.reduce((acc, c) => acc + Number(c.skin_commission_earned) + Number(c.skin_bonus_earned), 0);
+      const approvedCommissions = commissionsRes.data.filter(c => c.skin_status === 'approved');
+      const pendingCommissions = commissionsRes.data.filter(c => c.skin_status === 'pending');
+
+      const earned = approvedCommissions.reduce((acc, c) => acc + Number(c.skin_commission_earned) + Number(c.skin_bonus_earned), 0);
+      const pendingEarned = pendingCommissions.reduce((acc, c) => acc + Number(c.skin_commission_earned) + Number(c.skin_bonus_earned), 0);
       
       const paid = withdrawalsRes.data
         .filter(w => w.skin_status === 'approved')
         .reduce((acc, w) => acc + Number(w.skin_amount), 0);
       
-      const pending = withdrawalsRes.data
+      const pendingWithdrawals = withdrawalsRes.data
         .filter(w => w.skin_status === 'pending')
         .reduce((acc, w) => acc + Number(w.skin_amount), 0);
 
       setStats({
         totalEarned: earned,
         totalPaid: paid,
-        totalPending: pending,
-        walletBalance: earned - paid - pending
+        totalPending: pendingEarned + pendingWithdrawals,
+        walletBalance: earned - paid - pendingWithdrawals
       });
     }
     setLoading(false);
@@ -147,8 +151,10 @@ export default function MarketerEarningsPage() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-black text-green-600">+{formatPrice(Number(c.skin_commission_earned) + Number(c.skin_bonus_earned))}</p>
-                  <p className="text-[8px] font-black text-text-muted uppercase tracking-widest mt-1">Status: Approved</p>
+                  <p className={`text-sm font-black ${c.skin_status === 'approved' ? 'text-green-600' : 'text-orange-600 animate-pulse'}`}>
+                    +{formatPrice(Number(c.skin_commission_earned) + Number(c.skin_bonus_earned))}
+                  </p>
+                  <p className="text-[8px] font-black text-text-muted uppercase tracking-widest mt-1">Status: {c.skin_status}</p>
                 </div>
               </div>
             )) : (

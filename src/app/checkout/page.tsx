@@ -119,6 +119,16 @@ export default function CheckoutPage() {
             skin_phone: data.primaryPhone,
             skin_role: 'customer'
           }]);
+
+          // Update local store immediately
+          useAuthStore.getState().setUser({
+            id: currentUserId,
+            email: data.email as string,
+            firstName: data.firstName as string,
+            lastName: data.lastName as string,
+            username: `${data.firstName} ${data.lastName}`.trim(),
+            phone: data.primaryPhone as string,
+          });
         } catch (err: any) {
           alert(err.message);
           setIsSubmitting(false);
@@ -180,16 +190,34 @@ export default function CheckoutPage() {
 
     // 4. Record Marketer Commission if applicable
     const marketerCoupons = appliedCoupons.filter(c => c.skin_marketer_id);
+    const adminCoupons = appliedCoupons.filter(c => !c.skin_marketer_id);
+    
+    // Calculate how much discount came from ADMIN coupons
+    const subtotal = getTotal();
+    let adminDiscountTotal = 0;
+    adminCoupons.forEach(c => {
+      if (c.skin_type === 'percentage' || c.skin_type === 'percent') {
+        let d = (subtotal * c.skin_value) / 100;
+        if (c.skin_max_discount_amount) d = Math.min(d, c.skin_max_discount_amount);
+        adminDiscountTotal += d;
+      } else {
+        adminDiscountTotal += c.skin_value || 0;
+      }
+    });
+
+    // The base for marketer commission should NOT be reduced by admin discounts
+    const commissionBase = grandTotal + adminDiscountTotal;
+
     for (const coupon of marketerCoupons) {
-      const commissionAmount = (grandTotal * (coupon.skin_commission_percent || 0)) / 100;
+      const commissionAmount = (commissionBase * (coupon.skin_commission_percent || 0)) / 100;
       
       const { error: commError } = await supabase.from('skin_marketer_commissions').insert({
         skin_marketer_id: coupon.skin_marketer_id,
-        skin_order_id: orderPayload.skin_id, // Use generated ID directly
+        skin_order_id: orderPayload.skin_id,
         skin_coupon_id: coupon.skin_id,
         skin_order_amount: grandTotal,
         skin_commission_earned: commissionAmount,
-        skin_status: 'pending'
+        skin_status: 'pending' // Initially pending until order is verified
       });
 
       if (commError) {

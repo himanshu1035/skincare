@@ -56,6 +56,7 @@ export const AuthPage: React.FC = () => {
           email: data.user.email!,
           firstName: profile?.skin_first_name,
           lastName: profile?.skin_last_name,
+          username: profile?.skin_username,
           phone: profile?.skin_phone,
         });
 
@@ -96,6 +97,7 @@ export const AuthPage: React.FC = () => {
             email: data.user.email!,
             firstName,
             lastName,
+            username: fullName,
             phone,
           });
 

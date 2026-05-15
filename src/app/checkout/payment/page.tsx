@@ -177,6 +177,17 @@ function PaymentPageContent() {
             skin_phone: order.skin_customer_mobile, // Ensure delivery mobile is used here
             skin_role: 'customer'
           }]);
+
+          // Update local store immediately for the greeting
+          const { useAuthStore } = await import('@/store/useAuthStore');
+          useAuthStore.getState().setUser({
+            id: currentUserId,
+            email: checkoutData.email,
+            firstName: order.skin_first_name,
+            lastName: order.skin_last_name,
+            username: fullName,
+            phone: order.skin_customer_mobile,
+          });
         }
       } catch (err) {
         console.error("Deferred signup error:", err);

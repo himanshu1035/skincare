@@ -45,6 +45,7 @@ export const AccountPage = () => {
             email: data.user.email!,
             firstName: profileData.skin_first_name,
             lastName: profileData.skin_last_name,
+            username: profileData.skin_username,
             phone: profileData.skin_phone,
           });
         }
@@ -123,7 +124,7 @@ export const AccountPage = () => {
         <div className="flex-1 text-center md:text-left">
           <p className="text-[10px] font-black text-accent-gold uppercase tracking-[0.4em] mb-2">Authenticated Account</p>
           <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-text-dark mb-4">
-            Hello, {profile?.skin_first_name || user?.firstName || 'User'}!
+            Hey, {profile?.skin_username || user?.username || profile?.skin_first_name || user?.firstName || 'User'}!
           </h1>
           <div className="flex flex-wrap justify-center md:justify-start gap-6 text-sm font-medium text-text-muted">
             <div className="flex items-center gap-2"><Mail size={16} /> {profile?.skin_email || user?.email}</div>
