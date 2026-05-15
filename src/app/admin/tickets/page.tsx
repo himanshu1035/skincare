@@ -49,6 +49,22 @@ export default function AdminTicketsPage() {
 
   useEffect(() => {
     fetchAllTickets();
+    
+    // Realtime subscription for ticket list updates
+    const channel = supabase
+      .channel('admin-tickets-sync')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'skin_tickets' 
+      }, () => {
+        fetchAllTickets();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchAllTickets = async () => {

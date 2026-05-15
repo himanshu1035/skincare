@@ -39,6 +39,21 @@ export default function MarketerSupportPage() {
 
   useEffect(() => {
     fetchTickets();
+
+    const channel = supabase
+      .channel('marketer-tickets-sync')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'skin_tickets'
+      }, () => {
+        fetchTickets();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchTickets = async () => {
