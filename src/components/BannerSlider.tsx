@@ -154,7 +154,7 @@ export const BannerSlider: React.FC<{ initialBanners: Banner[] }> = ({ initialBa
       )}
 
       {/* Campaign Progress Bar (Visual only for premium feel) */}
-      <div className="absolute bottom-0 left-0 w-full h-1.5 bg-white/10 z-20">
+      <div className="absolute -bottom-1 left-0 w-full h-1 bg-white/10 z-20">
         <motion.div 
           key={currentIndex}
           initial={{ width: 0 }}
