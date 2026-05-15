@@ -190,34 +190,28 @@ export default function CheckoutPage() {
 
     // 4. Record Marketer Commission if applicable
     const marketerCoupons = appliedCoupons.filter(c => c.skin_marketer_id);
-    const adminCoupons = appliedCoupons.filter(c => !c.skin_marketer_id);
-    
-    // Calculate how much discount came from ADMIN coupons
     const subtotal = getTotal();
-    let adminDiscountTotal = 0;
-    adminCoupons.forEach(c => {
-      if (c.skin_type === 'percentage' || c.skin_type === 'percent') {
-        let d = (subtotal * c.skin_value) / 100;
-        if (c.skin_max_discount_amount) d = Math.min(d, c.skin_max_discount_amount);
-        adminDiscountTotal += d;
-      } else {
-        adminDiscountTotal += c.skin_value || 0;
-      }
-    });
-
-    // The base for marketer commission should NOT be reduced by admin discounts
-    const commissionBase = grandTotal + adminDiscountTotal;
 
     for (const coupon of marketerCoupons) {
-      const commissionAmount = (commissionBase * (coupon.skin_commission_percent || 0)) / 100;
+      // Calculate specific discount for THIS marketer coupon
+      let marketerDiscount = 0;
+      if (coupon.skin_type === 'percentage' || coupon.skin_type === 'percent') {
+        marketerDiscount = (subtotal * coupon.skin_value) / 100;
+        if (coupon.skin_max_discount_amount) marketerDiscount = Math.min(marketerDiscount, coupon.skin_max_discount_amount);
+      } else {
+        marketerDiscount = Math.min(coupon.skin_value || 0, subtotal);
+      }
+
+      // Commission = % of the DISCOUNT provided by THIS marketer coupon
+      const commissionAmount = (marketerDiscount * (coupon.skin_commission_percent || 0)) / 100;
       
       const { error: commError } = await supabase.from('skin_marketer_commissions').insert({
         skin_marketer_id: coupon.skin_marketer_id,
         skin_order_id: orderPayload.skin_id,
         skin_coupon_id: coupon.skin_id,
-        skin_order_amount: grandTotal,
+        skin_order_amount: grandTotal, // Actual amount paid
         skin_commission_earned: commissionAmount,
-        skin_status: 'pending' // Initially pending until order is verified
+        skin_status: 'pending' 
       });
 
       if (commError) {
@@ -384,12 +378,12 @@ export default function CheckoutPage() {
                   <span>Subtotal</span>
                   <span className="text-text-dark">{formatPrice(total)}</span>
                 </div>
-                {discountAmount > 0 && (
-                  <div className="flex justify-between text-[11px] font-bold uppercase tracking-widest text-green-600">
-                    <span>Coupon Discount</span>
-                    <span>-{formatPrice(discountAmount)}</span>
+                {appliedCoupons.map((coupon, idx) => (
+                  <div key={idx} className="flex justify-between text-[11px] font-bold uppercase tracking-widest text-green-600">
+                    <span>Coupon: {coupon.skin_code}</span>
+                    <span>-{formatPrice(coupon.calculated_discount || 0)}</span>
                   </div>
-                )}
+                ))}
                 {promoSavings > 0 && (
                   <div className="flex justify-between text-[11px] font-bold uppercase tracking-widest text-accent-gold">
                     <span>Promotional Savings</span>

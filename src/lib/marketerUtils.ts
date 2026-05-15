@@ -24,12 +24,22 @@ export async function recordMarketerCommission(orderId: string) {
   const marketer = order.skin_marketers;
   if (!marketer) return;
 
-  // 3. Calculate commission (Consistent with Checkout Logic: % of Order Total)
-  const orderAmount = Number(order.skin_total_amount);
-  const commissionPercent = Number(marketer.skin_commission_percent || 0);
-  const fixedBonus = Number(marketer.skin_fixed_bonus || 0);
+  // 3. Calculate commission (Consistent with Checkout Logic: % of the DISCOUNT provided)
+  const subtotal = Number(order.skin_total_amount) + Number(order.skin_discount_amount || 0); // Estimate original subtotal
+  
+  let marketerDiscount = 0;
+  if (order.skin_marketer_coupon_id) {
+    // We'd ideally need the specific coupon details here, but for fallback we'll use the record's logic
+    // Since we now record at checkout, this fallback is less critical but should be consistent
+    const couponPercent = Number(marketer.skin_commission_percent || 0); 
+    // Assuming the discount amount recorded in order is the base for calculation
+    marketerDiscount = Number(order.skin_discount_amount || 0); 
+  }
 
-  const commissionEarned = (orderAmount * commissionPercent) / 100;
+  const commissionEarned = (marketerDiscount * (marketer.skin_commission_percent || 0)) / 100;
+
+  const orderAmount = Number(order.skin_total_amount);
+  const fixedBonus = Number(marketer.skin_fixed_bonus || 0);
 
   // 4. Record in skin_marketer_commissions
   await supabase

@@ -58,21 +58,19 @@ export const useCartStore = create<CartStore>()(
         const subtotal = getTotal();
         let newTotalDiscount = 0;
         
-        const validCoupons = appliedCoupons.filter(coupon => {
+        const validCoupons = appliedCoupons.map(coupon => {
           // Rule 1: Prepaid only check
           if (coupon.skin_is_prepaid_only && paymentMethod !== 'UPI') {
-            return false;
+            return null;
           }
           // Rule 2: Min order amount check
           if (subtotal < coupon.skin_min_order_amount) {
-            return false;
+            return null;
           }
-          return true;
-        });
 
-        validCoupons.forEach(coupon => {
           let discount = 0;
           if (coupon.skin_type === 'percentage' || coupon.skin_type === 'percent') {
+            // ALWAYS calculated on original subtotal
             discount = (subtotal * coupon.skin_value) / 100;
             if (coupon.skin_max_discount_amount) {
               discount = Math.min(discount, coupon.skin_max_discount_amount);
@@ -80,8 +78,10 @@ export const useCartStore = create<CartStore>()(
           } else if (coupon.skin_type === 'fixed') {
             discount = Math.min(coupon.skin_value, subtotal);
           }
+
           newTotalDiscount += discount;
-        });
+          return { ...coupon, calculated_discount: discount };
+        }).filter(Boolean);
 
         set({ 
           appliedCoupons: validCoupons, 
