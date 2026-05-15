@@ -124,15 +124,17 @@ export const Navbar = React.memo(() => {
               <Star size={12} fill="currentColor" /> Best Sellers
             </Link>
             
-            {pinnedCollections.map((col) => (
-              <Link 
-                key={col.skin_slug} 
-                href={`/collections/${col.skin_slug}`}
-                className="text-[11px] font-black text-text-dark hover:text-accent-gold transition-colors tracking-[0.2em] uppercase"
-              >
-                {col.skin_name}
-              </Link>
-            ))}
+            {pinnedCollections
+              .filter(col => col.skin_slug !== 'best-sellers') // Avoid duplicate with the hardcoded link above
+              .map((col) => (
+                <Link 
+                  key={col.skin_slug} 
+                  href={`/collections/${col.skin_slug}`}
+                  className="text-[11px] font-black text-text-dark hover:text-accent-gold transition-colors tracking-[0.2em] uppercase"
+                >
+                  {col.skin_name}
+                </Link>
+              ))}
 
 
             
