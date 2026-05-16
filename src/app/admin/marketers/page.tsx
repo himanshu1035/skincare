@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase';
+import { createMarketerAction, deleteMarketerAction } from './actions';
 import Link from 'next/link';
 import { 
   Users, 
@@ -232,29 +233,8 @@ export default function AdminMarketersPage() {
           .eq('skin_id', editingMarketer.skin_id);
         if (error) throw error;
       } else {
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: formData.email,
-          password: formData.password,
-          options: { data: { role: 'marketer' } }
-        });
-        if (authError) throw authError;
-        const { error: profileError } = await supabase
-          .from('skin_marketers')
-          .insert({
-            skin_id: authData.user!.id,
-            skin_name: formData.name,
-            skin_email: formData.email,
-            skin_phone: formData.phone,
-            skin_commission_percent: formData.commission,
-            skin_fixed_bonus: formData.bonus,
-            skin_default_discount: formData.defaultDiscount,
-            skin_coupon_duration_days: formData.validityDays,
-            skin_is_one_time_use: formData.isOneTimeUse,
-            skin_code_length: formData.codeLength,
-            skin_level: formData.level,
-            skin_is_active: true
-          });
-        if (profileError) throw profileError;
+        const res = await createMarketerAction(formData);
+        if (!res.success) throw new Error(res.error);
       }
       setIsModalOpen(false);
       setEditingMarketer(null);
@@ -277,8 +257,12 @@ export default function AdminMarketersPage() {
   const handleDeleteMarketer = async (id: string) => {
     if (!confirm("Are you sure you want to delete this marketer account? This cannot be undone.")) return;
     setLoading(true);
-    const { error } = await supabase.from('skin_marketers').delete().eq('skin_id', id);
-    if (!error) fetchMarketers();
+    const res = await deleteMarketerAction(id);
+    if (res.success) {
+      fetchMarketers();
+    } else {
+      alert("Delete Error: " + res.error);
+    }
     setLoading(false);
   };
 

@@ -56,9 +56,18 @@ export async function updateCustomer(customerId: string, data: any) {
 
 export async function deleteCustomer(customerId: string) {
   const supabase = getAdminClient();
+  
+  // 1. Delete from Profile Tables
+  await supabase.from('skin_user_profiles').delete().eq('skin_id', customerId);
+  await supabase.from('skin_marketers').delete().eq('skin_id', customerId);
+  
+  // 2. Delete from Auth Users
   const { error } = await supabase.auth.admin.deleteUser(customerId);
-  if (error) throw error;
+  if (error) {
+    console.warn("Auth User Delete Warning:", error.message);
+  }
   
   revalidatePath('/admin/customers');
+  revalidatePath('/admin/marketers');
   return { success: true };
 }
