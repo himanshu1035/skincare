@@ -10,7 +10,11 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'www.cosrx.com',
+        hostname: 'www.cosrx.in',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cosrx.in',
       },
       {
         protocol: 'https',

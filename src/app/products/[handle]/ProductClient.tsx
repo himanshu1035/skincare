@@ -65,7 +65,7 @@ export const ProductClient: React.FC<ProductClientProps> = ({ product, recommend
       .replace(/bis_depth=["'][^"']*["']/g, '')
       .replace(/bis_chainid=["'][^"']*["']/g, '');
 
-    cleaned = cleaned.replace(/<a\s+[^>]*href=["']https?:\/\/(www\.)?cosrx\.com[^"']*["'][^>]*>(.*?)<\/a>/gi, '$2');
+    cleaned = cleaned.replace(/<a\s+[^>]*href=["']https?:\/\/(www\.)?cosrx\.(com|in)[^"']*["'][^>]*>(.*?)<\/a>/gi, '$3');
     cleaned = cleaned.replace(/\s{2,}/g, ' ').trim();
     return cleaned;
   };
