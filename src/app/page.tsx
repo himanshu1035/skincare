@@ -92,7 +92,7 @@ export default async function Home() {
       <BannerSlider initialBanners={activeBanners} />
       
       {/* 1. Collections Grid - Now first after Hero with blending */}
-      <section className="py-32 relative">
+      <section className="py-20 relative">
         <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-white to-transparent pointer-events-none" />
         <div className="container">
           <div className="flex flex-col items-center text-center mb-20">
@@ -124,7 +124,7 @@ export default async function Home() {
       </section>
 
       {/* 2. Bestsellers - Blended background */}
-      <section className="py-32 bg-secondary-ivory/20 relative">
+      <section className="py-20 bg-secondary-ivory/20 relative">
         <div className="container">
           <div className="flex flex-col md:flex-row items-end justify-between mb-20 gap-8">
             <div className="max-w-xl">
@@ -146,9 +146,9 @@ export default async function Home() {
       </section>
 
       {/* 3. Value Props - Now at bottom with extra blending */}
-      <section className="py-24 bg-white">
+      <section className="py-16 bg-white">
         <div className="container">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 text-center border-t border-secondary-ivory pt-24">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 text-center border-t border-secondary-ivory pt-16">
             {[
               { icon: <Sparkles size={24} />, title: "Derm-Tested", subtitle: "Expert Formulations" },
               { icon: <Droplets size={24} />, title: "Pure Ingredients", subtitle: "96% Snail Mucin" },

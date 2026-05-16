@@ -10,7 +10,7 @@ import { useCheckoutStore } from '@/store/useCheckoutStore';
 import { Button } from '@/components/ui/Button';
 import { Footer } from '@/components/Footer';
 import { createClient } from '@/lib/supabase';
-import { Lock, Phone, ShieldCheck, Mail, IndianRupee, AlertCircle, Loader2, CreditCard, MapPin, CheckCircle2 } from 'lucide-react';
+import { Lock, Phone, ShieldCheck, Mail, IndianRupee, AlertCircle, Loader2, CreditCard, MapPin, CheckCircle2, Trash2, Minus, Plus } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CouponInput } from '@/components/CouponInput';
@@ -43,7 +43,8 @@ export default function CheckoutPage() {
       return;
     }
     fetchSettings();
-  }, [items, router]);
+    revalidateCoupons(paymentMethod);
+  }, [items, router, paymentMethod, revalidateCoupons]);
 
   // Recalculate coupons when payment method changes
   useEffect(() => {
@@ -353,18 +354,45 @@ export default function CheckoutPage() {
           <div className="lg:col-span-5 text-text-dark">
             <div className="bg-secondary-ivory/20 rounded-[3rem] p-8 md:p-10 sticky top-32 border border-secondary-ivory shadow-sm">
               <h2 className="text-xl font-black mb-8 uppercase tracking-tight">Order Details</h2>
-              <div className="space-y-6 mb-8 max-h-[35vh] overflow-y-auto pr-4 custom-scrollbar">
+              <div className="space-y-6 mb-8 max-h-[45vh] overflow-y-auto pr-4 custom-scrollbar">
                 {items.map((item) => (
-                  <div key={item.id} className="flex gap-4">
-                    <div className="relative w-24 h-24 bg-white rounded-2xl overflow-hidden shadow-inner flex-shrink-0 border border-secondary-ivory">
+                  <div key={item.id} className="flex gap-4 group/item">
+                    <div className="relative w-20 h-20 md:w-24 md:h-24 bg-white rounded-2xl overflow-hidden shadow-inner flex-shrink-0 border border-secondary-ivory">
                       <Image src={item.image_url} alt={item.name} fill className="object-cover" />
-                      <div className="absolute -top-1 -right-1 w-6 h-6 bg-text-dark text-white text-[10px] font-black flex items-center justify-center rounded-full shadow-lg border-2 border-white">{item.quantity}</div>
                     </div>
-                    <div className="flex-1 flex flex-col justify-center">
-                      <h3 className="text-xs font-black text-text-dark line-clamp-2 uppercase tracking-tight leading-relaxed">{item.name}</h3>
-                      <p className="text-[10px] text-text-muted font-bold mt-1 uppercase tracking-widest">{formatPrice(item.price)} each</p>
+                    <div className="flex-1 flex flex-col justify-center min-w-0">
+                      <div className="flex justify-between items-start gap-2">
+                        <h3 className="text-[11px] font-black text-text-dark line-clamp-1 uppercase tracking-tight leading-relaxed">{item.name}</h3>
+                        <button 
+                          type="button"
+                          onClick={() => useCartStore.getState().removeItem(item.id)}
+                          className="text-text-muted hover:text-red-500 transition-colors p-1"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                      
+                      <div className="flex items-center justify-between mt-3">
+                        <div className="flex items-center border border-secondary-ivory rounded-lg overflow-hidden bg-white h-8">
+                          <button 
+                            type="button"
+                            onClick={() => useCartStore.getState().updateQuantity(item.id, item.quantity - 1)}
+                            className="px-2 hover:bg-secondary-ivory transition-colors"
+                          >
+                            <Minus size={12} />
+                          </button>
+                          <span className="w-8 text-center text-[11px] font-black">{item.quantity}</span>
+                          <button 
+                            type="button"
+                            onClick={() => useCartStore.getState().updateQuantity(item.id, item.quantity + 1)}
+                            className="px-2 hover:bg-secondary-ivory transition-colors"
+                          >
+                            <Plus size={12} />
+                          </button>
+                        </div>
+                        <span className="font-black text-xs text-text-dark">{formatPrice(item.price * item.quantity)}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center font-black text-sm text-text-dark">{formatPrice(item.price * item.quantity)}</div>
                   </div>
                 ))}
               </div>
