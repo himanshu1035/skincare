@@ -15,7 +15,7 @@ export async function createMarketerAction(formData: any) {
   try {
     const supabase = getAdminClient();
     
-    // 1. Create Auth User directly as an Admin
+    // 1. Creat
     // This avoids standard signup triggers and allows immediate confirmation
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email: formData.email,
