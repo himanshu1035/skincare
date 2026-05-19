@@ -30,6 +30,7 @@ interface CartStore {
   applyCoupon: (coupon: any, amount: number) => void;
   removeCoupon: (code: string) => void;
   revalidateCoupons: (paymentMethod: string) => void;
+  recalculateDiscount: () => void;
   refreshPromotions: () => Promise<void>;
   syncUser: (userId: string | null) => void;
 }
@@ -116,6 +117,7 @@ export const useCartStore = create<CartStore>()(
           return { items: newItems };
         });
         get().refreshPromotions();
+        get().recalculateDiscount();
       },
 
       removeItem: (id) => {
@@ -123,6 +125,7 @@ export const useCartStore = create<CartStore>()(
           items: state.items.filter((i) => i.id !== id),
         }));
         get().refreshPromotions();
+        get().recalculateDiscount();
       },
 
       updateQuantity: (id, quantity) => {
@@ -132,6 +135,32 @@ export const useCartStore = create<CartStore>()(
           ),
         }));
         get().refreshPromotions();
+        get().recalculateDiscount();
+      },
+
+      recalculateDiscount: () => {
+        const { appliedCoupons, getTotal } = get();
+        const subtotal = getTotal();
+        let newTotalDiscount = 0;
+        
+        const recalculatedCoupons = appliedCoupons.map(coupon => {
+          let discount = 0;
+          if (coupon.skin_type === 'percentage' || coupon.skin_type === 'percent') {
+            discount = (subtotal * coupon.skin_value) / 100;
+            if (coupon.skin_max_discount_amount) {
+              discount = Math.min(discount, coupon.skin_max_discount_amount);
+            }
+          } else if (coupon.skin_type === 'fixed') {
+            discount = Math.min(coupon.skin_value, subtotal);
+          }
+          newTotalDiscount += discount;
+          return { ...coupon, calculated_discount: discount };
+        });
+
+        set({ 
+          appliedCoupons: recalculatedCoupons, 
+          discountAmount: newTotalDiscount 
+        });
       },
 
       clearCart: () => set({ items: [], promoItems: [], appliedCoupons: [], discountAmount: 0, promoSavings: 0 }),

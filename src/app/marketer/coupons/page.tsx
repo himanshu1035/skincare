@@ -187,7 +187,21 @@ export default function MarketerCouponsPage() {
                       </button>
                     )}
                   </div>
-                  <div className="flex flex-wrap items-center gap-4 mt-2">
+                  {!isUsed && (
+                    <div className="mt-2 flex items-center">
+                      <button 
+                        onClick={() => {
+                          const link = `${window.location.origin}/?coupon=${c.skin_code}`;
+                          navigator.clipboard.writeText(link);
+                          alert('Campaign coupon link copied to clipboard!');
+                        }}
+                        className="text-accent-gold hover:text-text-dark font-black tracking-widest text-[9px] uppercase inline-flex items-center gap-1.5 bg-secondary-ivory/50 px-3 py-1.5 rounded-lg border border-secondary-ivory hover:border-accent-gold transition-all"
+                      >
+                        <Copy size={10} /> Copy Pre-Applied Coupon Link
+                      </button>
+                    </div>
+                  )}
+                  <div className="flex flex-wrap items-center gap-4 mt-3">
                      <div className="flex items-center gap-1.5 text-[10px] font-bold text-text-muted uppercase tracking-widest italic">
                        <Zap size={12} /> Redemptions: {usageCount}
                      </div>

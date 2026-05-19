@@ -55,11 +55,54 @@ export default async function CollectionPage({ params }: { params: Promise<{ han
        const { data: allProducts, error: allProdErr } = await supabase
         .from('skin_products')
         .select('*')
-        .range(0, 23) // Limit initial load to 24 products
+        .range(0, 99) // Fetch all products up to 100 so we can perform custom sorting
         .order('skin_created_at', { ascending: false });
        
        if (allProdErr) console.error('Error fetching all products:', allProdErr);
        products = allProducts || [];
+    }
+
+    // Apply custom sorting for 'all' handle
+    if (handle === 'all' && products.length > 0) {
+      let bestsellerProductIds: string[] = [];
+      try {
+        const { data: bestSellerCol } = await supabase
+          .from('skin_collections')
+          .select('skin_id')
+          .eq('skin_slug', 'best-sellers')
+          .single();
+
+        if (bestSellerCol) {
+          const { data: bsProds } = await supabase
+            .from('skin_collection_products')
+            .select('skin_product_id')
+            .eq('skin_collection_id', bestSellerCol.skin_id);
+          if (bsProds) {
+            bestsellerProductIds = bsProds.map(bp => bp.skin_product_id);
+          }
+        }
+      } catch (e) {
+        console.error('Error fetching bestseller IDs:', e);
+      }
+
+      products.sort((a, b) => {
+        const aName = (a.skin_name || '').toLowerCase();
+        const bName = (b.skin_name || '').toLowerCase();
+        
+        const aIsSnail = aName.includes('snail') || aName.includes('mucin');
+        const bIsSnail = bName.includes('snail') || bName.includes('mucin');
+        
+        if (aIsSnail && !bIsSnail) return -1;
+        if (!aIsSnail && bIsSnail) return 1;
+        
+        const aIsBest = bestsellerProductIds.includes(a.skin_id);
+        const bIsBest = bestsellerProductIds.includes(b.skin_id);
+        
+        if (aIsBest && !bIsBest) return -1;
+        if (!aIsBest && bIsBest) return 1;
+        
+        return 0; // maintain original database order
+      });
     }
   } catch (e) {
     console.error('Critical error in CollectionPage:', e);

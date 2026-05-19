@@ -20,7 +20,7 @@ export const PaginatedProductGrid: React.FC<PaginatedProductGridProps> = ({
 }) => {
   const [products, setProducts] = useState(initialProducts);
   const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(initialProducts.length >= 24);
+  const [hasMore, setHasMore] = useState(handle === 'all' ? false : initialProducts.length >= 24);
   const [isLoading, setIsLoading] = useState(false);
   const supabase = createClient();
 
