@@ -36,21 +36,30 @@ export default function UserOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [isGuest, setIsGuest] = useState(false);
+
+  // Guest lookup state
+  const [lookupEmail, setLookupEmail] = useState('');
+  const [lookupOrderId, setLookupOrderId] = useState('');
+  const [lookupError, setLookupError] = useState<string | null>(null);
+  const [lookupSubmitting, setLookupSubmitting] = useState(false);
 
   useEffect(() => {
     const checkUser = async () => {
       // Use createClient to ensure fresh session state
       const supabaseInstance = createClient();
       const { data: { session } } = await supabaseInstance.auth.getSession();
-      
-      // If no session but Zustand thinks we are logged in, the session might be expired
+
+      // Guests can still look up orders here without an account.
       if (!session) {
-        console.warn("No active Supabase session found. Redirecting to auth.");
-        router.push('/auth');
+        setIsCheckingAuth(false);
+        setIsGuest(true);
+        setLoading(false);
         return;
       }
 
       setIsCheckingAuth(false);
+      setIsGuest(false);
       const userId = session.user.id;
       const userEmail = session.user.email;
       fetchUserOrders(userId, userEmail);
@@ -84,6 +93,48 @@ export default function UserOrdersPage() {
     }
   };
 
+  // Guest order lookup: matches by email + order id prefix or full id.
+  const handleGuestLookup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLookupError(null);
+    setLookupSubmitting(true);
+    try {
+      const supabaseInstance = createClient();
+      const idQuery = lookupOrderId.trim();
+      const emailQuery = lookupEmail.trim().toLowerCase();
+
+      if (!idQuery || !emailQuery) {
+        setLookupError('Please enter both your email and order ID.');
+        return;
+      }
+
+      // Match by full id or by short id prefix (the UI shows the first 8 chars uppercase).
+      let query = supabaseInstance
+        .from('skin_orders')
+        .select('*')
+        .ilike('skin_customer_email', emailQuery);
+
+      if (idQuery.length >= 32) {
+        query = query.eq('skin_id', idQuery);
+      } else {
+        query = query.ilike('skin_id', `${idQuery.toLowerCase()}%`);
+      }
+
+      const { data, error } = await query.order('skin_created_at', { ascending: false });
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        setLookupError('No order found with that email and order ID.');
+        setOrders([]);
+        return;
+      }
+      setOrders(data);
+    } catch (err: any) {
+      setLookupError(err.message || 'Could not look up that order.');
+    } finally {
+      setLookupSubmitting(false);
+    }
+  };
+
   const toggleOrder = (orderId: string) => {
     setExpandedOrder(expandedOrder === orderId ? null : orderId);
   };
@@ -102,6 +153,49 @@ export default function UserOrdersPage() {
             <h1 className="text-5xl font-black tracking-tighter text-text-dark">Order History</h1>
             <p className="text-text-muted mt-2 font-medium italic">Track your premium COSRX shipments.</p>
           </header>
+
+          {isGuest && (
+            <div className="bg-white rounded-[2.5rem] p-8 md:p-10 border border-secondary-ivory shadow-sm mb-8">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-8">
+                <div>
+                  <p className="text-[10px] font-black text-accent-gold uppercase tracking-[0.3em] mb-2">Guest Order Lookup</p>
+                  <h2 className="text-2xl font-black text-text-dark uppercase tracking-tight">Track an Order</h2>
+                  <p className="text-sm text-text-muted font-medium italic mt-1">No account needed — just your order email and order ID.</p>
+                </div>
+                <Link href="/auth" className="text-[10px] font-black text-text-dark uppercase tracking-widest hover:text-accent-gold transition-colors whitespace-nowrap">
+                  Have an account? Sign in →
+                </Link>
+              </div>
+              <form onSubmit={handleGuestLookup} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <input
+                  type="email"
+                  required
+                  placeholder="Order email"
+                  value={lookupEmail}
+                  onChange={(e) => setLookupEmail(e.target.value)}
+                  className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium"
+                />
+                <input
+                  type="text"
+                  required
+                  placeholder="Order ID (first 8 characters or full)"
+                  value={lookupOrderId}
+                  onChange={(e) => setLookupOrderId(e.target.value)}
+                  className="w-full bg-secondary-ivory/30 border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium"
+                />
+                <button
+                  type="submit"
+                  disabled={lookupSubmitting}
+                  className="h-14 rounded-xl bg-text-dark text-white font-black text-xs tracking-[0.2em] uppercase hover:bg-accent-gold transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+                >
+                  {lookupSubmitting ? <Loader2 className="animate-spin" size={16} /> : 'Find My Order'}
+                </button>
+              </form>
+              {lookupError && (
+                <p className="text-xs font-bold text-red-500 mt-4">{lookupError}</p>
+              )}
+            </div>
+          )}
 
           {loading ? (
             <div className="py-20 flex items-center justify-center"><Loader2 className="animate-spin text-accent-gold" size={40} /></div>
@@ -286,7 +380,11 @@ export default function UserOrdersPage() {
             <div className="bg-white rounded-[3rem] p-20 text-center border border-dashed border-secondary-ivory">
               <div className="w-20 h-20 bg-secondary-ivory rounded-full flex items-center justify-center text-text-muted mx-auto mb-8"><ShoppingBag size={40} /></div>
               <h2 className="text-3xl font-black text-text-dark mb-4">No Orders Found</h2>
-              <p className="text-text-muted max-w-md mx-auto font-medium mb-10">Start your skincare journey by exploring our premium collections.</p>
+              <p className="text-text-muted max-w-md mx-auto font-medium mb-10">
+                {isGuest
+                  ? 'Use the lookup above with your order email and order ID, or start a new order from our collections.'
+                  : 'Start your skincare journey by exploring our premium collections.'}
+              </p>
               <Link href="/collections/all"><button className="px-10 py-4 bg-text-dark text-white rounded-full font-black text-xs tracking-widest uppercase hover:bg-accent-gold transition-all shadow-xl">Start Shopping</button></Link>
             </div>
           )}

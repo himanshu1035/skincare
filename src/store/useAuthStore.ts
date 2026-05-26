@@ -23,9 +23,10 @@ export const useAuthStore = create<AuthStore>()(
       setUser: (user) => set({ user }),
       logout: () => {
         set({ user: null });
-        // NEW: Also clear cart on logout
+        // Detach the cart from the previous user but DO NOT clear it,
+        // so a shopper can sign out and continue as a guest with the
+        // same items.
         import('@/store/useCartStore').then(mod => {
-          mod.useCartStore.getState().clearCart();
           mod.useCartStore.getState().syncUser(null);
         });
       },

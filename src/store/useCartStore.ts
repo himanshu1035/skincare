@@ -47,9 +47,14 @@ export const useCartStore = create<CartStore>()(
  
       syncUser: (currentUserId) => {
         const { userId, clearCart } = get();
-        // If the stored userId doesn't match the current session, clear everything
-        if (userId !== currentUserId) {
+        // Only clear when switching between two distinct logged-in users
+        // (e.g. one account signs out and another signs in on the same device).
+        // Guest <-> logged-in transitions keep the cart so guests can sign in
+        // mid-session and signed-in users can sign out without losing items.
+        if (userId && currentUserId && userId !== currentUserId) {
           clearCart();
+        }
+        if (userId !== currentUserId) {
           set({ userId: currentUserId });
         }
       },

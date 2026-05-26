@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "name": "Auto-Push to GitHub",
+  "description": "Stages, commits, and pushes any pending changes to the current branch on GitHub after every agent run. Uses scripts/auto-push.sh which is idempotent and a no-op when there is nothing to commit.",
+  "version": "1",
+  "when": {
+    "type": "agentStop"
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "bash ./scripts/auto-push.sh",
+    "timeout": 120
+  }
+}

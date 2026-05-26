@@ -81,7 +81,7 @@ export default function UnifiedUserSupportPage() {
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session) {
-      alert('Please login to raise a ticket');
+      alert('Please sign in to raise a ticket. You can shop and track orders without an account, but support tickets need a signed-in session so we can keep your conversation secure.');
       setSubmitting(false);
       return;
     }
@@ -169,16 +169,25 @@ export default function UnifiedUserSupportPage() {
              <div className="w-24 h-24 bg-secondary-ivory rounded-full flex items-center justify-center mx-auto mb-8 text-text-muted">
                 <User size={40} />
              </div>
-             <h2 className="text-4xl font-black text-text-dark uppercase italic tracking-tighter mb-6">Authentication Required</h2>
+             <p className="text-[10px] font-black text-accent-gold uppercase tracking-[0.4em] mb-4">Optional Account · Tickets Only</p>
+             <h2 className="text-4xl font-black text-text-dark uppercase italic tracking-tighter mb-6">Sign in to Open a Ticket</h2>
              <p className="text-text-muted text-lg font-medium italic mb-10 leading-relaxed">
-                To ensure your security and maintain a verified history of your requests, please log in to your COSRX account to access the Support Center.
+                You can shop and check out without an account. To raise and track support tickets, we ask you to sign in so we can keep a secure history of your conversations with our team.
              </p>
-             <Link 
-               href="/auth?redirect=/support"
-               className="inline-flex h-16 px-12 rounded-full bg-text-dark text-white font-black text-xs tracking-[0.2em] uppercase items-center gap-3 hover:bg-accent-gold transition-all shadow-2xl shadow-text-dark/10"
-             >
-                Login to Continue <ChevronRight size={18} />
-             </Link>
+             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+               <Link 
+                 href="/auth?redirect=/support"
+                 className="inline-flex h-16 px-12 rounded-full bg-text-dark text-white font-black text-xs tracking-[0.2em] uppercase items-center gap-3 hover:bg-accent-gold transition-all shadow-2xl shadow-text-dark/10"
+               >
+                  Sign in to Continue <ChevronRight size={18} />
+               </Link>
+               <Link 
+                 href="/account/orders"
+                 className="inline-flex h-16 px-12 rounded-full bg-secondary-ivory text-text-dark font-black text-xs tracking-[0.2em] uppercase items-center gap-3 hover:bg-accent-gold hover:text-white transition-all"
+               >
+                  Track an Order Instead
+               </Link>
+             </div>
           </div>
         ) : (
           <>

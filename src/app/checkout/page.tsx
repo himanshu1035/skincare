@@ -31,6 +31,11 @@ export default function CheckoutPage() {
   const [password, setPassword] = useState('');
   const [isExistingUser, setIsExistingUser] = useState(false);
   const [isBillingSameAsShipping, setIsBillingSameAsShipping] = useState(true);
+  // Account creation is OPTIONAL for guests. The password panel only opens
+  // if the shopper explicitly opts in, or if we detect the email already
+  // belongs to an existing account (in which case they need their password
+  // to attach this order to that account).
+  const [wantsAccount, setWantsAccount] = useState(false);
 
   const router = useRouter();
   const supabase = createClient();
@@ -101,7 +106,11 @@ export default function CheckoutPage() {
     let currentUserId = user?.id || null;
 
     if (!user) {
-      if (isExistingUser) {
+      // Guests can complete the order without creating an account at all.
+      // We only run sign-in / signup branches when the shopper opted in
+      // (wantsAccount) or when their email already belongs to an existing
+      // account AND they entered a password to attach this order to it.
+      if (isExistingUser && password) {
         try {
           const { data: loginData, error: loginErr } = await supabase.auth.signInWithPassword({
             email: data.email as string,
@@ -135,9 +144,14 @@ export default function CheckoutPage() {
           setIsSubmitting(false);
           return;
         }
-      } else {
-        // NEW USER: Defer registration to payment page
+      } else if (wantsAccount && password) {
+        // NEW USER opted in: defer registration to payment page.
         setSavedData({ ...data, password } as any);
+      } else {
+        // Pure GUEST checkout: don't store a password, don't create an account.
+        // Strip any stale password from the persisted store.
+        const { password: _drop, ...rest } = (data as any);
+        setSavedData(rest);
       }
     }
 
@@ -260,18 +274,63 @@ export default function CheckoutPage() {
                 </div>
 
                 {!user && (
-                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="space-y-4 bg-accent-gold/5 p-6 rounded-2xl border border-accent-gold/20">
-                      <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-accent-gold mb-2">
-                         <ShieldCheck size={14} /> {isExistingUser ? 'Welcome back! Enter password' : 'Create a secure password'}
-                      </div>
-                      <input 
-                        type="password" 
-                        placeholder="Password" 
-                        required 
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full bg-white border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" 
-                      />
+                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="space-y-4 bg-secondary-ivory/30 p-6 rounded-2xl border border-secondary-ivory">
+                      {isExistingUser ? (
+                        // Existing account detected — password is needed to attach this order to that account.
+                        // We still allow checkout without it; we just won't link the order to the existing user.
+                        <>
+                          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-accent-gold mb-2">
+                            <ShieldCheck size={14} /> Welcome back! Sign in to track this order
+                          </div>
+                          <input 
+                            type="password" 
+                            placeholder="Password (optional — leave blank to checkout as guest)"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="w-full bg-white border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" 
+                          />
+                          <p className="text-[10px] text-text-muted font-medium">
+                            We noticed an account with this email. Enter your password to add this order to your history,
+                            or skip and continue as guest.
+                          </p>
+                        </>
+                      ) : (
+                        // New email — account creation is fully optional.
+                        <>
+                          <label className="flex items-start gap-3 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={wantsAccount}
+                              onChange={(e) => {
+                                setWantsAccount(e.target.checked);
+                                if (!e.target.checked) setPassword('');
+                              }}
+                              className="mt-1 w-4 h-4 accent-accent-gold cursor-pointer"
+                            />
+                            <span className="flex-1">
+                              <span className="block text-xs font-black uppercase tracking-widest text-text-dark">
+                                Create an account (optional)
+                              </span>
+                              <span className="block text-[10px] text-text-muted font-medium mt-1">
+                                Save your details, track this order, and check out faster next time. You can also continue as a guest.
+                              </span>
+                            </span>
+                          </label>
+                          {wantsAccount && (
+                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
+                              <input 
+                                type="password" 
+                                placeholder="Choose a password"
+                                required
+                                minLength={6}
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="w-full bg-white border border-secondary-ivory rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-accent-gold outline-none transition-all font-medium" 
+                              />
+                            </motion.div>
+                          )}
+                        </>
+                      )}
                    </motion.div>
                 )}
 

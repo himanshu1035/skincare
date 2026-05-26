@@ -183,12 +183,21 @@ export const Navbar = React.memo(() => {
             >
               <Search size={22} />
             </button>
-            <Link href="/account/orders" className="p-1 hover:text-accent-gold transition-colors" title="My Orders">
+            <Link href="/account/orders" className="p-1 hover:text-accent-gold transition-colors" title={user ? 'My Orders' : 'Track an Order'}>
               <Package size={22} />
             </Link>
-            <Link href={user ? "/account" : "/auth"} className="p-1 hover:text-accent-gold transition-colors" title="My Account">
+            <Link href={user ? "/account" : "/auth"} className="p-1 hover:text-accent-gold transition-colors" title={user ? 'My Account' : 'Sign in (optional)'}>
               <User size={22} />
             </Link>
+            {!user && isMounted && (
+              <Link
+                href="/auth"
+                className="hidden md:inline-flex text-[10px] font-black text-text-dark hover:text-accent-gold transition-colors tracking-[0.2em] uppercase whitespace-nowrap"
+                title="Sign in (optional)"
+              >
+                Sign In
+              </Link>
+            )}
             <button 
               onClick={() => setIsCartOpen(true)}
               className="relative p-1 hover:text-accent-gold transition-colors group"

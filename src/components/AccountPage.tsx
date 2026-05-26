@@ -5,6 +5,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { User, Mail, Phone, ShoppingBag, Truck, MapPin, LogOut, ChevronRight, Package, ShieldCheck } from 'lucide-react';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { Button } from './ui/Button';
 import { formatPrice } from '@/lib/utils';
@@ -16,6 +17,7 @@ export const AccountPage = () => {
   const [profile, setProfile] = useState<any>(null);
 
   const [isChecking, setIsChecking] = useState(true);
+  const [isGuest, setIsGuest] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -31,7 +33,11 @@ export const AccountPage = () => {
       const { data, error } = await supabase.auth.getUser();
       
       if (error || !data.user) {
-        router.push('/auth');
+        // Account is optional. Show a soft "sign in" empty state instead of
+        // hard-redirecting guests away.
+        setIsGuest(true);
+        setIsChecking(false);
+        setLoading(false);
       } else {
         const { data: profileData } = await supabase
           .from('skin_user_profiles')
@@ -109,6 +115,42 @@ export const AccountPage = () => {
       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent-gold"></div>
     </div>
   );
+
+  // Guest view — account is optional. Shopper can sign in or look up an order.
+  if (isGuest) {
+    return (
+      <div className="container max-w-3xl py-20 px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-[3rem] p-12 md:p-16 shadow-sm border border-secondary-ivory text-center"
+        >
+          <div className="w-20 h-20 rounded-[2rem] bg-secondary-ivory flex items-center justify-center text-text-dark mx-auto mb-8">
+            <User size={36} />
+          </div>
+          <p className="text-[10px] font-black text-accent-gold uppercase tracking-[0.4em] mb-4">Optional Account</p>
+          <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-text-dark mb-6">Sign in (or skip it)</h1>
+          <p className="text-text-muted text-base font-medium italic max-w-md mx-auto leading-relaxed mb-10">
+            You can shop and track orders without an account. Sign in only if you want to save your details for next time.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href="/auth"
+              className="inline-flex h-14 px-10 rounded-full bg-text-dark text-white font-black text-[10px] tracking-[0.2em] uppercase items-center justify-center gap-2 hover:bg-accent-gold transition-all shadow-xl"
+            >
+              Sign In / Sign Up <ChevronRight size={14} />
+            </Link>
+            <Link
+              href="/account/orders"
+              className="inline-flex h-14 px-10 rounded-full bg-secondary-ivory text-text-dark font-black text-[10px] tracking-[0.2em] uppercase items-center justify-center gap-2 hover:bg-accent-gold hover:text-white transition-all"
+            >
+              <Package size={14} /> Track an Order
+            </Link>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="container max-w-6xl py-12 px-4">
